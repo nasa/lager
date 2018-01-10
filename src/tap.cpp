@@ -62,8 +62,11 @@ void Tap::publish(int data)
         bytes[i] = (data >> (i * 8));
     }
 
-    zmq::message_t uuidMsg(uuid.c_str(), uuid.size());
-    zmq::message_t valueMsg((void*)&data, sizeof(int));
+    zmq::message_t uuidMsg(uuid.size());
+    zmq::message_t valueMsg(sizeof(int));
+
+    memcpy(uuidMsg.data(), uuid.c_str(), uuid.size());
+    memcpy(valueMsg.data(), (void*)&data, sizeof(int));
 
     publisher->send(uuidMsg, ZMQ_SNDMORE);
     publisher->send(valueMsg);
