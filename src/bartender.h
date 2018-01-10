@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "chp_server.h"
+#include "forwarder.h"
 
 class Bartender
 {
@@ -16,7 +17,8 @@ public:
 
 private:
     std::shared_ptr<ChpServer> registrar;
-    std::shared_ptr<zmq::context_t> zContext;
+    std::shared_ptr<Forwarder> forwarder;
+    std::shared_ptr<zmq::context_t> context;
 };
 
 #endif

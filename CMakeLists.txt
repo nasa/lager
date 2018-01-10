@@ -31,16 +31,20 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 # Build GoogleTest
 add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
 
+set(SRC_DIR ${PROJECT_SOURCE_DIR}/src)
+
 include_directories(
     ${ZeroMQ_INCLUDE_DIRS}
     ${LIBUUID_INCLUDE_DIRS}
-    ${PROJECT_SOURCE_DIR}/src
+    ${SRC_DIR}
 )
 
+# Targets for bartender and test tap
 add_executable(bartender 
-    ${PROJECT_SOURCE_DIR}/src/bartender.cpp
-    ${PROJECT_SOURCE_DIR}/src/chp_server.cpp 
-    ${PROJECT_SOURCE_DIR}/src/bartender_main.cpp
+    ${SRC_DIR}/bartender.cpp
+    ${SRC_DIR}/chp_server.cpp 
+    ${SRC_DIR}/forwarder.cpp
+    ${SRC_DIR}/bartender_main.cpp
 )
 
 target_link_libraries(bartender 
@@ -50,12 +54,24 @@ target_link_libraries(bartender
 )
 
 add_executable(test_tap
-    ${PROJECT_SOURCE_DIR}/src/tap.cpp
-    ${PROJECT_SOURCE_DIR}/src/chp_client.cpp 
-    ${PROJECT_SOURCE_DIR}/src/client_main.cpp
+    ${SRC_DIR}/tap.cpp
+    ${SRC_DIR}/chp_client.cpp 
+    ${SRC_DIR}/tap_test_main.cpp
 )
 
 target_link_libraries(test_tap
+    ${ZeroMQ_LIBRARIES}
+    ${LIBUUID_LIBRARIES}
+    ${CMAKE_THREAD_LIBS_INIT}
+)
+
+add_executable(test_mug
+    ${SRC_DIR}/mug.cpp
+    ${SRC_DIR}/chp_client.cpp 
+    ${SRC_DIR}/mug_test_main.cpp
+)
+
+target_link_libraries(test_mug
     ${ZeroMQ_LIBRARIES}
     ${LIBUUID_LIBRARIES}
     ${CMAKE_THREAD_LIBS_INIT}

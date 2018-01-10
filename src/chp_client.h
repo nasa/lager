@@ -23,7 +23,7 @@ public:
     ChpClient(const std::string& serverHost_in, int basePort, int timeoutMillis_in);
     ~ChpClient();
 
-    void init(std::shared_ptr<zmq::context_t> context_in);
+    void init(std::shared_ptr<zmq::context_t> context_in, const std::string& uuid);
     void addOrUpdateKeyValue(const std::string& key, const std::string& value);
     void removeKey(const std::string& key);
     void start();

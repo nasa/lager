@@ -33,12 +33,14 @@ Replace `Visual Studio 15 2017` with your appropriate version.
 
 ### Usage
 
-Open a terminal window and run the server   
+Open a terminal window and run the bartender   
    
-`./server`   
+`./bartender`   
    
-Open a second terminal window and run the client   
+Open a second terminal window and run the tap   
    
-`./client`   
+`./test_tap`   
    
-You will see some output showing the hashmap being sent, and the client sending an update.  You may update the `client_main.cpp` and run additional clients to play around with it.
+Open a third terminal window and run the mug   
+   
+`./test_mug`   

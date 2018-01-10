@@ -1,15 +1,13 @@
 #include "chp_client.h"
 
 ChpClient::ChpClient(const std::string& serverHost_in, int basePort, int timeoutMillis_in):
-    running(false), sequence(-1)
+    running(false), sequence(-1), uuid("invalid")
 {
     snapshotPort = basePort;
     subscriberPort = basePort + 1;
     publisherPort = basePort + 2;
     timeoutMillis = timeoutMillis_in;
     serverHost = serverHost_in;
-
-    uuid = lager_utils::getUuid();
 }
 
 ChpClient::~ChpClient()
@@ -17,9 +15,10 @@ ChpClient::~ChpClient()
     zmq_term((void*)&context);
 }
 
-void ChpClient::init(std::shared_ptr<zmq::context_t> context_in)
+void ChpClient::init(std::shared_ptr<zmq::context_t> context_in, const std::string& uuid_in)
 {
     context = context_in;
+    uuid = uuid_in;
 }
 
 void ChpClient::start()

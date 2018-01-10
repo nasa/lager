@@ -1,0 +1,36 @@
+#ifndef FORWARDER
+#define FORWARDER
+
+#include <memory>
+#include <thread>
+
+#include <zmq.hpp>
+
+#include "lager_utils.h"
+
+class Forwarder
+{
+public:
+    Forwarder(int basePort);
+    ~Forwarder();
+
+    void init(std::shared_ptr<zmq::context_t> context_in);
+    void start();
+    void stop();
+
+private:
+    void forwarderThread();
+
+    std::shared_ptr<zmq::context_t> context;
+    std::shared_ptr<zmq::socket_t> frontend;
+    std::shared_ptr<zmq::socket_t> backend;
+
+    std::thread forwarderThreadHandle;
+
+    int frontendPort;
+    int backendPort;
+
+    bool running;
+};
+
+#endif

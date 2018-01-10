@@ -2,6 +2,8 @@
 #define LAGER_UTILS
 
 #include <iostream>
+#include <map>
+#include <sstream>
 
 #ifdef _WIN32
 // for uuid in Windows
@@ -92,6 +94,25 @@ namespace lager_utils
         ss << major << "." << minor << "." << patch;
 
         return ss.str();
+    }
+
+    static std::vector<uint8_t> getUuidBytes(const std::string& uuid)
+    {
+        std::vector<uint8_t> bytes;
+
+        for (const char& c : uuid)
+        {
+            if (c == '-')
+            {
+                continue;
+            }
+            else
+            {
+                bytes.push_back(c);
+            }
+        }
+
+        return bytes;
     }
 }
 
