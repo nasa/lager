@@ -1,8 +1,8 @@
 Lager
 -----------
 
-## Light-weight Accumulator Gathering Efficiently in Real-time
-
+Light-weight Accumulator Gathering Efficiently in Real-time   
+   
 Lager is a light-weight logging system.
 
 ### Dependencies Linux
@@ -42,3 +42,6 @@ Open a second terminal window and run the client
 `./client`   
    
 You will see some output showing the hashmap being sent, and the client sending an update.  You may update the `client_main.cpp` and run additional clients to play around with it.
+=======
+Lager is a light-weight logging system.
+>>>>>>> 89625b53f1073b2aa26becd08e9f7d4b13f086a3
