@@ -1,17 +1,13 @@
 build:trusty:
   image: js-er-code.jsc.nasa.gov:5005/lager/lager_image_base_trusty:stable
   script:
-    - apt update
-    - apt install -y git cmake build-essential libzmq3-dev uuid-dev
     - mkdir build
     - cd build
     - cmake .. && make
 
 build:xenial:
   image: js-er-code.jsc.nasa.gov:5005/lager/lager_image_base_xenial:stable
-  script:
-    - apt update
-    - apt install -y git cmake build-essential libzmq3-dev uuid-dev    
+  script:   
     - mkdir build
     - cd build
     - cmake .. && make
