@@ -4,6 +4,11 @@ Bartender::Bartender()
 {
 }
 
+Bartender::~Bartender()
+{
+    zmq_term((void*)*context.get());
+}
+
 void Bartender::init(int basePort)
 {
     context.reset(new zmq::context_t(1));

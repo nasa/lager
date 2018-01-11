@@ -13,10 +13,10 @@ int main(int argc, char* argv[])
 
     lager_utils::sleep(1000);
 
-    for (unsigned int i = 0; i < 10; ++i)
+    for (unsigned int i = 0; i < 5; ++i)
     {
         t.log(i);
-        lager_utils::sleep(1000);
+        lager_utils::sleep(500);
     }
 
     t.stop();

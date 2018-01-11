@@ -6,7 +6,7 @@ Mug::Mug(): running(false)
 
 Mug::~Mug()
 {
-    zmq_term((void*)&context);
+    zmq_term((void*)*context.get());
 }
 
 void Mug::init(const std::string& serverHost_in, int basePort)

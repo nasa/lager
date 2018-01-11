@@ -10,6 +10,7 @@ class Bartender
 {
 public:
     Bartender();
+    ~Bartender();
 
     void init(int basePort);
     void start();

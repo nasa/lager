@@ -1,6 +1,7 @@
 #ifndef CHP_CLIENT
 #define CHP_CLIENT
 
+#include <future>
 #include <iostream>
 #include <map>
 #include <memory>
@@ -21,7 +22,6 @@ class ChpClient
 {
 public:
     ChpClient(const std::string& serverHost_in, int basePort, int timeoutMillis_in);
-    ~ChpClient();
 
     void init(std::shared_ptr<zmq::context_t> context_in, const std::string& uuid);
     void addOrUpdateKeyValue(const std::string& key, const std::string& value);
@@ -43,6 +43,9 @@ private:
     std::thread snapshotThreadHandle;
     std::thread subscriberThreadHandle;
     std::thread publisherThreadHandle;
+    std::condition_variable snapshotCv;
+    std::condition_variable subscriberCv;
+    std::mutex mutex;
 
     std::map<std::string, std::string> hashMap;
 
@@ -57,6 +60,8 @@ private:
     double sequence;
 
     bool running;
+    bool snapshotRunning;
+    bool subscriberRunning;
 };
 
 #endif

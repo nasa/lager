@@ -7,7 +7,28 @@ Lager is a light-weight logging system.
 
 ### Dependencies Linux
 
-`sudo apt install -y git cmake build-essential libzmq3-dev uuid-dev`   
+Package dependencies   
+
+`sudo apt install -y git cmake build-essential uuid-dev`   
+   
+[ZeroMQ](https://github.com/zeromq/libzmq) >= 4.2.2 or higher is required.  To install from source:   
+   
+```
+cd
+git clone https://github.com/zeromq/libzmq
+cd libzmq
+git checkout v4.2.2
+mkdir build
+cd build
+cmake ..
+make
+sudo make install
+cd
+git clone https://github.com/zeromq/cppzmq
+cd cppzmq
+git checkout v4.2.2
+sudo cp zmq.hpp /usr/local/include/
+```
 
 ### Building Linux
 

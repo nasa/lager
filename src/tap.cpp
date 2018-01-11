@@ -1,8 +1,7 @@
 #include "tap.h"
 
-Tap::Tap(): publisherPort(0), running(false)
+Tap::Tap(): publisherPort(0), running(false), newData(false)
 {
-
 }
 
 void Tap::init(const std::string& serverHost_in, int basePort)
@@ -11,28 +10,11 @@ void Tap::init(const std::string& serverHost_in, int basePort)
 
     publisherPort = basePort + 10;
     uuid = lager_utils::getUuid();
-    uuidBytes = lager_utils::getUuidBytes(uuid);
+    serverHost = serverHost_in;
 
     // 2000 default timeout for testing
     chpClient.reset(new ChpClient(serverHost_in, basePort, 2000));
     chpClient->init(context, uuid);
-
-    try
-    {
-        int linger = 0;
-        publisher.reset(new zmq::socket_t(*context.get(), ZMQ_PUB));
-        publisher->setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
-        publisher->connect(lager_utils::getRemoteUri(serverHost_in, publisherPort).c_str());
-
-        std::cout << "tap::publisher: " << lager_utils::getRemoteUri(serverHost_in, publisherPort) << std::endl;
-    }
-    catch (zmq::error_t e)
-    {
-        std::cout << "publisher socket failed: " << e.what() << std::endl;
-        return;
-    }
-
-    lager_utils::sleep(1000);
 }
 
 void Tap::start()
@@ -40,36 +22,73 @@ void Tap::start()
     running = true;
 
     chpClient->start();
+    publisherThreadHandle = std::thread(&Tap::publisherThread, this);
+    publisherThreadHandle.detach();
 }
 
 void Tap::stop()
 {
+    std::unique_lock<std::mutex> lock(mutex);
+
+    // closing the context unblocks any currently blocked zmq sockets
+    context->close();
     chpClient->stop();
+
+    running = false;
+
+    while (publisherRunning)
+    {
+        publisherCv.wait(lock);
+    }
 }
 
 void Tap::log(int data)
 {
-    std::async(std::launch::async, &Tap::publish, this, data);
+    mutex.lock();
+    newData = true;
+    theInt = data;
+    mutex.unlock();
 }
 
-void Tap::publish(int data)
+void Tap::publisherThread()
 {
-    std::vector<uint8_t> bytes;
-    bytes.resize(4);
+    publisherRunning = true;
 
-    for (unsigned int i = 0; i < 4; ++i)
+    try
     {
-        bytes[i] = (data >> (i * 8));
+        int linger = 0;
+        zmq::socket_t publisher(*context.get(), ZMQ_PUB);
+        publisher.setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
+        publisher.connect(lager_utils::getRemoteUri(serverHost, publisherPort).c_str());
+
+        lager_utils::sleep(1000);
+
+        while (running)
+        {
+            if (newData)
+            {
+                zmq::message_t uuidMsg(uuid.size());
+                zmq::message_t valueMsg(sizeof(int));
+
+                memcpy(uuidMsg.data(), uuid.c_str(), uuid.size());
+                mutex.lock();
+                memcpy(valueMsg.data(), (void*)&theInt, sizeof(int));
+                newData = false;
+                mutex.unlock();
+
+                publisher.send(uuidMsg, ZMQ_SNDMORE);
+                publisher.send(valueMsg);
+
+                std::cout << "tap::publish data = " << theInt << std::endl;
+            }
+        }
     }
-
-    zmq::message_t uuidMsg(uuid.size());
-    zmq::message_t valueMsg(sizeof(int));
-
-    memcpy(uuidMsg.data(), uuid.c_str(), uuid.size());
-    memcpy(valueMsg.data(), (void*)&data, sizeof(int));
-
-    publisher->send(uuidMsg, ZMQ_SNDMORE);
-    publisher->send(valueMsg);
-
-    std::cout << "tap::publish data = " << data << std::endl;
+    catch (zmq::error_t e)
+    {
+        // publisher.close();
+        publisherRunning = false;
+        publisherCv.notify_one();
+        std::cout << "publisher socket failed: " << e.what() << std::endl;
+        return;
+    }
 }

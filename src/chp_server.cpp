@@ -9,11 +9,6 @@ ChpServer::ChpServer(int basePort): running(false), sequence(0)
     updatedKeys.clear();
 }
 
-ChpServer::~ChpServer()
-{
-    zmq_term((void*)&context);
-}
-
 void ChpServer::init(std::shared_ptr<zmq::context_t> context_in)
 {
     context = context_in;

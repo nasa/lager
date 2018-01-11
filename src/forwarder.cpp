@@ -6,11 +6,6 @@ Forwarder::Forwarder(int basePort): running(false)
     backendPort = basePort + 1;
 }
 
-Forwarder::~Forwarder()
-{
-    zmq_term((void*)&context);
-}
-
 void Forwarder::init(std::shared_ptr<zmq::context_t> context_in)
 {
     context = context_in;

@@ -18,19 +18,23 @@ public:
     void log(int data);
 
 private:
-    void publish(int data);
+    void publisherThread();
 
     std::shared_ptr<ChpClient> chpClient;
     std::shared_ptr<zmq::context_t> context;
-    std::shared_ptr<zmq::socket_t> publisher;
+    std::thread publisherThreadHandle;
+    std::mutex mutex;
+    std::condition_variable publisherCv;
 
     std::string uuid;
-
-    std::vector<uint8_t> uuidBytes;
+    std::string serverHost;
 
     int publisherPort;
+    int theInt;
 
+    bool newData;
     bool running;
+    bool publisherRunning;
 };
 
 #endif
