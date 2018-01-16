@@ -32,9 +32,7 @@ coverage:build:
     paths:
       - coverage/
         
-pages:deploy:
-  dependencies:
-    - coverage
+coverage:deploy:
   script:
     - mv coverage/ public/
   artifacts:
