@@ -1,9 +1,11 @@
 #ifndef CHP_SERVER
 #define CHP_SERVER
 
+#include <condition_variable>
 #include <iostream>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <sstream>
 #include <thread>
 
@@ -19,6 +21,7 @@ class ChpServer
 {
 public:
     ChpServer(int basePort);
+    ~ChpServer();
 
     void init(std::shared_ptr<zmq::context_t> context_in);
     void addOrUpdateKeyValue(const std::string& key, const std::string& value);
@@ -47,6 +50,10 @@ private:
     std::thread publisherThreadHandle;
     std::thread snapshotThreadHandle;
     std::thread collectorThreadHandle;
+    std::condition_variable publisherCv;
+    std::condition_variable snapshotCv;
+    std::condition_variable collectorCv;
+    std::mutex mutex;
 
     std::map<std::string, std::string> hashMap;
     std::map<std::string, std::string> uuidMap;
@@ -58,6 +65,9 @@ private:
 
     double sequence;
 
+    bool publisherRunning;
+    bool snapshotRunning;
+    bool collectorRunning;
     bool running;
 };
 

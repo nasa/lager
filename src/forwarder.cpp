@@ -6,6 +6,10 @@ Forwarder::Forwarder(int basePort): running(false)
     backendPort = basePort + 1;
 }
 
+Forwarder::~Forwarder()
+{
+}
+
 void Forwarder::init(std::shared_ptr<zmq::context_t> context_in)
 {
     context = context_in;
@@ -16,15 +20,16 @@ void Forwarder::start()
     running = true;
 
     forwarderThreadHandle = std::thread(&Forwarder::forwarderThread, this);
+    forwarderThreadHandle.detach();
 }
 
 void Forwarder::stop()
 {
-    running = false;
+    std::unique_lock<std::mutex> lock(mutex);
 
-    if (forwarderThreadHandle.joinable())
+    while (running)
     {
-        forwarderThreadHandle.join();
+        cv.wait(lock);
     }
 }
 
@@ -34,20 +39,23 @@ void Forwarder::forwarderThread()
     {
         frontend.reset(new zmq::socket_t(*context.get(), ZMQ_SUB));
         frontend->bind(lager_utils::getLocalUri(frontendPort).c_str());
-        std::cout << "forwarder frontend: " << lager_utils::getLocalUri(frontendPort) << std::endl;
         frontend->setsockopt(ZMQ_SUBSCRIBE, "", 0);
 
         backend.reset(new zmq::socket_t(*context.get(), ZMQ_PUB));
         backend->bind(lager_utils::getLocalUri(backendPort).c_str());
-        std::cout << "forwarder backend: " << lager_utils::getLocalUri(backendPort) << std::endl;
 
         zmq_device(ZMQ_FORWARDER, (void*)*frontend.get(), (void*)*backend.get());
     }
     catch (zmq::error_t e)
     {
-        std::cout << "socket failed: " << e.what() << std::endl;
-        return;
+        if (e.num() != ETERM)
+        {
+            std::cout << "forwarder socket failed: " << e.what() << std::endl;
+        }
     }
 
+    frontend->close();
+    backend->close();
+    cv.notify_one();
     running = false;
 }

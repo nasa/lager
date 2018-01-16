@@ -1,6 +1,7 @@
 #ifndef BARTENDER
 #define BARTENDER
 
+#include <future>
 #include <memory>
 
 #include "chp_server.h"

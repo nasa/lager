@@ -9,6 +9,10 @@ ChpServer::ChpServer(int basePort): running(false), sequence(0)
     updatedKeys.clear();
 }
 
+ChpServer::~ChpServer()
+{
+}
+
 void ChpServer::init(std::shared_ptr<zmq::context_t> context_in)
 {
     context = context_in;
@@ -21,25 +25,31 @@ void ChpServer::start()
     publisherThreadHandle = std::thread(&ChpServer::publisherThread, this);
     snapshotThreadHandle = std::thread(&ChpServer::snapshotThread, this);
     collectorThreadHandle = std::thread(&ChpServer::collectorThread, this);
+
+    publisherThreadHandle.detach();
+    snapshotThreadHandle.detach();
+    collectorThreadHandle.detach();
 }
 
 void ChpServer::stop()
 {
+    std::unique_lock<std::mutex> lock(mutex);
+
     running = false;
 
-    if (snapshotThreadHandle.joinable())
+    while (publisherRunning)
     {
-        snapshotThreadHandle.join();
+        publisherCv.wait(lock);
     }
 
-    if (publisherThreadHandle.joinable())
+    while (snapshotRunning)
     {
-        publisherThreadHandle.join();
+        snapshotCv.wait(lock);
     }
 
-    if (collectorThreadHandle.joinable())
+    while (collectorRunning)
     {
-        collectorThreadHandle.join();
+        collectorCv.wait(lock);
     }
 }
 
@@ -57,45 +67,53 @@ void ChpServer::removeKey(const std::string& key)
 
 void ChpServer::snapshotThread()
 {
+    snapshotRunning = true;
+
     try
     {
         snapshot.reset(new zmq::socket_t(*context.get(), ZMQ_ROUTER));
         snapshot->bind(lager_utils::getLocalUri(snapshotPort).c_str());
-    }
-    catch (zmq::error_t e)
-    {
-        std::cout << "snapshot socket failed: " << e.what() << std::endl;
-        return;
-    }
 
-    zmq::pollitem_t items[] = {{static_cast<void*>(*snapshot.get()), 0, ZMQ_POLLIN, 0}};
+        zmq::pollitem_t items[] = {{static_cast<void*>(*snapshot.get()), 0, ZMQ_POLLIN, 0}};
 
-    std::string identity("");
-    std::string icanhaz("");
-    std::string subtree("");
+        std::string identity("");
+        std::string icanhaz("");
+        std::string subtree("");
 
-    while (running)
-    {
-        zmq::poll(&items[0], 1, 1000);
-
-        if (items[0].revents & ZMQ_POLLIN)
+        while (running)
         {
-            zmq::message_t msg;
+            zmq::poll(&items[0], 1, 1000);
 
-            snapshot->recv(&msg);
-            identity = std::string(static_cast<char*>(msg.data()), msg.size());
-            snapshot->recv(&msg);
-            icanhaz = std::string(static_cast<char*>(msg.data()), msg.size());
-            snapshot->recv(&msg);
-            subtree = std::string(static_cast<char*>(msg.data()), msg.size());
-
-            if (icanhaz == "ICANHAZ?")
+            if (items[0].revents & ZMQ_POLLIN)
             {
-                snapshotMap(identity);
-                snapshotBye(identity);
+                zmq::message_t msg;
+
+                snapshot->recv(&msg);
+                identity = std::string(static_cast<char*>(msg.data()), msg.size());
+                snapshot->recv(&msg);
+                icanhaz = std::string(static_cast<char*>(msg.data()), msg.size());
+                snapshot->recv(&msg);
+                subtree = std::string(static_cast<char*>(msg.data()), msg.size());
+
+                if (icanhaz == "ICANHAZ?")
+                {
+                    snapshotMap(identity);
+                    snapshotBye(identity);
+                }
             }
         }
     }
+    catch (zmq::error_t e)
+    {
+        if (e.num() != ETERM)
+        {
+            std::cout << "snapshot socket failed: " << e.what() << std::endl;
+        }
+    }
+
+    snapshot->close();
+    snapshotRunning = false;
+    snapshotCv.notify_one();
 }
 
 void ChpServer::snapshotMap(const std::string& identity)
@@ -204,30 +222,38 @@ void ChpServer::publishUpdatedKeys()
 
 void ChpServer::publisherThread()
 {
+    publisherRunning = true;
+
     try
     {
         publisher.reset(new zmq::socket_t(*context.get(), ZMQ_PUB));
         publisher->bind(lager_utils::getLocalUri(publisherPort).c_str());
+
+        while (running)
+        {
+            if (updatedKeys.size() > 0)
+            {
+                publishUpdatedKeys();
+            }
+            else
+            {
+                publishHugz();
+            }
+
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
     }
     catch (zmq::error_t e)
     {
-        std::cout << "publisher socket failed: " << e.what() << std::endl;
-        return;
+        if (e.num() != ETERM)
+        {
+            std::cout << "publisher socket failed: " << e.what() << std::endl;
+        }
     }
 
-    while (running)
-    {
-        if (updatedKeys.size() > 0)
-        {
-            publishUpdatedKeys();
-        }
-        else
-        {
-            publishHugz();
-        }
-
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-    }
+    publisher->close();
+    publisherRunning = false;
+    publisherCv.notify_one();
 }
 
 void ChpServer::publishHugz()
@@ -259,91 +285,99 @@ void ChpServer::publishHugz()
 
 void ChpServer::collectorThread()
 {
+    collectorRunning = true;
+
     try
     {
         collector.reset(new zmq::socket_t(*context.get(), ZMQ_SUB));
         collector->bind(lager_utils::getLocalUri(collectorPort).c_str());
         collector->setsockopt(ZMQ_SUBSCRIBE, "", 0);
-    }
-    catch (zmq::error_t e)
-    {
-        std::cout << "collector socket failed: " << e.what() << std::endl;
-        return;
-    }
 
-    zmq::pollitem_t items[] = {{static_cast<void*>(*collector.get()), 0, ZMQ_POLLIN, 0}};
+        zmq::pollitem_t items[] = {{static_cast<void*>(*collector.get()), 0, ZMQ_POLLIN, 0}};
 
-    std::string key("");
-    std::string uuid("");
-    std::string properties("");
-    std::string value("");
-    double sequence = 0;
-    bool duplicateKey = false;
+        std::string key("");
+        std::string uuid("");
+        std::string properties("");
+        std::string value("");
+        double sequence = 0;
+        bool duplicateKey = false;
 
-    while (running)
-    {
-        zmq::poll(&items[0], 1, 1000);
-
-        if (items[0].revents & ZMQ_POLLIN)
+        while (running)
         {
-            zmq::message_t msg;
+            zmq::poll(&items[0], 1, 1000);
 
-            collector->recv(&msg);
-            key = std::string(static_cast<char*>(msg.data()), msg.size());
-
-            collector->recv(&msg);
-            sequence = *(double*)msg.data();
-
-            collector->recv(&msg);
-            uuid = std::string(static_cast<char*>(msg.data()), msg.size());
-
-            collector->recv(&msg);
-            properties = std::string(static_cast<char*>(msg.data()), msg.size());
-
-            collector->recv(&msg);
-            value = std::string(static_cast<char*>(msg.data()), msg.size());
-
-            std::cout << "received key update for key " << key << std::endl;
-
-            if (uuid.length() == 0)
+            if (items[0].revents & ZMQ_POLLIN)
             {
-                std::cout << "empty uuid, ignoring" << std::endl;
-            }
-            else
-            {
-                if (uuidMap.find(uuid) != uuidMap.end())
+                zmq::message_t msg;
+
+                collector->recv(&msg);
+                key = std::string(static_cast<char*>(msg.data()), msg.size());
+
+                collector->recv(&msg);
+                sequence = *(double*)msg.data();
+
+                collector->recv(&msg);
+                uuid = std::string(static_cast<char*>(msg.data()), msg.size());
+
+                collector->recv(&msg);
+                properties = std::string(static_cast<char*>(msg.data()), msg.size());
+
+                collector->recv(&msg);
+                value = std::string(static_cast<char*>(msg.data()), msg.size());
+
+                std::cout << "received key update for key " << key << std::endl;
+
+                if (uuid.length() == 0)
                 {
-                    std::cout << "uuid already registered for key " << key << " ignoring" << std::endl;
+                    std::cout << "empty uuid, ignoring" << std::endl;
                 }
                 else
                 {
-                    duplicateKey = false;
-
-                    for (auto i = uuidMap.begin(); i != uuidMap.end(); ++i)
+                    if (uuidMap.find(uuid) != uuidMap.end())
                     {
-                        // Duplicate key exists in the map under another uuid
-                        if (i->second == key)
+                        std::cout << "uuid already registered for key " << key << " ignoring" << std::endl;
+                    }
+                    else
+                    {
+                        duplicateKey = false;
+
+                        for (auto i = uuidMap.begin(); i != uuidMap.end(); ++i)
                         {
-                            duplicateKey = true;
-                            std::cout << "key already registered by another uuid. TBD action" << std::endl;
+                            // Duplicate key exists in the map under another uuid
+                            if (i->second == key)
+                            {
+                                duplicateKey = true;
+                                std::cout << "key already registered by another uuid. TBD action" << std::endl;
+                            }
+                        }
+
+                        if (!duplicateKey)
+                        {
+                            uuidMap[uuid] = key;
                         }
                     }
-
-                    if (!duplicateKey)
-                    {
-                        uuidMap[uuid] = key;
-                    }
                 }
-            }
 
-            if (value.length() == 0)
-            {
-                removeKey(key);
-            }
-            else
-            {
-                addOrUpdateKeyValue(key, value);
+                if (value.length() == 0)
+                {
+                    removeKey(key);
+                }
+                else
+                {
+                    addOrUpdateKeyValue(key, value);
+                }
             }
         }
     }
+    catch (zmq::error_t e)
+    {
+        if (e.num() != ETERM)
+        {
+            std::cout << "collector socket failed: " << e.what() << std::endl;
+        }
+    }
+
+    collector->close();
+    collectorRunning = false;
+    collectorCv.notify_one();
 }

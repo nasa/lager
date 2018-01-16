@@ -26,6 +26,8 @@ private:
     std::shared_ptr<zmq::socket_t> subscriber;
 
     std::thread subscriberThreadHandle;
+    std::mutex mutex;
+    std::condition_variable subscriberCv;
 
     std::string serverHost;
     std::string uuid;
@@ -33,6 +35,7 @@ private:
     int subscriberPort;
 
     bool running;
+    bool subscriberRunning;
 };
 
 #endif

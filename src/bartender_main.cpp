@@ -1,5 +1,3 @@
-#include <zmq.hpp>
-
 #include "bartender.h"
 #include "lager_utils.h"
 

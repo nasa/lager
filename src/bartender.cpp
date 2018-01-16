@@ -6,7 +6,6 @@ Bartender::Bartender()
 
 Bartender::~Bartender()
 {
-    zmq_term((void*)*context.get());
 }
 
 void Bartender::init(int basePort)
@@ -28,6 +27,7 @@ void Bartender::start()
 
 void Bartender::stop()
 {
+    context->close();
     registrar->stop();
     forwarder->stop();
 }

@@ -1,7 +1,9 @@
 #ifndef FORWARDER
 #define FORWARDER
 
+#include <condition_variable>
 #include <memory>
+#include <mutex>
 #include <thread>
 
 #include <zmq.hpp>
@@ -12,6 +14,7 @@ class Forwarder
 {
 public:
     Forwarder(int basePort);
+    ~Forwarder();
 
     void init(std::shared_ptr<zmq::context_t> context_in);
     void start();
@@ -25,6 +28,8 @@ private:
     std::shared_ptr<zmq::socket_t> backend;
 
     std::thread forwarderThreadHandle;
+    std::mutex mutex;
+    std::condition_variable cv;
 
     int frontendPort;
     int backendPort;

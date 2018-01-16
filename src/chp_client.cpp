@@ -71,9 +71,9 @@ void ChpClient::subscriberThread()
 
     zmq::pollitem_t items[] = {{static_cast<void*>(*subscriber.get()), 0, ZMQ_POLLIN, 0}};
 
-    while (running)
+    try
     {
-        try
+        while (running)
         {
             zmq::poll(&items[0], 1, timeoutMillis);
 
@@ -127,26 +127,21 @@ void ChpClient::subscriberThread()
             }
             else
             {
-                if (!running)
-                {
-                    subscriberRunning = false;
-                    subscriberCv.notify_one();
-                    return;
-                }
-
                 std::cout << "no hugz in " << timeoutMillis << "ms, TBD action." << std::endl;
             }
         }
-        catch (zmq::error_t& e)
+    }
+    catch (zmq::error_t& e)
+    {
+        if (e.num() != ETERM)
         {
-            subscriber->close();
-            subscriberRunning = false;
-            subscriberCv.notify_one();
-            return;
+            std::cout << "subscriber socket failed: " << e.what() << std::endl;
         }
     }
 
+    subscriber->close();
     subscriberRunning = false;
+    subscriberCv.notify_one();
 }
 
 void ChpClient::snapshotThread()
@@ -167,72 +162,78 @@ void ChpClient::snapshotThread()
     std::string empty("");
     double sequence = 0;
 
-    while (key != "KTHXBAI")
+    try
     {
-        try
+        while (running)
         {
-            zmq::message_t reqFrame0(icanhaz.size());
-            zmq::message_t reqFrame1(subtree.size());
-
-            memcpy(reqFrame0.data(), icanhaz.c_str(), icanhaz.size());
-            memcpy(reqFrame1.data(), subtree.c_str(), subtree.size());
-
-            snapshot->send(reqFrame0, ZMQ_SNDMORE);
-            snapshot->send(reqFrame1);
-
-            zmq::pollitem_t items[] = {{static_cast<void*>(*snapshot.get()), 0, ZMQ_POLLIN, 0}};
-            zmq::poll(items, 1, timeoutMillis);
-
-            if (items[0].revents & ZMQ_POLLIN)
+            if (key != "KTHXBAI")
             {
-                zmq::message_t replyMsg;
+                zmq::message_t reqFrame0(icanhaz.size());
+                zmq::message_t reqFrame1(subtree.size());
 
-                snapshot->recv(&replyMsg);
-                key = std::string(static_cast<char*>(replyMsg.data()), replyMsg.size());
+                memcpy(reqFrame0.data(), icanhaz.c_str(), icanhaz.size());
+                memcpy(reqFrame1.data(), subtree.c_str(), subtree.size());
 
-                snapshot->recv(&replyMsg);
-                sequence = *(double*)replyMsg.data();
+                snapshot->send(reqFrame0, ZMQ_SNDMORE);
+                snapshot->send(reqFrame1);
 
-                snapshot->recv(&replyMsg);
-                empty = std::string(static_cast<char*>(replyMsg.data()), replyMsg.size());
+                zmq::pollitem_t items[] = {{static_cast<void*>(*snapshot.get()), 0, ZMQ_POLLIN, 0}};
+                zmq::poll(items, 1, timeoutMillis);
 
-                snapshot->recv(&replyMsg);
-                empty = std::string(static_cast<char*>(replyMsg.data()), replyMsg.size());
-
-                snapshot->recv(&replyMsg);
-                value = std::string(static_cast<char*>(replyMsg.data()), replyMsg.size());
-
-                if (sequence > this->sequence)
+                if (items[0].revents & ZMQ_POLLIN)
                 {
-                    if (value.length() > 0)
+                    zmq::message_t replyMsg;
+
+                    snapshot->recv(&replyMsg);
+                    key = std::string(static_cast<char*>(replyMsg.data()), replyMsg.size());
+
+                    snapshot->recv(&replyMsg);
+                    sequence = *(double*)replyMsg.data();
+
+                    snapshot->recv(&replyMsg);
+                    empty = std::string(static_cast<char*>(replyMsg.data()), replyMsg.size());
+
+                    snapshot->recv(&replyMsg);
+                    empty = std::string(static_cast<char*>(replyMsg.data()), replyMsg.size());
+
+                    snapshot->recv(&replyMsg);
+                    value = std::string(static_cast<char*>(replyMsg.data()), replyMsg.size());
+
+                    if (sequence > this->sequence)
                     {
-                        updateMap[key] = value;
+                        if (value.length() > 0)
+                        {
+                            updateMap[key] = value;
+                        }
+                        else if (key != "KTHXBAI")
+                        {
+                            // this shouldn't happen, throw here later
+                            std::cout << "got initial snapshot (key, value) with empty value" << std::endl;
+                        }
                     }
-                    else if (key != "KTHXBAI")
+                    else
                     {
-                        // this shouldn't happen, throw here later
-                        std::cout << "got initial snapshot (key, value) with empty value" << std::endl;
+                        std::cout << "bad sequence check (new = " << sequence << ", old = " << this->sequence << ")" << std::endl;
                     }
                 }
                 else
                 {
-                    std::cout << "bad sequence check (new = " << sequence << ", old = " << this->sequence << ")" << std::endl;
+                    // only process a complete set
+                    updateMap.clear();
+                    std::cout << "no reply from snapshot server in " << timeoutMillis << "ms, retrying infinite times" << std::endl;
                 }
             }
             else
             {
-                std::cout << "snapshot::4" << std::endl;
-                // only process a complete set
-                updateMap.clear();
-                std::cout << "no reply from snapshot server in " << timeoutMillis << "ms, retrying infinite times" << std::endl;
+                break;
             }
         }
-        catch (zmq::error_t& e)
+    }
+    catch (zmq::error_t& e)
+    {
+        if (e.num() != ETERM)
         {
-            snapshot->close();
-            snapshotRunning = false;
-            snapshotCv.notify_one();
-            return;
+            std::cout << "snapshot socket failed: " << e.what() << std::endl;
         }
     }
 
@@ -241,10 +242,14 @@ void ChpClient::snapshotThread()
         hashMap[i->first] = i->second;
     }
 
-    this->sequence = sequence;
-    std::cout << "received hashMap" << std::endl;
-    lager_utils::printHashMap(hashMap);
+    if (updateMap.size() > 0)
+    {
+        this->sequence = sequence;
+        std::cout << "received hashMap" << std::endl;
+        lager_utils::printHashMap(hashMap);
+    }
 
+    snapshot->close();
     snapshotRunning = false;
     snapshotCv.notify_one();
 }
@@ -256,36 +261,48 @@ void ChpClient::publisherThread(const std::string& key, const std::string& value
         return;
     }
 
-    int hwm = 1;
-    int linger = 0;
-    publisher.reset(new zmq::socket_t(*context.get(), ZMQ_PUB));
-    publisher->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(int));
-    publisher->setsockopt(ZMQ_LINGER, &linger, sizeof(int));
-    publisher->connect(lager_utils::getRemoteUri(serverHost.c_str(), publisherPort).c_str());
+    try
+    {
+        int hwm = 1;
+        int linger = 0;
+        publisher.reset(new zmq::socket_t(*context.get(), ZMQ_PUB));
+        publisher->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(int));
+        publisher->setsockopt(ZMQ_LINGER, &linger, sizeof(int));
+        publisher->connect(lager_utils::getRemoteUri(serverHost.c_str(), publisherPort).c_str());
 
-    lager_utils::sleep(1000);
+        lager_utils::sleep(1000);
 
-    // @TODO implement properties
-    std::string properties("");
-    double zero = 0;
+        // @TODO implement properties
+        std::string properties("");
+        double zero = 0;
 
-    zmq::message_t frame0(key.size());
-    zmq::message_t frame1(sizeof(double));
-    zmq::message_t frame2(uuid.size());
-    zmq::message_t frame3(properties.size());
-    zmq::message_t frame4(value.size());
+        zmq::message_t frame0(key.size());
+        zmq::message_t frame1(sizeof(double));
+        zmq::message_t frame2(uuid.size());
+        zmq::message_t frame3(properties.size());
+        zmq::message_t frame4(value.size());
 
-    memcpy(frame0.data(), key.c_str(), key.size());
-    memcpy(frame1.data(), (void*)&zero, sizeof(double));
-    memcpy(frame2.data(), uuid.c_str(), uuid.size());
-    memcpy(frame3.data(), properties.c_str(), properties.size());
-    memcpy(frame4.data(), value.c_str(), value.size());
+        memcpy(frame0.data(), key.c_str(), key.size());
+        memcpy(frame1.data(), (void*)&zero, sizeof(double));
+        memcpy(frame2.data(), uuid.c_str(), uuid.size());
+        memcpy(frame3.data(), properties.c_str(), properties.size());
+        memcpy(frame4.data(), value.c_str(), value.size());
 
-    publisher->send(frame0, ZMQ_SNDMORE);
-    publisher->send(frame1, ZMQ_SNDMORE);
-    publisher->send(frame2, ZMQ_SNDMORE);
-    publisher->send(frame3, ZMQ_SNDMORE);
-    publisher->send(frame4);
+        publisher->send(frame0, ZMQ_SNDMORE);
+        publisher->send(frame1, ZMQ_SNDMORE);
+        publisher->send(frame2, ZMQ_SNDMORE);
+        publisher->send(frame3, ZMQ_SNDMORE);
+        publisher->send(frame4);
 
-    std::cout << "sent updated key " << key << std::endl;
+        std::cout << "sent updated key " << key << std::endl;
+    }
+    catch (zmq::error_t& e)
+    {
+        if (e.num() != ETERM)
+        {
+            std::cout << "publisher socket failed: " << e.what() << std::endl;
+        }
+    }
+
+    publisher->close();
 }
