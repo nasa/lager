@@ -23,8 +23,23 @@ build:windows:
     - windows
 
 coverage:
-image: js-er-code.jsc.nasa.gov:5005/lager/lager_image_base_xenial:stable
-  script:   
-    - mkdir build
-    - cd build
-    - cmake .. && make lager_coverage
+  stage: build
+  image: js-er-code.jsc.nasa.gov:5005/lager/lager_image_base_xenial:stable
+    script:   
+      - mkdir build
+      - cd build
+      - cmake .. && make lager_coverage
+    artifacts:
+      paths:
+        - coverage/
+        
+pages:
+  stage: deploy
+  dependencies:
+    - coverage
+  script:
+    - mv coverage/ public/
+  artifacts:
+    paths:
+      - public
+
