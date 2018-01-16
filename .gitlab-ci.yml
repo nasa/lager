@@ -32,7 +32,7 @@ coverage:build:
     paths:
       - coverage/
         
-pages:deploy:
+coverage:deploy:
   dependencies:
     - build
   script:
