@@ -95,25 +95,6 @@ namespace lager_utils
 
         return ss.str();
     }
-
-    static std::vector<uint8_t> getUuidBytes(const std::string& uuid)
-    {
-        std::vector<uint8_t> bytes;
-
-        for (const char& c : uuid)
-        {
-            if (c == '-')
-            {
-                continue;
-            }
-            else
-            {
-                bytes.push_back(c);
-            }
-        }
-
-        return bytes;
-    }
 }
 
 #endif

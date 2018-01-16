@@ -53,8 +53,6 @@ void Mug::subscriberThread()
         subscriber->connect(lager_utils::getRemoteUri(serverHost.c_str(), subscriberPort).c_str());
         subscriber->setsockopt(ZMQ_SUBSCRIBE, "", 0);
 
-        std::cout << "mug::subscriber: " << lager_utils::getRemoteUri(serverHost.c_str(), subscriberPort) << std::endl;
-
         std::string key("");
         std::string empty("");
         std::string value("");

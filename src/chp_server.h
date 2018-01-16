@@ -28,6 +28,7 @@ public:
     void removeKey(const std::string& key);
     void start();
     void stop();
+    std::map<std::string, std::string> getHashMap() {return hashMap;}
 
 private:
     void snapshotThread();
@@ -39,8 +40,6 @@ private:
     void collectorThread();
     void snapshotStopped();
     void initialize(std::shared_ptr<zmq::context_t> context_in);
-    std::string getLocalUri(int port) const;
-    std::string getRemoteUri(const std::string& remoteUriBase, int remotePort) const;
 
     std::shared_ptr<zmq::context_t> context;
     std::shared_ptr<zmq::socket_t> snapshot;

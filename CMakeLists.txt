@@ -39,11 +39,26 @@ include_directories(
     ${SRC_DIR}
 )
 
-# Targets for bartender and test tap
-add_executable(bartender 
+# Sources (@todo make this a library later)
+set(BARTENDER_SRCS
     ${SRC_DIR}/bartender.cpp
     ${SRC_DIR}/chp_server.cpp 
     ${SRC_DIR}/forwarder.cpp
+)
+
+set(TAP_SRCS
+    ${SRC_DIR}/tap.cpp
+    ${SRC_DIR}/chp_client.cpp 
+)
+
+set(MUG_SRCS
+    ${SRC_DIR}/mug.cpp
+    ${SRC_DIR}/chp_client.cpp     
+)
+
+# Targets for bartender and test tap
+add_executable(bartender 
+    ${BARTENDER_SRCS}
     ${SRC_DIR}/bartender_main.cpp
 )
 
@@ -54,8 +69,7 @@ target_link_libraries(bartender
 )
 
 add_executable(test_tap
-    ${SRC_DIR}/tap.cpp
-    ${SRC_DIR}/chp_client.cpp 
+    ${TAP_SRCS}
     ${SRC_DIR}/tap_test_main.cpp
 )
 
@@ -66,8 +80,7 @@ target_link_libraries(test_tap
 )
 
 add_executable(test_mug
-    ${SRC_DIR}/mug.cpp
-    ${SRC_DIR}/chp_client.cpp 
+    ${MUG_SRCS}
     ${SRC_DIR}/mug_test_main.cpp
 )
 
@@ -97,9 +110,20 @@ endif()
 enable_testing()
 include_directories(${GTEST_INCLUDE_DIRS})
 file(GLOB TEST_SRCS test/*.cpp)
-add_executable(unit_tests ${TEST_SRCS})
+add_executable(unit_tests 
+    ${TEST_SRCS}
+    ${BARTENDER_SRCS}
+    ${TAP_SRCS}
+)
+target_compile_definitions(unit_tests PRIVATE -DZMQ_VER="${ZeroMQ_VER}")
 target_link_libraries(unit_tests 
     ${ZeroMQ_LIBRARIES} 
+    ${LIBUUID_LIBRARIES}
     gtest
 )
 add_test(test_all unit_tests)
+
+# Code coverage
+include(CodeCoverage)
+setup_target_for_coverage(${PROJECT_NAME}_coverage unit_tests coverage)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")

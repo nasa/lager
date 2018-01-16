@@ -143,8 +143,6 @@ void ChpServer::snapshotMap(const std::string& identity)
         snapshot->send(frame3, ZMQ_SNDMORE);
         snapshot->send(frame4);
     }
-
-    std::cout << "sent hashMap" << std::endl;
 }
 
 void ChpServer::snapshotBye(const std::string& identity)
@@ -208,8 +206,6 @@ void ChpServer::publishUpdatedKeys()
         }
 
         sequence++;
-
-        std::cout << "sent updated key " << *i << std::endl;
     }
 
     for (std::vector<std::string>::iterator i = removedKeys.begin(); i != removedKeys.end(); ++i)
@@ -240,7 +236,7 @@ void ChpServer::publisherThread()
                 publishHugz();
             }
 
-            std::this_thread::sleep_for(std::chrono::seconds(1));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
     catch (zmq::error_t e)
@@ -279,8 +275,6 @@ void ChpServer::publishHugz()
     publisher->send(frame2, ZMQ_SNDMORE);
     publisher->send(frame3, ZMQ_SNDMORE);
     publisher->send(frame4);
-
-    std::cout << "hugz sent" << std::endl;
 }
 
 void ChpServer::collectorThread()
@@ -325,19 +319,13 @@ void ChpServer::collectorThread()
                 collector->recv(&msg);
                 value = std::string(static_cast<char*>(msg.data()), msg.size());
 
-                std::cout << "received key update for key " << key << std::endl;
-
                 if (uuid.length() == 0)
                 {
-                    std::cout << "empty uuid, ignoring" << std::endl;
+                    std::cout << "empty uuid, ignoring, TBD action" << std::endl;
                 }
                 else
                 {
-                    if (uuidMap.find(uuid) != uuidMap.end())
-                    {
-                        std::cout << "uuid already registered for key " << key << " ignoring" << std::endl;
-                    }
-                    else
+                    if (uuidMap.find(uuid) == uuidMap.end())
                     {
                         duplicateKey = false;
 

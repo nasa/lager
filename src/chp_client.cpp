@@ -96,27 +96,22 @@ void ChpClient::subscriberThread()
                 subscriber->recv(&msg);
                 value = std::string(static_cast<char*>(msg.data()), msg.size());
 
-                if (key == "HUGZ")
-                {
-                    std::cout << "hugz received" << std::endl;
-                }
-                else
+                if (key != "HUGZ")
                 {
                     if (sequence > this->sequence)
                     {
                         if (value.length() == 0)
                         {
                             hashMap.erase(key);
-                            std::cout << "removed key " << key << " from hashMap" << std::endl;
                         }
                         else
                         {
                             hashMap[key] = value;
-                            std::cout << "updated hashMap with (" << key << ", " << value << ")" << std::endl;
                         }
                     }
                     else
                     {
+                        // todo error
                         std::cout << "bad sequence check (new = " << sequence << ", old = " << this->sequence << ")" << std::endl;
                     }
 
@@ -213,6 +208,7 @@ void ChpClient::snapshotThread()
                     }
                     else
                     {
+                        // @todo throw error
                         std::cout << "bad sequence check (new = " << sequence << ", old = " << this->sequence << ")" << std::endl;
                     }
                 }
@@ -245,7 +241,6 @@ void ChpClient::snapshotThread()
     if (updateMap.size() > 0)
     {
         this->sequence = sequence;
-        std::cout << "received hashMap" << std::endl;
         lager_utils::printHashMap(hashMap);
     }
 
@@ -293,8 +288,6 @@ void ChpClient::publisherThread(const std::string& key, const std::string& value
         publisher->send(frame2, ZMQ_SNDMORE);
         publisher->send(frame3, ZMQ_SNDMORE);
         publisher->send(frame4);
-
-        std::cout << "sent updated key " << key << std::endl;
     }
     catch (zmq::error_t& e)
     {
