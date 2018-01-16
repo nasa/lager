@@ -34,7 +34,7 @@ coverage:build:
         
 pages:deploy:
   dependencies:
-    - coverage:build
+    - build
   script:
     - mv coverage/ public/
   artifacts:
