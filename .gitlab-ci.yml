@@ -22,7 +22,7 @@ build:windows:
     - lager
     - windows
 
-coverage:build
+coverage:build:
   image: js-er-code.jsc.nasa.gov:5005/lager/lager_image_base_xenial:stable
     script:   
       - mkdir build
@@ -32,7 +32,7 @@ coverage:build
       paths:
         - coverage/
         
-pages:deploy
+pages:deploy:
   dependencies:
     - coverage
   script:
