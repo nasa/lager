@@ -24,13 +24,13 @@ build:windows:
 
 coverage:build:
   image: js-er-code.jsc.nasa.gov:5005/lager/lager_image_base_xenial:stable
-    script:   
-      - mkdir build
-      - cd build
-      - cmake .. && make lager_coverage
-    artifacts:
-      paths:
-        - coverage/
+  script:   
+    - mkdir build
+    - cd build
+    - cmake .. && make lager_coverage
+  artifacts:
+    paths:
+      - coverage/
         
 pages:deploy:
   dependencies:
