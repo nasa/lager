@@ -124,6 +124,8 @@ target_link_libraries(unit_tests
 add_test(test_all unit_tests)
 
 # Code coverage
-include(CodeCoverage)
-setup_target_for_coverage(${PROJECT_NAME}_coverage unit_tests coverage)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
+if (NOT WIN32)
+    include(CodeCoverage)
+    setup_target_for_coverage(${PROJECT_NAME}_coverage unit_tests coverage)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
+endif()
