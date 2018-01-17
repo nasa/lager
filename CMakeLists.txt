@@ -7,6 +7,7 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 find_package(Threads REQUIRED)
 find_package(ZeroMQ REQUIRED)
 find_package(LibUuid REQUIRED)
+find_package(XercesC REQUIRED)
 
 # Fix for cmake versions without UPDATE_DISCONNECTED
 if (CMAKE_VERSION VERSION_LESS 3.2)
@@ -21,8 +22,7 @@ download_project(
     PROJ googletest
     GIT_REPOSITORY https://github.com/google/googletest.git
     GIT_TAG release-1.8.0
-    ${UPDATE_DISCONNECTED_IF_AVAILABLE}
-)
+    ${UPDATE_DISCONNECTED_IF_AVAILABLE})
 
 # Prevent GoogleTest from overriding our compiler/linker options
 # when building with Visual Studio
@@ -36,63 +36,74 @@ set(SRC_DIR ${PROJECT_SOURCE_DIR}/src)
 include_directories(
     ${ZeroMQ_INCLUDE_DIRS}
     ${LIBUUID_INCLUDE_DIRS}
-    ${SRC_DIR}
-)
+    ${XercesC_INCLUDE_DIRS}
+    ${SRC_DIR})
 
 # Sources (@todo make this a library later)
 set(BARTENDER_SRCS
     ${SRC_DIR}/bartender.cpp
     ${SRC_DIR}/chp_server.cpp 
-    ${SRC_DIR}/forwarder.cpp
-)
+    ${SRC_DIR}/forwarder.cpp)
 
 set(TAP_SRCS
     ${SRC_DIR}/tap.cpp
-    ${SRC_DIR}/chp_client.cpp 
-)
+    ${SRC_DIR}/chp_client.cpp)
 
 set(MUG_SRCS
     ${SRC_DIR}/mug.cpp
-    ${SRC_DIR}/chp_client.cpp     
-)
+    ${SRC_DIR}/chp_client.cpp)
 
 # Targets for bartender and test tap
 add_executable(bartender 
     ${BARTENDER_SRCS}
-    ${SRC_DIR}/bartender_main.cpp
-)
+    ${SRC_DIR}/bartender_main.cpp)
 
 target_link_libraries(bartender 
     ${ZeroMQ_LIBRARIES}
     ${LIBUUID_LIBRARIES}
-    ${CMAKE_THREAD_LIBS_INIT}
-)
+    ${CMAKE_THREAD_LIBS_INIT})
 
 add_executable(test_tap
     ${TAP_SRCS}
-    ${SRC_DIR}/tap_test_main.cpp
-)
+    ${SRC_DIR}/tap_test_main.cpp)
 
 target_link_libraries(test_tap
     ${ZeroMQ_LIBRARIES}
     ${LIBUUID_LIBRARIES}
-    ${CMAKE_THREAD_LIBS_INIT}
-)
+    ${CMAKE_THREAD_LIBS_INIT})
 
 add_executable(test_mug
     ${MUG_SRCS}
-    ${SRC_DIR}/mug_test_main.cpp
-)
+    ${SRC_DIR}/mug_test_main.cpp)
 
 target_link_libraries(test_mug
     ${ZeroMQ_LIBRARIES}
     ${LIBUUID_LIBRARIES}
-    ${CMAKE_THREAD_LIBS_INIT}
-)
+    ${CMAKE_THREAD_LIBS_INIT})
+
+add_executable(format_test
+    ${SRC_DIR}/data_format.cpp
+    ${SRC_DIR}/data_format_test_main.cpp)
+
+target_link_libraries(format_test
+    ${XercesC_LIBRARIES})
+
+# Copy format schema and test files
+add_custom_command(
+    TARGET format_test POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PROJECT_SOURCE_DIR}/share/data_format.xsd 
+        $<TARGET_FILE_DIR:format_test>)
+
+add_custom_command(
+    TARGET format_test POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PROJECT_SOURCE_DIR}/share/sample_format.xml 
+        $<TARGET_FILE_DIR:format_test>)
 
 # Copies ZMQ dll(s) to output directory under Windows
 # Note older ZMQ builds may have different directory
-# structures for the built libraries
+# structures for the built libraries.  May need to adjust
+# Windows requirements or make this more able to handle
+# different versions.
 if (WIN32)
     foreach(LIB ${ZeroMQ_LIBRARIES})
         if(LIB MATCHES ".lib")
@@ -113,14 +124,12 @@ file(GLOB TEST_SRCS test/*.cpp)
 add_executable(unit_tests 
     ${TEST_SRCS}
     ${BARTENDER_SRCS}
-    ${TAP_SRCS}
-)
+    ${TAP_SRCS})
 target_compile_definitions(unit_tests PRIVATE -DZMQ_VER="${ZeroMQ_VER}")
 target_link_libraries(unit_tests 
     ${ZeroMQ_LIBRARIES} 
     ${LIBUUID_LIBRARIES}
-    gtest
-)
+    gtest)
 add_test(test_all unit_tests)
 
 # Code coverage
