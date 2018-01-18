@@ -83,6 +83,7 @@ target_link_libraries(test_mug
 
 add_executable(format_test
     ${SRC_DIR}/data_format.cpp
+    ${SRC_DIR}/data_format_parser.cpp
     ${SRC_DIR}/data_format_test_main.cpp)
 
 target_link_libraries(format_test
