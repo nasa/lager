@@ -39,7 +39,7 @@ coverage:
     - ls -al
   artifacts:
     paths:
-      - build-docker/coverage/
+      - coverage/
 
 report:
   stage: deploy
@@ -47,4 +47,4 @@ report:
     - coverage
   script:
     - ls -al
-    - mv build-docker/coverage/ public/
+    - mv coverage/ public/
