@@ -36,6 +36,7 @@ coverage:
     - mkdir build
     - cd build
     - cmake -DCMAKE_BUILD_TYPE=Debug .. && make lager_coverage
+    - ls -al
   artifacts:
     paths:
       - build-docker/coverage/
@@ -45,4 +46,5 @@ report:
   dependencies: 
     - coverage
   script:
+    - ls -al
     - mv build-docker/coverage/ public/
