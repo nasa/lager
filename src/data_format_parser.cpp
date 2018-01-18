@@ -157,11 +157,11 @@ std::shared_ptr<DataFormat> DataFormatParser::parse()
                     unsigned int size;
                     unsigned int offset;
 
-                    std::istringstream iss(XMLString::transcode(xSize));
-                    iss >> size;
+                    std::istringstream issSize(XMLString::transcode(xSize));
+                    issSize >> size;
 
-                    iss = std::istringstream(XMLString::transcode(xOffset));
-                    iss >> offset;
+                    std::istringstream issOffset(XMLString::transcode(xOffset));
+                    issOffset >> offset;
 
                     format->addItem(DataItem(std::string(XMLString::transcode(xName)),
                                              std::string(XMLString::transcode(xType)),
