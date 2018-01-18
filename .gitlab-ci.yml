@@ -38,4 +38,11 @@ coverage:
     - cmake -DCMAKE_BUILD_TYPE=Debug .. && make lager_coverage
   artifacts:
     paths:
-      - coverage/
+      - build/coverage/
+
+report:
+  stage: deploy
+  dependencies: 
+    - coverage
+  script:
+    - cp -r build/coverage/* public/
