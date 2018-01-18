@@ -36,15 +36,13 @@ coverage:
     - mkdir build
     - cd build
     - cmake -DCMAKE_BUILD_TYPE=Debug .. && make lager_coverage
-    - ls -al
   artifacts:
     paths:
-      - coverage/
+      - ./coverage/*
 
 report:
   stage: deploy
   dependencies: 
     - coverage
   script:
-    - ls -al
     - mv coverage/ public/
