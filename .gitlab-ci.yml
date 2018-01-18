@@ -38,4 +38,4 @@ gcov:
     - mkdir build
     - cd build
     - cmake -DCMAKE_BUILD_TYPE=Debug .. && make lager_coverage
-  coverage: /\bOverall\D+(\d+[.]\d\%)/
+  coverage: '/\bOverall\D+(\d+[.]\d\%)/'
