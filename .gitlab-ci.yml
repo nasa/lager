@@ -1,8 +1,8 @@
 stages:
-  - build-trusty
   - build-xenial
   - build-windows
   - coverage
+  - build-trusty
 
 trusty:
   stage: build-trusty
