@@ -41,8 +41,13 @@ coverage:
       - build/coverage/
 
 report:
+  image: js-er-code.jsc.nasa.gov:5005/ci_build/ubuntu_xenial_with_nasa_certs_and_python
   stage: deploy
   dependencies: 
     - coverage
   script:
-    - cp -r build/coverage/* public/
+      - git clone -b feature/generic-file-support git@js-er-code.jsc.nasa.gov:ci_build/ci_scripts.git
+      - cd ci_scripts 
+      - pip install .
+      - cd ..
+      - artifactory_upload generic $CI_PROJECT_PATH/$CI_COMMIT_REF_SLUG build/coverage
