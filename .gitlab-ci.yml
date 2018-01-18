@@ -28,6 +28,8 @@ coverage:build:
     - mkdir build
     - cd build
     - cmake -DCMAKE_BUILD_TYPE=Debug .. && make lager_coverage
-  artifacts:
-    paths:
-      - ./coverage/
+  rspec:
+    variables: 
+      SIMPLE_COV: 1
+    script: rspec
+    coverage: /\bOverall\D+(\d+[.]\d\%)/ 
