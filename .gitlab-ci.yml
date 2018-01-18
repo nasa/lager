@@ -46,8 +46,11 @@ report:
   dependencies: 
     - coverage
   script:
-      - git clone -b feature/generic-file-support git@js-er-code.jsc.nasa.gov:ci_build/ci_scripts.git
-      - cd ci_scripts 
-      - pip install .
-      - cd ..
-      - artifactory_upload generic $CI_PROJECT_PATH/$CI_COMMIT_REF_SLUG build/coverage
+    - git clone -b feature/generic-file-support git@js-er-code.jsc.nasa.gov:ci_build/ci_scripts.git
+    - cd ci_scripts 
+    - pip install .
+    - cd ..
+    - artifactory_upload generic $CI_PROJECT_PATH/$CI_COMMIT_REF_SLUG build/coverage
+  only:
+    - master
+    - develop
