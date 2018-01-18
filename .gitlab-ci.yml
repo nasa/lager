@@ -1,18 +1,27 @@
-build:trusty:
+stages:
+  - build-trusty
+  - build-xenial
+  - build-windows
+  - coverage
+
+trusty:
+  stage: build-trusty
   image: js-er-code.jsc.nasa.gov:5005/lager/lager_image_base_trusty:stable
   script:
     - mkdir build
     - cd build
     - cmake .. && make
 
-build:xenial:
+xenial:
+  stage: build-xenial
   image: js-er-code.jsc.nasa.gov:5005/lager/lager_image_base_xenial:stable
   script:   
     - mkdir build
     - cd build
     - cmake .. && make
 
-build:windows:
+windows:
+  stage: build-windows
   script:
     - mkdir build
     - cd build
@@ -22,7 +31,8 @@ build:windows:
     - lager
     - windows
 
-coverage:build:
+gcov:
+  stage: coverage
   image: js-er-code.jsc.nasa.gov:5005/lager/lager_image_base_xenial:stable
   script:   
     - mkdir build
