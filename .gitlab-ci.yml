@@ -1,6 +1,6 @@
 stages:
   - build
-  - coverage
+  - deploy
 
 trusty:
   stage: build
@@ -29,10 +29,20 @@ windows:
     - lager
     - windows
 
-gcov:
-  stage: coverage
+coverage:
+  stage: build
   image: js-er-code.jsc.nasa.gov:5005/lager/lager_image_base_xenial:stable
   script:   
     - mkdir build
     - cd build
     - cmake -DCMAKE_BUILD_TYPE=Debug .. && make lager_coverage
+  artifacts:
+    paths:
+      - build-docker/coverage/
+
+report:
+  stage: deploy
+  dependencies: 
+    - coverage
+  script:
+    - mv build-docker/coverage/ public/
