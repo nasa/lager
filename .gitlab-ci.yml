@@ -30,12 +30,4 @@ coverage:build:
     - cmake .. && make lager_coverage
   artifacts:
     paths:
-      - coverage/
-        
-coverage:deploy:
-  script:
-    - mv coverage/ public/
-  artifacts:
-    paths:
-      - public
-
+      - ./coverage/
