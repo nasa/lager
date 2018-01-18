@@ -8,7 +8,6 @@
 #ifdef _WIN32
 // for uuid in Windows
 #pragma comment(lib, "rpcrt4.lib")
-#include <windows.h>
 #else
 #include <uuid/uuid.h>
 #include <unistd.h>

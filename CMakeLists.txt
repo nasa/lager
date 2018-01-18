@@ -110,9 +110,9 @@ if (WIN32)
             get_filename_component(LIB_WE ${LIB} NAME_WE)
             get_filename_component(LIB_DIR ${LIB} DIRECTORY)
             set(LIB_DLL "${LIB_DIR}/${LIB_WE}.dll")
-            add_custom_command(TARGET client POST_BUILD
+            add_custom_command(TARGET bartender POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${LIB_DLL}" $<TARGET_FILE_DIR:client>)
+                "${LIB_DLL}" $<TARGET_FILE_DIR:bartender>)
         endif()
     endforeach()
 endif()
