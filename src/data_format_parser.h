@@ -1,7 +1,6 @@
 #ifndef DATA_FORMAT_PARSER
 #define DATA_FORMAT_PARSER
 
-#include <iostream>
 #include <memory>
 
 #include <xercesc/dom/DOM.hpp>

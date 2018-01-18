@@ -38,10 +38,11 @@ DataFormatParser::DataFormatParser(const std::string& xmlFile_in, const std::str
     }
     catch (const XMLException& e)
     {
+        std::stringstream ss;
         char* message = XMLString::transcode(e.getMessage());
-        std::cout << "error initializing xercesc: " << message << std::endl;
+        ss << "error initializing xercesc: " << message << std::endl;
         XMLString::release(&message);
-        return;
+        throw std::runtime_error(ss.str());
     }
 
     xmlFile = xmlFile_in;
@@ -79,7 +80,7 @@ DataFormatParser::~DataFormatParser()
     }
     catch (...)
     {
-        std::cout << "error destructing XMLStrings" << std::endl;
+        throw std::runtime_error("~DataFormatParser: XMLStrings destruction");
     }
 
     try
@@ -88,9 +89,11 @@ DataFormatParser::~DataFormatParser()
     }
     catch (const XMLException& e)
     {
+        std::stringstream ss;
         char* message = XMLString::transcode(e.getMessage());
-        std::cout << "destructor exception: " << message << std::endl;
+        ss << "~DataFormatParser: " << message << std::endl;
         XMLString::release(&message);
+        throw std::runtime_error(ss.str());
     }
 }
 
@@ -113,8 +116,9 @@ std::shared_ptr<DataFormat> DataFormatParser::parse()
         // the xml file is valid per the schema
         if (parser->getErrorCount() != 0)
         {
-            std::cout << "error in " << xmlFile << ": " << errHandler->getLastError() << std::endl;
-            throw std::runtime_error("");
+            std::stringstream ss;
+            ss << "error in file " << xmlFile << ": " << errHandler->getLastError();
+            throw std::runtime_error(ss.str());
         }
 
         DOMDocument* doc = parser->getDocument();
@@ -122,14 +126,12 @@ std::shared_ptr<DataFormat> DataFormatParser::parse()
 
         if (!formatElement)
         {
-            std::cout << "no format element at the root of the document" << std::endl;
-            throw std::runtime_error("");
+            throw std::runtime_error("missing root element");
         }
 
         if (!XMLString::equals(formatElement->getTagName(), tagFormat))
         {
-            std::cout << "root element is not format as expected" << std::endl;
-            throw std::runtime_error("");
+            throw std::runtime_error("root element is not 'format'");
         }
 
         const XMLCh* xVersion = formatElement->getAttribute(attVersion);
@@ -172,29 +174,31 @@ std::shared_ptr<DataFormat> DataFormatParser::parse()
     }
     catch (const XMLException& e)
     {
+        std::stringstream ss;
         char* message = XMLString::transcode(e.getMessage());
-        std::cout << "xml exception: " << message << std::endl;
+        ss << "parse(): XMLException: " << message;
         XMLString::release(&message);
-        throw std::runtime_error("");
+        throw std::runtime_error(ss.str());
     }
     catch (const DOMException& e)
     {
+        std::stringstream ss;
         char* message = XMLString::transcode(e.msg);
-        std::cout << "dom exception: " << message << std::endl;
+        ss << "parse(): DOMException: " << message;
         XMLString::release(&message);
-        throw std::runtime_error("");
+        throw std::runtime_error(ss.str());
     }
     catch (const SAXParseException& e)
     {
+        std::stringstream ss;
         char* message = XMLString::transcode(e.getMessage());
-        std::cout << "sax exception: " << message << std::endl;
+        ss << "parse(): SAXException: " << message;
         XMLString::release(&message);
-        throw std::runtime_error("");
+        throw std::runtime_error(ss.str());
     }
     catch (const std::runtime_error& e)
     {
-        std::cout << "uncaught exception: " << e.what() << std::endl;
-        throw std::runtime_error("");
+        throw std::runtime_error(e.what());
     }
 
     return format;
