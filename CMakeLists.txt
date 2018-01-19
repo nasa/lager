@@ -116,6 +116,18 @@ if (WIN32)
                 "${LIB_DLL}" $<TARGET_FILE_DIR:bartender>)
         endif()
     endforeach()
+    foreach(LIB ${XercesC_LIBRARIES})
+        if(LIB MATCHES ".lib")
+            get_filename_component(LIB_DIR ${LIB} DIRECTORY)
+            string(REGEX REPLACE "lib" "bin" LIB_DIR ${LIB_DIR})
+            file(GLOB XercesC_BINARIES "${LIB_DIR}/*.dll")
+            foreach(XercesC_BINARY ${XercesC_BINARIES})
+                add_custom_command(TARGET bartender POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${XercesC_BINARY}" $<TARGET_FILE_DIR:bartender>)
+            endforeach()
+        endif()
+    endforeach()    
 endif()
 
 # GoogleTest

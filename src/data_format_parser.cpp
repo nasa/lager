@@ -68,33 +68,15 @@ DataFormatParser::~DataFormatParser()
         delete errHandler;
     }
 
-    try
-    {
-        XMLString::release(&tagFormat);
-        XMLString::release(&tagItem);
-        XMLString::release(&attVersion);
-        XMLString::release(&attName);
-        XMLString::release(&attType);
-        XMLString::release(&attSize);
-        XMLString::release(&attOffset);
-    }
-    catch (...)
-    {
-        throw std::runtime_error("~DataFormatParser: XMLStrings destruction");
-    }
+    XMLString::release(&tagFormat);
+    XMLString::release(&tagItem);
+    XMLString::release(&attVersion);
+    XMLString::release(&attName);
+    XMLString::release(&attType);
+    XMLString::release(&attSize);
+    XMLString::release(&attOffset);
 
-    try
-    {
-        XMLPlatformUtils::Terminate();
-    }
-    catch (const XMLException& e)
-    {
-        std::stringstream ss;
-        char* message = XMLString::transcode(e.getMessage());
-        ss << "~DataFormatParser: " << message << std::endl;
-        XMLString::release(&message);
-        throw std::runtime_error(ss.str());
-    }
+    XMLPlatformUtils::Terminate();
 }
 
 std::shared_ptr<DataFormat> DataFormatParser::parse()
