@@ -8,7 +8,7 @@ trusty:
   script:
     - mkdir build
     - cd build
-    - cmake .. && make
+    - cmake .. && make && make test
 
 xenial:
   stage: build
@@ -16,7 +16,7 @@ xenial:
   script:   
     - mkdir build
     - cd build
-    - cmake .. && make
+    - cmake .. && make && make test
 
 windows:
   stage: build
@@ -25,6 +25,7 @@ windows:
     - cd build
     - cmake -G "Visual Studio 15 2017" ..
     - cmake --build .
+    - ctest
   tags:
     - lager
     - windows
