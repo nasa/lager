@@ -22,7 +22,7 @@ public:
     DataFormat(const std::string& version);
 
     void addItem(const DataItem& item);
-    void print();
+    void print(std::ostream& stream);
 
 private:
     std::vector<DataItem> items;

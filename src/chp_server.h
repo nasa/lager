@@ -68,6 +68,7 @@ private:
     bool snapshotRunning;
     bool collectorRunning;
     bool running;
+    bool initialized;
 };
 
 #endif

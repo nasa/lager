@@ -85,13 +85,6 @@ target_link_libraries(test_mug
     ${LIBUUID_LIBRARIES}
     ${CMAKE_THREAD_LIBS_INIT})
 
-add_executable(format_test
-    ${DATA_FORMAT_SRCS}
-    ${SRC_DIR}/data_format_test_main.cpp)
-
-target_link_libraries(format_test
-    ${XercesC_LIBRARIES})
-
 # Copy format schema and test files
 add_custom_command(
     TARGET format_test POST_BUILD

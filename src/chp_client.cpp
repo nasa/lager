@@ -1,7 +1,7 @@
 #include "chp_client.h"
 
 ChpClient::ChpClient(const std::string& serverHost_in, int basePort, int timeoutMillis_in):
-    initialized(false), running(false), sequence(-1), uuid("invalid")
+    initialized(false), running(false), timedOut(false), sequence(-1), uuid("invalid")
 {
     snapshotPort = basePort;
     subscriberPort = basePort + 1;
@@ -22,9 +22,7 @@ void ChpClient::start()
 {
     if (!initialized)
     {
-        // todo throw?
-        std::cout << "start called before init" << std::endl;
-        return;
+        throw std::runtime_error("ChpClient started before initialized");
     }
 
     running = true;
@@ -65,6 +63,7 @@ void ChpClient::removeKey(const std::string& key)
 
 void ChpClient::subscriberThread()
 {
+    timedOut = false;
     subscriberRunning = true;
     subscriber.reset(new zmq::socket_t(*context.get(), ZMQ_SUB));
 
@@ -107,6 +106,7 @@ void ChpClient::subscriberThread()
 
                 if (key != "HUGZ")
                 {
+                    // @todo what should be the action here if sequence count fails?
                     if (sequence > this->sequence)
                     {
                         if (value.length() == 0)
@@ -118,11 +118,6 @@ void ChpClient::subscriberThread()
                             hashMap[key] = value;
                         }
                     }
-                    else
-                    {
-                        // todo error
-                        std::cout << "bad sequence check (new = " << sequence << ", old = " << this->sequence << ")" << std::endl;
-                    }
 
                     lager_utils::printHashMap(hashMap);
                 }
@@ -131,21 +126,19 @@ void ChpClient::subscriberThread()
             }
             else
             {
-                std::cout << "no hugz in " << timeoutMillis << "ms, TBD action." << std::endl;
+                timedOut = true;
             }
         }
     }
     catch (zmq::error_t& e)
     {
-        if (e.num() != ETERM)
+        if (e.num() == ETERM)
         {
-            std::cout << "subscriber socket failed: " << e.what() << std::endl;
+            subscriber->close();
+            subscriberRunning = false;
+            subscriberCv.notify_one();
         }
     }
-
-    subscriber->close();
-    subscriberRunning = false;
-    subscriberCv.notify_one();
 }
 
 void ChpClient::snapshotThread()
@@ -236,9 +229,11 @@ void ChpClient::snapshotThread()
     }
     catch (zmq::error_t& e)
     {
-        if (e.num() != ETERM)
+        if (e.num() == ETERM)
         {
-            std::cout << "snapshot socket failed: " << e.what() << std::endl;
+            snapshot->close();
+            snapshotRunning = false;
+            snapshotCv.notify_one();
         }
     }
 
@@ -260,51 +255,36 @@ void ChpClient::snapshotThread()
 
 void ChpClient::publisherThread(const std::string& key, const std::string& value)
 {
-    if (!running)
-    {
-        return;
-    }
+    int hwm = 1;
+    int linger = 0;
+    publisher.reset(new zmq::socket_t(*context.get(), ZMQ_PUB));
+    publisher->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(int));
+    publisher->setsockopt(ZMQ_LINGER, &linger, sizeof(int));
+    publisher->connect(lager_utils::getRemoteUri(serverHost.c_str(), publisherPort).c_str());
 
-    try
-    {
-        int hwm = 1;
-        int linger = 0;
-        publisher.reset(new zmq::socket_t(*context.get(), ZMQ_PUB));
-        publisher->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(int));
-        publisher->setsockopt(ZMQ_LINGER, &linger, sizeof(int));
-        publisher->connect(lager_utils::getRemoteUri(serverHost.c_str(), publisherPort).c_str());
+    lager_utils::sleep(1000);
 
-        lager_utils::sleep(1000);
+    // @TODO implement properties
+    std::string properties("");
+    double zero = 0;
 
-        // @TODO implement properties
-        std::string properties("");
-        double zero = 0;
+    zmq::message_t frame0(key.size());
+    zmq::message_t frame1(sizeof(double));
+    zmq::message_t frame2(uuid.size());
+    zmq::message_t frame3(properties.size());
+    zmq::message_t frame4(value.size());
 
-        zmq::message_t frame0(key.size());
-        zmq::message_t frame1(sizeof(double));
-        zmq::message_t frame2(uuid.size());
-        zmq::message_t frame3(properties.size());
-        zmq::message_t frame4(value.size());
+    memcpy(frame0.data(), key.c_str(), key.size());
+    memcpy(frame1.data(), (void*)&zero, sizeof(double));
+    memcpy(frame2.data(), uuid.c_str(), uuid.size());
+    memcpy(frame3.data(), properties.c_str(), properties.size());
+    memcpy(frame4.data(), value.c_str(), value.size());
 
-        memcpy(frame0.data(), key.c_str(), key.size());
-        memcpy(frame1.data(), (void*)&zero, sizeof(double));
-        memcpy(frame2.data(), uuid.c_str(), uuid.size());
-        memcpy(frame3.data(), properties.c_str(), properties.size());
-        memcpy(frame4.data(), value.c_str(), value.size());
-
-        publisher->send(frame0, ZMQ_SNDMORE);
-        publisher->send(frame1, ZMQ_SNDMORE);
-        publisher->send(frame2, ZMQ_SNDMORE);
-        publisher->send(frame3, ZMQ_SNDMORE);
-        publisher->send(frame4);
-    }
-    catch (zmq::error_t& e)
-    {
-        if (e.num() != ETERM)
-        {
-            std::cout << "publisher socket failed: " << e.what() << std::endl;
-        }
-    }
+    publisher->send(frame0, ZMQ_SNDMORE);
+    publisher->send(frame1, ZMQ_SNDMORE);
+    publisher->send(frame2, ZMQ_SNDMORE);
+    publisher->send(frame3, ZMQ_SNDMORE);
+    publisher->send(frame4);
 
     publisher->close();
 }

@@ -10,12 +10,12 @@ void DataFormat::addItem(const DataItem& item)
     items.push_back(item);
 }
 
-void DataFormat::print()
+void DataFormat::print(std::ostream& stream)
 {
-    std::cout << "version: " << version << std::endl;
+    stream << "version: " << version << std::endl;
 
     for (std::vector<DataItem>::iterator i = items.begin(); i != items.end(); ++i)
     {
-        std::cout << (*i).name << " " << (*i).type << std::endl;
+        stream << (*i).name << " " << (*i).type << std::endl;
     }
 }

@@ -28,6 +28,7 @@ public:
     void removeKey(const std::string& key);
     void start();
     void stop();
+    bool isTimedOut() {return timedOut;};
     std::map<std::string, std::string> getHashMap() {return hashMap;}
 
 private:
@@ -62,6 +63,7 @@ private:
 
     bool initialized;
     bool running;
+    bool timedOut;
     bool snapshotRunning;
     bool subscriberRunning;
 };

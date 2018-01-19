@@ -1,6 +1,6 @@
 #include "chp_server.h"
 
-ChpServer::ChpServer(int basePort): running(false), sequence(0)
+ChpServer::ChpServer(int basePort): initialized(false), running(false), sequence(0)
 {
     snapshotPort = basePort;
     publisherPort = basePort + 1;
@@ -16,10 +16,17 @@ ChpServer::~ChpServer()
 void ChpServer::init(std::shared_ptr<zmq::context_t> context_in)
 {
     context = context_in;
+
+    initialized = true;
 }
 
 void ChpServer::start()
 {
+    if (!initialized)
+    {
+        throw std::runtime_error("ChpServer started before initialized");
+    }
+
     running = true;
 
     publisherThreadHandle = std::thread(&ChpServer::publisherThread, this);
@@ -105,15 +112,13 @@ void ChpServer::snapshotThread()
     }
     catch (zmq::error_t e)
     {
-        if (e.num() != ETERM)
+        if (e.num() == ETERM)
         {
-            std::cout << "snapshot socket failed: " << e.what() << std::endl;
+            snapshot->close();
+            snapshotRunning = false;
+            snapshotCv.notify_one();
         }
     }
-
-    snapshot->close();
-    snapshotRunning = false;
-    snapshotCv.notify_one();
 }
 
 void ChpServer::snapshotMap(const std::string& identity)
@@ -241,15 +246,13 @@ void ChpServer::publisherThread()
     }
     catch (zmq::error_t e)
     {
-        if (e.num() != ETERM)
+        if (e.num() == ETERM)
         {
-            std::cout << "publisher socket failed: " << e.what() << std::endl;
+            publisher->close();
+            publisherRunning = false;
+            publisherCv.notify_one();
         }
     }
-
-    publisher->close();
-    publisherRunning = false;
-    publisherCv.notify_one();
 }
 
 void ChpServer::publishHugz()
@@ -319,11 +322,7 @@ void ChpServer::collectorThread()
                 collector->recv(&msg);
                 value = std::string(static_cast<char*>(msg.data()), msg.size());
 
-                if (uuid.length() == 0)
-                {
-                    std::cout << "empty uuid, ignoring, TBD action" << std::endl;
-                }
-                else
+                if (uuid.length() > 0)
                 {
                     if (uuidMap.find(uuid) == uuidMap.end())
                     {
@@ -359,13 +358,11 @@ void ChpServer::collectorThread()
     }
     catch (zmq::error_t e)
     {
-        if (e.num() != ETERM)
+        if (e.num() == ETERM)
         {
-            std::cout << "collector socket failed: " << e.what() << std::endl;
+            collector->close();
+            collectorRunning = false;
+            collectorCv.notify_one();
         }
     }
-
-    collector->close();
-    collectorRunning = false;
-    collectorCv.notify_one();
 }

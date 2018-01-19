@@ -5,19 +5,7 @@
 #include "data_format.h"
 #include "data_format_parser.h"
 
-class DataFormatTests : public ::testing::Test
-{
-protected:
-    virtual void SetUp()
-    {
-
-    }
-
-    virtual void TearDown()
-    {
-
-    }
-};
+class DataFormatTests : public ::testing::Test {};
 
 TEST_F(DataFormatTests, GoodFormatParse)
 {
@@ -36,4 +24,13 @@ TEST_F(DataFormatTests, BadFormatParse)
     EXPECT_ANY_THROW(b.parse());
     EXPECT_ANY_THROW(c.parse());
     EXPECT_ANY_THROW(d.parse());
+}
+
+TEST_F(DataFormatTests, Print)
+{
+    DataFormatParser p("good_format.xml", "good_schema.xsd");
+    std::shared_ptr<DataFormat> df = p.parse();
+    std::stringstream ss;
+    df->print(ss);
+    EXPECT_STREQ(ss.str().c_str(), "version: BEERR01\ncolumn1 string\ncolumn2 integer\n");
 }
