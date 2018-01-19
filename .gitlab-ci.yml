@@ -24,8 +24,8 @@ windows:
     - mkdir build
     - cd build
     - cmake -G "Visual Studio 15 2017" ..
-    - cmake --build .
-    - ctest
+    - cmake --build . --config Debug
+    - ctest -C Debug
   tags:
     - lager
     - windows
