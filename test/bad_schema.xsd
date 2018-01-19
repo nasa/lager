@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+<!-- attributes -->
+<xs:attribute name="name" type="xs:string"/>
+<xs:attribute name="type" type="xs:string"/>
+<xs:attribute name="size" type="xs:integer"/>
+<xs:attribute name="offset" type="xs:integer"/>
+<xs:attribute name="version" type="xs:string"/>
+
+<!-- item -->
+<xs:element name="item">
+    <xs:complexType>
+        <xs:attribute ref="name" use="required"/>
+        <xs:attribute ref="type" use="required"/>
+        <xs:attribute ref="size" use="required"/>
+        <xs:attribute ref="offset" use="required"/>
+    </xs:complexType>
+</xs:element>
+
+<!-- main -->
+<xs:element name="format">
+    <xs:complexType>
+        <xs:sequence>
+            <xs:element ref="item" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute ref="version" use="required"/>
+</xs:element>
+
+</xs:schema>

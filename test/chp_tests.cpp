@@ -87,3 +87,50 @@ TEST_F(ChpTests, AddMultipleKeys)
     c.stop();
     s.stop();
 }
+
+TEST_F(ChpTests, ClientMapReceive)
+{
+    context.reset(new zmq::context_t(1));
+    ChpServer s(12345);
+    ChpClient c("localhost", 12345, 1000);
+
+    s.init(context);
+    c.init(context, lager_utils::getUuid());
+
+    s.start();
+    ASSERT_EQ(s.getHashMap().size(), 0);
+    s.addOrUpdateKeyValue("testkey1", "testvalue1");
+    lager_utils::sleep(100);
+    ASSERT_STREQ(s.getHashMap()["testkey1"].c_str(), "testvalue1");
+    c.start();
+    lager_utils::sleep(1000);
+    ASSERT_EQ(c.getHashMap().size(), 1);
+    context->close();
+    c.stop();
+    s.stop();
+}
+
+TEST_F(ChpTests, ServerDuplicateKeys)
+{
+    context.reset(new zmq::context_t(1));
+    ChpServer s(12345);
+    ChpClient c("localhost", 12345, 1000);
+    ChpClient cDupe("localhost", 12345, 1000);
+
+    s.init(context);
+    c.init(context, lager_utils::getUuid());
+    cDupe.init(context, lager_utils::getUuid());
+
+    s.start();
+    c.start();
+    cDupe.start();
+    ASSERT_EQ(s.getHashMap().size(), 0);
+    c.addOrUpdateKeyValue("testkey1", "testvalue1");
+    lager_utils::sleep(1000);
+    cDupe.addOrUpdateKeyValue("testkey1", "testvalue1");
+    lager_utils::sleep(1000);
+    ASSERT_EQ(c.getHashMap().size(), 1);
+    context->close();
+    c.stop();
+    s.stop();
+}

@@ -16,10 +16,10 @@ using namespace xercesc;
 class XercesErrorHandler : public xercesc::ErrorHandler
 {
 public:
-    void warning(const xercesc::SAXParseException& ex);
+    void warning(const xercesc::SAXParseException& ex) {};
     void error(const xercesc::SAXParseException& ex);
     void fatalError(const xercesc::SAXParseException& ex);
-    void resetErrors();
+    void resetErrors() {};
     std::string getLastError() {return lastError;};
 private:
     void reportParseException(const xercesc::SAXParseException& ex);

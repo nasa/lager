@@ -1,7 +1,7 @@
 #include "chp_client.h"
 
 ChpClient::ChpClient(const std::string& serverHost_in, int basePort, int timeoutMillis_in):
-    running(false), sequence(-1), uuid("invalid")
+    initialized(false), running(false), sequence(-1), uuid("invalid")
 {
     snapshotPort = basePort;
     subscriberPort = basePort + 1;
@@ -14,10 +14,19 @@ void ChpClient::init(std::shared_ptr<zmq::context_t> context_in, const std::stri
 {
     context = context_in;
     uuid = uuid_in;
+
+    initialized = true;
 }
 
 void ChpClient::start()
 {
+    if (!initialized)
+    {
+        // todo throw?
+        std::cout << "start called before init" << std::endl;
+        return;
+    }
+
     running = true;
 
     snapshotThreadHandle = std::thread(&ChpClient::snapshotThread, this);

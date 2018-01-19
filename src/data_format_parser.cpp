@@ -11,11 +11,6 @@ void XercesErrorHandler::reportParseException(const xercesc::SAXParseException& 
     xercesc::XMLString::release(&message);
 }
 
-void XercesErrorHandler::warning(const xercesc::SAXParseException& ex)
-{
-    reportParseException(ex);
-}
-
 void XercesErrorHandler::error(const xercesc::SAXParseException& ex)
 {
     reportParseException(ex);
@@ -26,24 +21,10 @@ void XercesErrorHandler::fatalError(const xercesc::SAXParseException& ex)
     reportParseException(ex);
 }
 
-void XercesErrorHandler::resetErrors()
-{
-}
-
+// note file path must be full path or same directory.  relative paths don't work
 DataFormatParser::DataFormatParser(const std::string& xmlFile_in, const std::string& xsdFile_in)
 {
-    try
-    {
-        XMLPlatformUtils::Initialize();
-    }
-    catch (const XMLException& e)
-    {
-        std::stringstream ss;
-        char* message = XMLString::transcode(e.getMessage());
-        ss << "error initializing xercesc: " << message << std::endl;
-        XMLString::release(&message);
-        throw std::runtime_error(ss.str());
-    }
+    XMLPlatformUtils::Initialize();
 
     xmlFile = xmlFile_in;
     xsdFile = xsdFile_in;
@@ -106,16 +87,6 @@ std::shared_ptr<DataFormat> DataFormatParser::parse()
         DOMDocument* doc = parser->getDocument();
         DOMElement* formatElement = doc->getDocumentElement();
 
-        if (!formatElement)
-        {
-            throw std::runtime_error("missing root element");
-        }
-
-        if (!XMLString::equals(formatElement->getTagName(), tagFormat))
-        {
-            throw std::runtime_error("root element is not 'format'");
-        }
-
         const XMLCh* xVersion = formatElement->getAttribute(attVersion);
         std::string version(XMLString::transcode(xVersion));
 
@@ -153,30 +124,6 @@ std::shared_ptr<DataFormat> DataFormatParser::parse()
                 }
             }
         }
-    }
-    catch (const XMLException& e)
-    {
-        std::stringstream ss;
-        char* message = XMLString::transcode(e.getMessage());
-        ss << "parse(): XMLException: " << message;
-        XMLString::release(&message);
-        throw std::runtime_error(ss.str());
-    }
-    catch (const DOMException& e)
-    {
-        std::stringstream ss;
-        char* message = XMLString::transcode(e.msg);
-        ss << "parse(): DOMException: " << message;
-        XMLString::release(&message);
-        throw std::runtime_error(ss.str());
-    }
-    catch (const SAXParseException& e)
-    {
-        std::stringstream ss;
-        char* message = XMLString::transcode(e.getMessage());
-        ss << "parse(): SAXException: " << message;
-        XMLString::release(&message);
-        throw std::runtime_error(ss.str());
     }
     catch (const std::runtime_error& e)
     {

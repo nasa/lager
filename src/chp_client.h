@@ -28,6 +28,7 @@ public:
     void removeKey(const std::string& key);
     void start();
     void stop();
+    std::map<std::string, std::string> getHashMap() {return hashMap;}
 
 private:
     void snapshotThread();
@@ -59,6 +60,7 @@ private:
 
     double sequence;
 
+    bool initialized;
     bool running;
     bool snapshotRunning;
     bool subscriberRunning;

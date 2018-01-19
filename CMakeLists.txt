@@ -53,6 +53,10 @@ set(MUG_SRCS
     ${SRC_DIR}/mug.cpp
     ${SRC_DIR}/chp_client.cpp)
 
+set(DATA_FORMAT_SRCS
+    ${SRC_DIR}/data_format.cpp
+    ${SRC_DIR}/data_format_parser.cpp)
+
 # Targets for bartender and test tap
 add_executable(bartender 
     ${BARTENDER_SRCS}
@@ -82,8 +86,7 @@ target_link_libraries(test_mug
     ${CMAKE_THREAD_LIBS_INIT})
 
 add_executable(format_test
-    ${SRC_DIR}/data_format.cpp
-    ${SRC_DIR}/data_format_parser.cpp
+    ${DATA_FORMAT_SRCS}
     ${SRC_DIR}/data_format_test_main.cpp)
 
 target_link_libraries(format_test
@@ -100,7 +103,7 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PROJECT_SOURCE_DIR}/share/sample_format.xml 
         $<TARGET_FILE_DIR:format_test>)
 
-# Copies ZMQ dll(s) to output directory under Windows
+# Copies dll(s) to output directory under Windows
 # Note older ZMQ builds may have different directory
 # structures for the built libraries.  May need to adjust
 # Windows requirements or make this more able to handle
@@ -137,17 +140,27 @@ file(GLOB TEST_SRCS test/*.cpp)
 add_executable(unit_tests 
     ${TEST_SRCS}
     ${BARTENDER_SRCS}
-    ${TAP_SRCS})
+    ${TAP_SRCS}
+    ${DATA_FORMAT_SRCS})
 target_compile_definitions(unit_tests PRIVATE -DZMQ_VER="${ZeroMQ_VER}")
 target_link_libraries(unit_tests 
     ${ZeroMQ_LIBRARIES} 
+    ${XercesC_LIBRARIES}
     ${LIBUUID_LIBRARIES}
     gtest)
-add_test(test_all unit_tests)
+set_target_properties(unit_tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/test)
+add_test(NAME test_all COMMAND unit_tests WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/test)
+
+file(GLOB TEST_FILES test/*.xml test/*.xsd)
+foreach(TEST_FILE ${TEST_FILES})
+    add_custom_command(TARGET unit_tests POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${TEST_FILE}" $<TARGET_FILE_DIR:unit_tests>)
+endforeach()
 
 # Code coverage
-if (NOT WIN32)
+if (CMAKE_BUILD_TYPE MATCHES Debug)
     include(CodeCoverage)
-    setup_target_for_coverage(${PROJECT_NAME}_coverage unit_tests coverage)
+    setup_target_for_coverage(coverage unit_tests ${CMAKE_BINARY_DIR}/test coverage)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
 endif()
