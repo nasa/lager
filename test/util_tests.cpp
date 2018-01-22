@@ -7,7 +7,9 @@ class LagerUtilTests : public ::testing::Test
 
 TEST_F(LagerUtilTests, UuidLength)
 {
+#ifndef _WIN32
     ASSERT_EQ(lager_utils::getUuid().size(), 16);
+#endif _WIN32
 }
 
 TEST_F(LagerUtilTests, LocalUri)

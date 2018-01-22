@@ -25,7 +25,8 @@ windows:
     - cd build
     - cmake -G "Visual Studio 15 2017" ..
     - cmake --build . --config Debug
-    - ctest -C Debug
+    - cd test\Debug
+    - unit_tests.exe
   tags:
     - lager
     - windows

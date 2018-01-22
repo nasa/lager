@@ -107,6 +107,7 @@ if (WIN32)
             get_filename_component(LIB_WE ${LIB} NAME_WE)
             get_filename_component(LIB_DIR ${LIB} DIRECTORY)
             set(LIB_DLL "${LIB_DIR}/${LIB_WE}.dll")
+            set(ZMQ_BINARIES ${ZMQ_BINARIES} ${LIB_DLL})
             add_custom_command(TARGET bartender POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${LIB_DLL}" $<TARGET_FILE_DIR:bartender>)
@@ -141,8 +142,23 @@ target_link_libraries(unit_tests
     ${XercesC_LIBRARIES}
     ${LIBUUID_LIBRARIES}
     gtest)
+
+if (WIN32)
+    set(TEST_DIR ${CMAKE_BINARY_DIR}/test/${CMAKE_BUILD_TYPE})
+    add_custom_command(TARGET unit_tests POST_BUILD
+        DEPENDS bartender
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${XercesC_BINARIES} $<TARGET_FILE_DIR:unit_tests>)
+    add_custom_command(TARGET unit_tests POST_BUILD
+        DEPENDS bartender
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${ZMQ_BINARIES} $<TARGET_FILE_DIR:unit_tests>)
+else()
+    set(TEST_DIR ${CMAKE_BINARY_DIR}/test)
+endif()
+
 set_target_properties(unit_tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/test)
-add_test(NAME test_all COMMAND unit_tests WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/test)
+add_test(NAME test_all COMMAND unit_tests WORKING_DIRECTORY ${TEST_DIR})
 
 file(GLOB TEST_FILES test/*.xml test/*.xsd)
 foreach(TEST_FILE ${TEST_FILES})
