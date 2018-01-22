@@ -2,9 +2,9 @@
 
 ChpServer::ChpServer(int basePort): initialized(false), running(false), sequence(0)
 {
-    snapshotPort = basePort;
-    publisherPort = basePort + 1;
-    collectorPort = basePort + 2;
+    snapshotPort = basePort + CHP_SNAPSHOT_OFFSET;
+    publisherPort = basePort + CHP_PUBLISHER_OFFSET;
+    collectorPort = basePort + CHP_COLLECTOR_OFFSET;
 
     updatedKeys.clear();
 }

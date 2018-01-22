@@ -2,8 +2,8 @@
 
 Forwarder::Forwarder(int basePort): running(false)
 {
-    frontendPort = basePort;
-    backendPort = basePort + 1;
+    frontendPort = basePort + FORWARDER_FRONTEND_OFFSET;
+    backendPort = basePort + FORWARDER_BACKEND_OFFSET;
 }
 
 Forwarder::~Forwarder()

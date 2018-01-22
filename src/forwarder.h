@@ -8,6 +8,7 @@
 
 #include <zmq.hpp>
 
+#include "lager_defines.h"
 #include "lager_utils.h"
 
 class Forwarder

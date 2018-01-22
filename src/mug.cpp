@@ -12,7 +12,7 @@ Mug::~Mug()
 void Mug::init(const std::string& serverHost_in, int basePort)
 {
     // frontendPort = basePort;
-    subscriberPort = basePort + 11;
+    subscriberPort = basePort + FORWARDER_BACKEND_OFFSET;
 
     serverHost = serverHost_in;
 

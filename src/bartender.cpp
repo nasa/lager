@@ -15,7 +15,7 @@ void Bartender::init(int basePort)
     registrar.reset(new ChpServer(basePort));
     registrar->init(context);
 
-    forwarder.reset(new Forwarder(basePort + 10));
+    forwarder.reset(new Forwarder(basePort));
     forwarder->init(context);
 }
 

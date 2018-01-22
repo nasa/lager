@@ -3,9 +3,9 @@
 ChpClient::ChpClient(const std::string& serverHost_in, int basePort, int timeoutMillis_in):
     initialized(false), running(false), timedOut(false), sequence(-1), uuid("invalid")
 {
-    snapshotPort = basePort;
-    subscriberPort = basePort + 1;
-    publisherPort = basePort + 2;
+    snapshotPort = basePort + CHP_SNAPSHOT_OFFSET;
+    subscriberPort = basePort + CHP_PUBLISHER_OFFSET;
+    publisherPort = basePort + CHP_COLLECTOR_OFFSET;
     timeoutMillis = timeoutMillis_in;
     serverHost = serverHost_in;
 }
