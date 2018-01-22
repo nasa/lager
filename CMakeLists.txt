@@ -135,6 +135,7 @@ add_executable(unit_tests
     ${TEST_SRCS}
     ${BARTENDER_SRCS}
     ${TAP_SRCS}
+    ${MUG_SRCS}
     ${DATA_FORMAT_SRCS})
 target_compile_definitions(unit_tests PRIVATE -DZMQ_VER="${ZeroMQ_VER}")
 target_link_libraries(unit_tests 
