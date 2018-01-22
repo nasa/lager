@@ -56,39 +56,29 @@ void Tap::publisherThread()
     publisherRunning = true;
     zmq::socket_t publisher(*context.get(), ZMQ_PUB);
 
-    try
+    int linger = 0;
+    publisher.setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
+    publisher.connect(lager_utils::getRemoteUri(serverHost, publisherPort).c_str());
+
+    lager_utils::sleep(1000);
+
+    while (running)
     {
-        int linger = 0;
-        publisher.setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
-        publisher.connect(lager_utils::getRemoteUri(serverHost, publisherPort).c_str());
-
-        lager_utils::sleep(1000);
-
-        while (running)
+        if (newData)
         {
-            if (newData)
-            {
-                zmq::message_t uuidMsg(uuid.size());
-                zmq::message_t valueMsg(sizeof(int));
+            zmq::message_t uuidMsg(uuid.size());
+            zmq::message_t valueMsg(sizeof(int));
 
-                memcpy(uuidMsg.data(), uuid.c_str(), uuid.size());
-                mutex.lock();
-                memcpy(valueMsg.data(), (void*)&theInt, sizeof(int));
-                newData = false;
-                mutex.unlock();
+            memcpy(uuidMsg.data(), uuid.c_str(), uuid.size());
+            mutex.lock();
+            memcpy(valueMsg.data(), (void*)&theInt, sizeof(int));
+            newData = false;
+            mutex.unlock();
 
-                publisher.send(uuidMsg, ZMQ_SNDMORE);
-                publisher.send(valueMsg);
+            publisher.send(uuidMsg, ZMQ_SNDMORE);
+            publisher.send(valueMsg);
 
-                std::cout << "tap::publish data = " << theInt << std::endl;
-            }
-        }
-    }
-    catch (zmq::error_t e)
-    {
-        if (e.num() != ETERM)
-        {
-            std::cout << "publisher socket failed: " << e.what() << std::endl;
+            std::cout << "tap::publish data = " << theInt << std::endl;
         }
     }
 

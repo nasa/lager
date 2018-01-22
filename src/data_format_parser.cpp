@@ -11,6 +11,8 @@ void XercesErrorHandler::reportParseException(const xercesc::SAXParseException& 
     xercesc::XMLString::release(&message);
 }
 
+void XercesErrorHandler::warning(const xercesc::SAXParseException& ex) {}
+
 void XercesErrorHandler::error(const xercesc::SAXParseException& ex)
 {
     reportParseException(ex);
