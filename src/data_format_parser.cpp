@@ -81,6 +81,7 @@ std::shared_ptr<DataFormat> DataFormatParser::parse()
         {
             std::stringstream ss;
             ss << "error in file " << xmlFile << ": " << errHandler->getLastError();
+            errHandler->resetErrors();
             throw std::runtime_error(ss.str());
         }
 

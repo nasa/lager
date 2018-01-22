@@ -35,24 +35,14 @@ void Forwarder::stop()
 
 void Forwarder::forwarderThread()
 {
-    try
-    {
-        frontend.reset(new zmq::socket_t(*context.get(), ZMQ_SUB));
-        frontend->bind(lager_utils::getLocalUri(frontendPort).c_str());
-        frontend->setsockopt(ZMQ_SUBSCRIBE, "", 0);
+    frontend.reset(new zmq::socket_t(*context.get(), ZMQ_SUB));
+    frontend->bind(lager_utils::getLocalUri(frontendPort).c_str());
+    frontend->setsockopt(ZMQ_SUBSCRIBE, "", 0);
 
-        backend.reset(new zmq::socket_t(*context.get(), ZMQ_PUB));
-        backend->bind(lager_utils::getLocalUri(backendPort).c_str());
+    backend.reset(new zmq::socket_t(*context.get(), ZMQ_PUB));
+    backend->bind(lager_utils::getLocalUri(backendPort).c_str());
 
-        zmq_device(ZMQ_FORWARDER, (void*)*frontend.get(), (void*)*backend.get());
-    }
-    catch (zmq::error_t e)
-    {
-        if (e.num() != ETERM)
-        {
-            std::cout << "forwarder socket failed: " << e.what() << std::endl;
-        }
-    }
+    zmq_device(ZMQ_FORWARDER, (void*)*frontend.get(), (void*)*backend.get());
 
     frontend->close();
     backend->close();

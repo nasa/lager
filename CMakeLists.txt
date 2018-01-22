@@ -87,14 +87,14 @@ target_link_libraries(test_mug
 
 # Copy format schema and test files
 add_custom_command(
-    TARGET format_test POST_BUILD
+    TARGET bartender POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PROJECT_SOURCE_DIR}/share/data_format.xsd 
-        $<TARGET_FILE_DIR:format_test>)
+        $<TARGET_FILE_DIR:bartender>)
 
 add_custom_command(
-    TARGET format_test POST_BUILD
+    TARGET bartender POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PROJECT_SOURCE_DIR}/share/sample_format.xml 
-        $<TARGET_FILE_DIR:format_test>)
+        $<TARGET_FILE_DIR:bartender>)
 
 # Copies dll(s) to output directory under Windows
 # Note older ZMQ builds may have different directory
