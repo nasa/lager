@@ -15,12 +15,14 @@ public:
     Tap();
 
     void init(const std::string& serverHost_in, int basePort);
-    void start(const std::string& dataKey_in, const std::string& dataFormatStr_in, bool isFile = true);
+    void start(const std::string& key_in, const std::string& formatStr_in, bool isFile = true);
     void stop();
-    void log(int data);
+    void log();
 
 private:
     void publisherThread();
+    void initData();
+    void updateData();
 
     std::shared_ptr<ChpClient> chpClient;
     std::shared_ptr<zmq::context_t> context;
@@ -28,15 +30,21 @@ private:
     std::mutex mutex;
     std::condition_variable publisherCv;
 
-    std::shared_ptr<DataFormat> dataFormat;
+    std::shared_ptr<DataFormat> format;
+    std::vector<uint8_t> payload;
 
     std::string uuid;
-    std::string dataKey;
-    std::string dataFormatStr;
+    std::string key;
+    std::string formatStr;
+    std::string version;
     std::string serverHost;
 
+    uint64_t timestamp;
+
+    unsigned int payloadSize;
+    unsigned int useCompression;
+
     int publisherPort;
-    int theInt;
 
     bool newData;
     bool running;

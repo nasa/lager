@@ -29,7 +29,7 @@ TEST_F(TapTests, DoesItWorkFile)
 
     for (unsigned int i = 0; i < 5; ++i)
     {
-        t.log(i);
+        t.log();
         lager_utils::sleep(500);
     }
 
@@ -48,7 +48,7 @@ TEST_F(TapTests, DoesItWorkString)
 
     for (unsigned int i = 0; i < 5; ++i)
     {
-        t.log(i);
+        t.log();
         lager_utils::sleep(500);
     }
 

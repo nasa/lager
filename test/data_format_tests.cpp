@@ -21,6 +21,25 @@ TEST_F(DataFormatTests, GoodFormatParseFromString)
                                       "<item name=\"column2\" type=\"integer\" size=\"4\" offset=\"255\"/></format>"));
 }
 
+TEST_F(DataFormatTests, VersionStringTooLong)
+{
+    DataFormatParser p("good_schema.xsd");
+    EXPECT_ANY_THROW(p.parseFromString("<?xml version=\"1.0\" encoding=\"UTF-8\"?><format version=\"123456789\">"
+                                       "<item name=\"column1\" type=\"string\" size=\"255\" offset=\"0\"/>"
+                                       "<item name=\"column2\" type=\"integer\" size=\"4\" offset=\"255\"/></format>"));
+}
+
+TEST_F(DataFormatTests, NegativeValues)
+{
+    DataFormatParser p("good_schema.xsd");
+    EXPECT_ANY_THROW(p.parseFromString("<?xml version=\"1.0\" encoding=\"UTF-8\"?><format version=\"123456789\">"
+                                       "<item name=\"column1\" type=\"string\" size=\"255\" offset=\"-1\"/>"
+                                       "<item name=\"column2\" type=\"integer\" size=\"4\" offset=\"255\"/></format>"));
+    EXPECT_ANY_THROW(p.parseFromString("<?xml version=\"1.0\" encoding=\"UTF-8\"?><format version=\"123456789\">"
+                                       "<item name=\"column1\" type=\"string\" size=\"-1\" offset=\"0\"/>"
+                                       "<item name=\"column2\" type=\"integer\" size=\"4\" offset=\"255\"/></format>"));
+}
+
 TEST_F(DataFormatTests, BadFormatParseFromFile)
 {
     DataFormatParser a("good_schema.xsd");

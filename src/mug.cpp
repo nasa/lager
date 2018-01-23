@@ -58,6 +58,12 @@ void Mug::subscriberThread()
         std::string value("");
         double sequence = 0;
 
+        std::string uuid;
+        std::string version;
+        unsigned int compression;
+        uint64_t timestamp;
+        std::vector<uint8_t> payload;
+
         zmq::pollitem_t items[] = {{static_cast<void*>(*subscriber.get()), 0, ZMQ_POLLIN, 0}};
 
         while (running)
@@ -72,12 +78,17 @@ void Mug::subscriberThread()
                 subscriber->recv(&msg);
                 std::string uuid(static_cast<char*>(msg.data()), msg.size());
 
-                int theInt = 0;
                 subscriber->recv(&msg);
-                theInt = *(int*)msg.data();
+                std::string version(static_cast<char*>(msg.data()), msg.size());
 
-                // std::cout << "uuid = " << uuid.c_str() << std::endl;
-                std::cout << "theInt = " << theInt << std::endl;
+                subscriber->recv(&msg);
+                compression = *(int*)msg.data();
+
+                subscriber->recv(&msg);
+                timestamp = *(uint64_t*)msg.data();
+
+                subscriber->recv(&msg);
+                // payload = *(std::vector<uint8_t>*)msg.data();
             }
         }
     }

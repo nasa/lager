@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include "lager_defines.h"
 #include "lager_utils.h"
 
 class LagerUtilTests : public ::testing::Test
@@ -8,7 +9,7 @@ class LagerUtilTests : public ::testing::Test
 TEST_F(LagerUtilTests, UuidLength)
 {
 #ifndef _WIN32
-    ASSERT_EQ(lager_utils::getUuid().size(), 16);
+    ASSERT_EQ(lager_utils::getUuid().size(), UUID_SIZE_BYTES);
 #endif
 }
 

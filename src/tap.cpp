@@ -1,6 +1,6 @@
 #include "tap.h"
 
-Tap::Tap(): publisherPort(0), running(false), newData(false)
+Tap::Tap(): publisherPort(0), running(false), newData(false), useCompression(0)
 {
 }
 
@@ -18,30 +18,42 @@ void Tap::init(const std::string& serverHost_in, int basePort)
 }
 
 // defaults to use input file path, may re-think this later
-void Tap::start(const std::string& dataKey_in, const std::string& dataFormatStr_in, bool isFile)
+void Tap::start(const std::string& key_in, const std::string& formatStr_in, bool isFile)
 {
     DataFormatParser p;
 
     if (isFile)
     {
-        dataFormat = p.parseFromFile(dataFormatStr_in);
-        dataFormatStr = p.getXmlStr();
+        format = p.parseFromFile(formatStr_in);
+        formatStr = p.getXmlStr();
     }
     else
     {
-        dataFormat = p.parseFromString(dataFormatStr_in);
-        dataFormatStr = dataFormatStr_in;
+        format = p.parseFromString(formatStr_in);
+        formatStr = formatStr_in;
     }
 
-    dataKey = dataKey_in;
+    version = format->getVersion();
+    key = key_in;
+
+    payloadSize = format->getPayloadSize();
+    payload.resize(payloadSize);
 
     running = true;
 
-    chpClient->addOrUpdateKeyValue(dataKey, dataFormatStr);
+    chpClient->addOrUpdateKeyValue(key, formatStr);
     chpClient->start();
 
     publisherThreadHandle = std::thread(&Tap::publisherThread, this);
     publisherThreadHandle.detach();
+}
+
+void Tap::updateData()
+{
+    mutex.lock();
+    timestamp = lager_utils::getCurrentTime();
+    newData = true;
+    mutex.unlock();
 }
 
 void Tap::stop()
@@ -60,12 +72,9 @@ void Tap::stop()
     chpClient->stop();
 }
 
-void Tap::log(int data)
+void Tap::log()
 {
-    mutex.lock();
-    newData = true;
-    theInt = data;
-    mutex.unlock();
+    updateData();
 }
 
 void Tap::publisherThread()
@@ -84,18 +93,25 @@ void Tap::publisherThread()
         if (newData)
         {
             zmq::message_t uuidMsg(uuid.size());
-            zmq::message_t valueMsg(sizeof(int));
+            zmq::message_t versionMsg(version.size());
+            zmq::message_t compressionMsg(sizeof(useCompression));
+            zmq::message_t timestampMsg(sizeof(timestamp));
+            zmq::message_t payloadMsg(payload.size());
 
-            memcpy(uuidMsg.data(), uuid.c_str(), uuid.size());
             mutex.lock();
-            memcpy(valueMsg.data(), (void*)&theInt, sizeof(int));
+            memcpy(uuidMsg.data(), uuid.c_str(), uuid.size());
+            memcpy(versionMsg.data(), version.c_str(), version.size());
+            memcpy(compressionMsg.data(), (void*)&useCompression, sizeof(useCompression));
+            memcpy(timestampMsg.data(), (void*)&timestamp, sizeof(timestamp));
+            memcpy(payloadMsg.data(), (void*)&payload, payload.size());
             newData = false;
             mutex.unlock();
 
             publisher.send(uuidMsg, ZMQ_SNDMORE);
-            publisher.send(valueMsg);
-
-            std::cout << "tap::publish data = " << theInt << std::endl;
+            publisher.send(versionMsg, ZMQ_SNDMORE);
+            publisher.send(compressionMsg, ZMQ_SNDMORE);
+            publisher.send(timestampMsg, ZMQ_SNDMORE);
+            publisher.send(payloadMsg);
         }
     }
 

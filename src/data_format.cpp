@@ -19,3 +19,15 @@ void DataFormat::print(std::ostream& stream)
         stream << (*i).name << " " << (*i).type << std::endl;
     }
 }
+
+unsigned int DataFormat::getPayloadSize()
+{
+    unsigned int totalSize = 0;
+
+    for (std::vector<DataItem>::iterator i = items.begin(); i != items.end(); ++i)
+    {
+        totalSize += (*i).size;
+    }
+
+    return totalSize;
+}

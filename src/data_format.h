@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include "lager_defines.h"
+
 struct DataItem
 {
     std::string name;
@@ -21,6 +23,10 @@ class DataFormat
 public:
     DataFormat(const std::string& version);
 
+    std::vector<DataItem> getItems() {return items;};
+    std::string getVersion() {return version;};
+
+    unsigned int getPayloadSize();
     void addItem(const DataItem& item);
     void print(std::ostream& stream);
 

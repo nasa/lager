@@ -94,6 +94,14 @@ namespace lager_utils
 
         return ss.str();
     }
+
+    static uint64_t getCurrentTime()
+    {
+        auto tp = std::chrono::system_clock::now();
+        auto dur = tp.time_since_epoch();
+        uint64_t nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(dur).count();
+        return nanoseconds;
+    }
 }
 
 #endif
