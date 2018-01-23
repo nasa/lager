@@ -1,3 +1,7 @@
+#include <fstream>
+#include <streambuf>
+#include <string>
+
 #include <zmq.hpp>
 
 #include "tap.h"
@@ -9,7 +13,7 @@ int main(int argc, char* argv[])
 
     Tap t;
     t.init("localhost", 12345);
-    t.start();
+    t.start("/sample_format", "sample_format.xml");
 
     lager_utils::sleep(1000);
 

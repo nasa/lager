@@ -1,11 +1,14 @@
 #ifndef DATA_FORMAT_PARSER
 #define DATA_FORMAT_PARSER
 
+#include <fstream>
 #include <memory>
+#include <string>
 
 #include <xercesc/dom/DOM.hpp>
 #include <xercesc/parsers/XercesDOMParser.hpp>
 #include <xercesc/sax/HandlerBase.hpp>
+#include <xercesc/framework/MemBufInputSource.hpp>
 #include <xercesc/util/PlatformUtils.hpp>
 #include <xercesc/util/XMLString.hpp>
 
@@ -29,10 +32,17 @@ private:
 class DataFormatParser
 {
 public:
-    DataFormatParser(const std::string& xmlFile_in, const std::string& xsdFile_in);
+    DataFormatParser();
+    DataFormatParser(const std::string& xsdFile_in);
     ~DataFormatParser();
 
-    std::shared_ptr<DataFormat> parse();
+    std::string getXmlStr() {return xmlStr;};
+
+    std::shared_ptr<DataFormat> parseFromFile(const std::string& xmlFile);
+    std::shared_ptr<DataFormat> parseFromString(const std::string& xmlStr_in);
+
+private:
+    void parse();
 
     XercesDOMParser* parser;
     XercesErrorHandler* errHandler;
@@ -45,7 +55,9 @@ public:
     XMLCh* attSize;
     XMLCh* attOffset;
 
-    std::string xmlFile;
+    std::shared_ptr<DataFormat> format;
+
+    std::string xmlStr;
     std::string xsdFile;
 };
 

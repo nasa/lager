@@ -202,11 +202,6 @@ void ChpClient::snapshotThread()
                         {
                             updateMap[key] = value;
                         }
-                        else if (key != "KTHXBAI")
-                        {
-                            // this shouldn't happen, throw here later
-                            std::cout << "got initial snapshot (key, value) with empty value" << std::endl;
-                        }
                     }
                     else
                     {

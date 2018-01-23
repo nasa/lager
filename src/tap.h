@@ -6,6 +6,8 @@
 #include <vector>
 
 #include "chp_client.h"
+#include "data_format.h"
+#include "data_format_parser.h"
 
 class Tap
 {
@@ -13,7 +15,7 @@ public:
     Tap();
 
     void init(const std::string& serverHost_in, int basePort);
-    void start();
+    void start(const std::string& dataKey_in, const std::string& dataFormatStr_in, bool isFile = true);
     void stop();
     void log(int data);
 
@@ -26,7 +28,11 @@ private:
     std::mutex mutex;
     std::condition_variable publisherCv;
 
+    std::shared_ptr<DataFormat> dataFormat;
+
     std::string uuid;
+    std::string dataKey;
+    std::string dataFormatStr;
     std::string serverHost;
 
     int publisherPort;

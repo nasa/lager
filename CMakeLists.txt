@@ -69,11 +69,13 @@ target_link_libraries(bartender
 
 add_executable(test_tap
     ${TAP_SRCS}
+    ${DATA_FORMAT_SRCS}
     ${SRC_DIR}/tap_test_main.cpp)
 
 target_link_libraries(test_tap
     ${ZeroMQ_LIBRARIES}
     ${LIBUUID_LIBRARIES}
+    ${XercesC_LIBRARIES}
     ${CMAKE_THREAD_LIBS_INIT})
 
 add_executable(test_mug

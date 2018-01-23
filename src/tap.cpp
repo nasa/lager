@@ -8,7 +8,7 @@ void Tap::init(const std::string& serverHost_in, int basePort)
 {
     context.reset(new zmq::context_t(1));
 
-    publisherPort = basePort + 10;
+    publisherPort = basePort + FORWARDER_FRONTEND_OFFSET;
     uuid = lager_utils::getUuid();
     serverHost = serverHost_in;
 
@@ -17,10 +17,27 @@ void Tap::init(const std::string& serverHost_in, int basePort)
     chpClient->init(context, uuid);
 }
 
-void Tap::start()
+// defaults to use input file path, may re-think this later
+void Tap::start(const std::string& dataKey_in, const std::string& dataFormatStr_in, bool isFile)
 {
+    DataFormatParser p;
+
+    if (isFile)
+    {
+        dataFormat = p.parseFromFile(dataFormatStr_in);
+        dataFormatStr = p.getXmlStr();
+    }
+    else
+    {
+        dataFormat = p.parseFromString(dataFormatStr_in);
+        dataFormatStr = dataFormatStr_in;
+    }
+
+    dataKey = dataKey_in;
+
     running = true;
 
+    chpClient->addOrUpdateKeyValue(dataKey, dataFormatStr);
     chpClient->start();
 
     publisherThreadHandle = std::thread(&Tap::publisherThread, this);

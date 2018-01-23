@@ -23,13 +23,26 @@ void XercesErrorHandler::fatalError(const xercesc::SAXParseException& ex)
     reportParseException(ex);
 }
 
+// defaulting to a standard xsd location, prob should formalize this somehow
+DataFormatParser::DataFormatParser() : DataFormatParser("data_format.xsd")
+{
+}
+
 // note file path must be full path or same directory.  relative paths don't work
-DataFormatParser::DataFormatParser(const std::string& xmlFile_in, const std::string& xsdFile_in)
+DataFormatParser::DataFormatParser(const std::string& xsdFile_in)
 {
     XMLPlatformUtils::Initialize();
 
-    xmlFile = xmlFile_in;
     xsdFile = xsdFile_in;
+
+    std::ifstream f(xsdFile);
+
+    if (!f.good())
+    {
+        std::stringstream ss;
+        ss << "failed to load schema file: " << xsdFile;
+        throw std::runtime_error(ss.str());
+    }
 
     tagFormat = XMLString::transcode("format");
     tagItem = XMLString::transcode("item");
@@ -62,10 +75,32 @@ DataFormatParser::~DataFormatParser()
     XMLPlatformUtils::Terminate();
 }
 
-std::shared_ptr<DataFormat> DataFormatParser::parse()
+std::shared_ptr<DataFormat> DataFormatParser::parseFromFile(const std::string& xmlFile)
 {
-    std::shared_ptr<DataFormat> format;
+    std::ifstream f(xmlFile);
 
+    if (!f.good())
+    {
+        std::stringstream ss;
+        ss << "failed to load xml file: " << xmlFile;
+        throw std::runtime_error(ss.str());
+    }
+
+    xmlStr = std::string((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+
+    parse();
+    return format;
+}
+
+std::shared_ptr<DataFormat> DataFormatParser::parseFromString(const std::string& xmlStr_in)
+{
+    xmlStr = xmlStr_in;
+    parse();
+    return format;
+}
+
+void DataFormatParser::parse()
+{
     parser->loadGrammar(xsdFile.c_str(), Grammar::SchemaGrammarType);
     parser->setErrorHandler(errHandler);
     parser->setValidationScheme(XercesDOMParser::Val_Always);
@@ -75,14 +110,17 @@ std::shared_ptr<DataFormat> DataFormatParser::parse()
 
     try
     {
-        parser->parse(xmlFile.c_str());
+        MemBufInputSource xmlBuf((const XMLByte*)xmlStr.c_str(), xmlStr.size(), "unused");
+
+        // parser->parse(xmlFile.c_str());
+        parser->parse(xmlBuf);
 
         // because we passed in the XSD file, this error count will tell us if
         // the xml file is valid per the schema
         if (parser->getErrorCount() != 0)
         {
             std::stringstream ss;
-            ss << "error in file " << xmlFile << ": " << errHandler->getLastError();
+            ss << "error in xml: " << errHandler->getLastError();
             errHandler->resetErrors();
             throw std::runtime_error(ss.str());
         }
@@ -132,6 +170,4 @@ std::shared_ptr<DataFormat> DataFormatParser::parse()
     {
         throw std::runtime_error(e.what());
     }
-
-    return format;
 }
