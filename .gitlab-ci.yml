@@ -38,7 +38,7 @@ coverage:
     - mkdir build
     - cd build
     - cmake -DCMAKE_BUILD_TYPE=Debug .. && make coverage
-  coverage: '/(?m)\bOverall\D+(\d+[.]\d\%)/'
+  coverage: '(?m)\bOverall\D+(\d+[.]\d\%)'
   artifacts:
     paths:
       - build/coverage/
