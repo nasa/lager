@@ -9,7 +9,7 @@ int main(int argc, char* argv[])
     b.init(12345);
     b.start();
 
-    lager_utils::sleep(20000);
+    lager_utils::sleep(60000);
 
     b.stop();
 

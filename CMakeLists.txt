@@ -54,6 +54,7 @@ set(MUG_SRCS
     src/chp_client.cpp)
 
 set(DATA_FORMAT_SRCS
+    src/data_ref_item.cpp
     src/data_format.cpp
     src/data_format_parser.cpp)
 

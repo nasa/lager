@@ -30,6 +30,11 @@ bool Tap::init(const std::string& serverHost_in, int basePort)
     return true;
 }
 
+void Tap::addItem(DataRefItem item)
+{
+    dataRefItems.push_back(item);
+}
+
 // defaults to use input file path, may re-think this later
 void Tap::start(const std::string& key_in, const std::string& formatStr_in, bool isFile)
 {
@@ -49,8 +54,8 @@ void Tap::start(const std::string& key_in, const std::string& formatStr_in, bool
     version = format->getVersion();
     key = key_in;
 
-    payloadSize = format->getPayloadSize();
-    payload.resize(payloadSize);
+    // payloadSize = format->getPayloadSize();
+    // payload.resize(payloadSize);
 
     running = true;
 
@@ -109,22 +114,39 @@ void Tap::publisherThread()
             zmq::message_t versionMsg(version.size());
             zmq::message_t compressionMsg(sizeof(useCompression));
             zmq::message_t timestampMsg(sizeof(timestamp));
-            zmq::message_t payloadMsg(payload.size());
 
             mutex.lock();
+
             memcpy(uuidMsg.data(), uuid.c_str(), uuid.size());
             memcpy(versionMsg.data(), version.c_str(), version.size());
             memcpy(compressionMsg.data(), (void*)&useCompression, sizeof(useCompression));
             memcpy(timestampMsg.data(), (void*)&timestamp, sizeof(timestamp));
-            memcpy(payloadMsg.data(), (void*)&payload, payload.size());
-            newData = false;
-            mutex.unlock();
 
             publisher.send(uuidMsg, ZMQ_SNDMORE);
             publisher.send(versionMsg, ZMQ_SNDMORE);
             publisher.send(compressionMsg, ZMQ_SNDMORE);
             publisher.send(timestampMsg, ZMQ_SNDMORE);
-            publisher.send(payloadMsg);
+
+            for (unsigned int i = 0; i < dataRefItems.size(); ++i)
+            {
+                void* data = dataRefItems[i].getData();
+                uint32_t size = dataRefItems[i].getSize();
+
+                zmq::message_t tmp(size);
+                memcpy(tmp.data(), data, sizeof(data));
+
+                if (i < dataRefItems.size() - 1)
+                {
+                    publisher.send(tmp, ZMQ_SNDMORE);
+                }
+                else
+                {
+                    publisher.send(tmp);
+                }
+            }
+
+            newData = false;
+            mutex.unlock();
         }
     }
 

@@ -2,8 +2,10 @@
 #define MUG
 
 #include <future>
+#include <map>
 #include <memory>
 #include <thread>
+#include <vector>
 
 #include "chp_client.h"
 
@@ -28,6 +30,8 @@ private:
     std::thread subscriberThreadHandle;
     std::mutex mutex;
     std::condition_variable subscriberCv;
+
+    std::map<std::string, std::vector<uint8_t> > payloads;
 
     std::string serverHost;
     std::string uuid;

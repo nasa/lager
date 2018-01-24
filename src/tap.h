@@ -8,6 +8,7 @@
 #include "chp_client.h"
 #include "data_format.h"
 #include "data_format_parser.h"
+#include "data_ref_item.h"
 
 class Tap
 {
@@ -16,6 +17,7 @@ public:
     virtual ~Tap();
 
     bool init(const std::string& serverHost_in, int basePort);
+    void addItem(DataRefItem item);
     void start(const std::string& key_in, const std::string& formatStr_in, bool isFile = true);
     void stop();
     void log();
@@ -32,7 +34,7 @@ private:
     std::condition_variable publisherCv;
 
     std::shared_ptr<DataFormat> format;
-    std::vector<uint8_t> payload;
+    std::vector<DataRefItem> dataRefItems;
 
     std::string uuid;
     std::string key;
@@ -50,6 +52,10 @@ private:
     bool newData;
     bool running;
     bool publisherRunning;
+
+    // demo
+    uint32_t int1;
+    uint32_t int2;
 };
 
 #endif
