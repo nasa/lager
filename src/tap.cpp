@@ -129,11 +129,8 @@ void Tap::publisherThread()
 
             for (unsigned int i = 0; i < dataRefItems.size(); ++i)
             {
-                void* data = dataRefItems[i].getData();
-                uint32_t size = dataRefItems[i].getSize();
-
-                zmq::message_t tmp(size);
-                memcpy(tmp.data(), data, sizeof(data));
+                zmq::message_t tmp(dataRefItems[i].getSize());
+                memcpy(tmp.data(), dataRefItems[i].getData(), dataRefItems[i].getSize());
 
                 if (i < dataRefItems.size() - 1)
                 {
