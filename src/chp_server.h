@@ -18,11 +18,10 @@
 #include "lager_defines.h"
 #include "lager_utils.h"
 
-class ChpServer
+class ClusteredHashmapServer final
 {
 public:
-    ChpServer(int basePort);
-    ~ChpServer();
+    ClusteredHashmapServer(int basePort);
 
     void init(std::shared_ptr<zmq::context_t> context_in);
     void addOrUpdateKeyValue(const std::string& key, const std::string& value);

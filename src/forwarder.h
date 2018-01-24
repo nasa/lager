@@ -11,11 +11,10 @@
 #include "lager_defines.h"
 #include "lager_utils.h"
 
-class Forwarder
+class Forwarder final
 {
 public:
     Forwarder(int basePort);
-    ~Forwarder();
 
     void init(std::shared_ptr<zmq::context_t> context_in);
     void start();

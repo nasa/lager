@@ -19,10 +19,10 @@
 #include "lager_defines.h"
 #include "lager_utils.h"
 
-class ChpClient
+class ClusteredHashmapClient final
 {
 public:
-    ChpClient(const std::string& serverHost_in, int basePort, int timeoutMillis_in);
+    ClusteredHashmapClient(const std::string& serverHost_in, int basePort, int timeoutMillis_in);
 
     void init(std::shared_ptr<zmq::context_t> context_in, const std::string& uuid);
     void addOrUpdateKeyValue(const std::string& key, const std::string& value);

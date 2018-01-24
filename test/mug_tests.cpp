@@ -19,6 +19,13 @@ protected:
     }
 };
 
+TEST_F(MugTests, BadPortNumber)
+{
+    Mug m;
+    EXPECT_FALSE(m.init("localhost", -50));
+    EXPECT_FALSE(m.init("localhost", 65535));
+}
+
 TEST_F(MugTests, DoesItWork)
 {
     Mug m;

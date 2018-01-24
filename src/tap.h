@@ -13,8 +13,9 @@ class Tap
 {
 public:
     Tap();
+    virtual ~Tap();
 
-    void init(const std::string& serverHost_in, int basePort);
+    bool init(const std::string& serverHost_in, int basePort);
     void start(const std::string& key_in, const std::string& formatStr_in, bool isFile = true);
     void stop();
     void log();
@@ -24,7 +25,7 @@ private:
     void initData();
     void updateData();
 
-    std::shared_ptr<ChpClient> chpClient;
+    std::shared_ptr<ClusteredHashmapClient> chpClient;
     std::shared_ptr<zmq::context_t> context;
     std::thread publisherThreadHandle;
     std::mutex mutex;

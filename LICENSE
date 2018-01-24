@@ -1,0 +1,18 @@
+cmake/CodeCoverage.cmake:
+
+Copyright (c) 2012 - 2015, Lars Bilke
+All rights reserved.
+
+cmake/DownloadProject.cmake:
+cmake/DownloadProject.CMakeLists.cmake:
+
+Distributed under the OSI-approved MIT License.  See accompanying
+file LICENSE or https://github.com/Crascit/DownloadProject for details.
+
+cmake/FindZeroMQ.cmake:
+Copyright (c) Kitware, Inc.
+All rights reserved.
+
+cmake/FindLibUuid.cmake:
+Copyright @ Members of the EMI Collaboration, 2010.
+See www.eu-emi.eu for details on the copyright holders.

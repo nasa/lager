@@ -19,6 +19,13 @@ protected:
     }
 };
 
+TEST_F(TapTests, BadPortNumber)
+{
+    Tap t;
+    EXPECT_FALSE(t.init("localhost", -50));
+    EXPECT_FALSE(t.init("localhost", 65536));
+}
+
 TEST_F(TapTests, DoesItWorkFile)
 {
     Tap t;

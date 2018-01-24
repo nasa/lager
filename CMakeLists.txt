@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 2.8.11 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.1.3 FATAL_ERROR)
 project(lager)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 find_package(Threads REQUIRED)
@@ -31,36 +31,35 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 # Build GoogleTest
 add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
 
-set(SRC_DIR ${PROJECT_SOURCE_DIR}/src)
-
+# @todo switch to use target_include_dir when conversion to library is made
 include_directories(
     ${ZeroMQ_INCLUDE_DIRS}
     ${LIBUUID_INCLUDE_DIRS}
     ${XercesC_INCLUDE_DIRS}
-    ${SRC_DIR})
+    src)
 
 # Sources (@todo make this a library later)
 set(BARTENDER_SRCS
-    ${SRC_DIR}/bartender.cpp
-    ${SRC_DIR}/chp_server.cpp 
-    ${SRC_DIR}/forwarder.cpp)
+    src/bartender.cpp
+    src/chp_server.cpp 
+    src/forwarder.cpp)
 
 set(TAP_SRCS
-    ${SRC_DIR}/tap.cpp
-    ${SRC_DIR}/chp_client.cpp)
+    src/tap.cpp
+    src/chp_client.cpp)
 
 set(MUG_SRCS
-    ${SRC_DIR}/mug.cpp
-    ${SRC_DIR}/chp_client.cpp)
+    src/mug.cpp
+    src/chp_client.cpp)
 
 set(DATA_FORMAT_SRCS
-    ${SRC_DIR}/data_format.cpp
-    ${SRC_DIR}/data_format_parser.cpp)
+    src/data_format.cpp
+    src/data_format_parser.cpp)
 
 # Targets for bartender and test tap
 add_executable(bartender 
     ${BARTENDER_SRCS}
-    ${SRC_DIR}/bartender_main.cpp)
+    src/bartender_main.cpp)
 
 target_link_libraries(bartender 
     ${ZeroMQ_LIBRARIES}
@@ -70,7 +69,7 @@ target_link_libraries(bartender
 add_executable(test_tap
     ${TAP_SRCS}
     ${DATA_FORMAT_SRCS}
-    ${SRC_DIR}/tap_test_main.cpp)
+    src/tap_test_main.cpp)
 
 target_link_libraries(test_tap
     ${ZeroMQ_LIBRARIES}
@@ -80,7 +79,7 @@ target_link_libraries(test_tap
 
 add_executable(test_mug
     ${MUG_SRCS}
-    ${SRC_DIR}/mug_test_main.cpp)
+    src/mug_test_main.cpp)
 
 target_link_libraries(test_mug
     ${ZeroMQ_LIBRARIES}
@@ -88,6 +87,7 @@ target_link_libraries(test_mug
     ${CMAKE_THREAD_LIBS_INIT})
 
 # Copy format schema and test files
+# @todo later will install the schema file and not copy sample formats
 add_custom_command(
     TARGET bartender POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PROJECT_SOURCE_DIR}/share/data_format.xsd 
@@ -130,6 +130,7 @@ if (WIN32)
 endif()
 
 # GoogleTest
+# @todo break out tests into individual add_test()s so it's easier to run
 enable_testing()
 include_directories(${GTEST_INCLUDE_DIRS})
 file(GLOB TEST_SRCS test/*.cpp)

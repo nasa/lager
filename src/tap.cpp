@@ -4,17 +4,30 @@ Tap::Tap(): publisherPort(0), running(false), newData(false), useCompression(0)
 {
 }
 
-void Tap::init(const std::string& serverHost_in, int basePort)
+Tap::~Tap()
+{
+}
+
+bool Tap::init(const std::string& serverHost_in, int basePort)
 {
     context.reset(new zmq::context_t(1));
 
     publisherPort = basePort + FORWARDER_FRONTEND_OFFSET;
+
+    if (publisherPort < 0 || publisherPort > 65535)
+    {
+        // @todo provide stream output of errors?
+        return false;
+    }
+
     uuid = lager_utils::getUuid();
     serverHost = serverHost_in;
 
     // 2000 default timeout for testing
-    chpClient.reset(new ChpClient(serverHost_in, basePort, 2000));
+    chpClient.reset(new ClusteredHashmapClient(serverHost_in, basePort, 2000));
     chpClient->init(context, uuid);
+
+    return true;
 }
 
 // defaults to use input file path, may re-think this later

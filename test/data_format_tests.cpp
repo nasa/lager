@@ -75,6 +75,6 @@ TEST_F(DataFormatTests, Print)
     DataFormatParser p("good_schema.xsd");
     std::shared_ptr<DataFormat> df = p.parseFromFile("good_format.xml");
     std::stringstream ss;
-    df->print(ss);
+    ss << *df.get();
     EXPECT_STREQ(ss.str().c_str(), "version: BEERR01\ncolumn1 string\ncolumn2 integer\n");
 }

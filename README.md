@@ -11,7 +11,7 @@ Package dependencies
 
 `sudo apt install -y git cmake build-essential uuid-dev xerces-c-dev`   
 
-[CMake](https://cmake.org) >= 3.1 required.  Note this package is `cmake` in Ubuntu 16.04 and `cmake3` in Ubuntu 14.04.  The primary reason for CMake 3.1 is XercesC works better with `find_package()`   
+[CMake](https://cmake.org) >= 3.1.3 required.  Note this package is `cmake` in Ubuntu 16.04 and `cmake3` in Ubuntu 14.04.  The primary reason for CMake 3.1.3 is XercesC works better with `find_package()`   
 [ZeroMQ](https://github.com/zeromq/libzmq) >= 4.2.2 required.  To install from source:   
    
 ```

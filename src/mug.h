@@ -11,9 +11,9 @@ class Mug
 {
 public:
     Mug();
-    ~Mug();
+    virtual ~Mug();
 
-    void init(const std::string& serverHost_in, int basePort);
+    bool init(const std::string& serverHost_in, int basePort);
     void start();
     void stop();
     void log(int data);

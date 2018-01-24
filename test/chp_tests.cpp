@@ -26,8 +26,8 @@ protected:
 
 TEST_F(ChpTests, UninitializedStart)
 {
-    ChpServer s(12345);
-    ChpClient c("localhost", 12345, 1000);
+    ClusteredHashmapServer s(12345);
+    ClusteredHashmapClient c("localhost", 12345, 1000);
 
     EXPECT_ANY_THROW(s.start());
     EXPECT_ANY_THROW(c.start());
@@ -36,7 +36,7 @@ TEST_F(ChpTests, UninitializedStart)
 TEST_F(ChpTests, ServerAddRemoveKeys)
 {
     context.reset(new zmq::context_t(1));
-    ChpServer c(12345);
+    ClusteredHashmapServer c(12345);
     c.init(context);
     c.start();
     EXPECT_EQ(c.getHashMap().size(), 0);
@@ -53,8 +53,8 @@ TEST_F(ChpTests, ServerAddRemoveKeys)
 TEST_F(ChpTests, BothAddRemoveKeys)
 {
     context.reset(new zmq::context_t(1));
-    ChpServer s(12345);
-    ChpClient c("localhost", 12345, 1000);
+    ClusteredHashmapServer s(12345);
+    ClusteredHashmapClient c("localhost", 12345, 1000);
 
     s.init(context);
     c.init(context, lager_utils::getUuid());
@@ -76,8 +76,8 @@ TEST_F(ChpTests, BothAddRemoveKeys)
 TEST_F(ChpTests, AddMultipleKeys)
 {
     context.reset(new zmq::context_t(1));
-    ChpServer s(12345);
-    ChpClient c("localhost", 12345, 1000);
+    ClusteredHashmapServer s(12345);
+    ClusteredHashmapClient c("localhost", 12345, 1000);
 
     s.init(context);
     c.init(context, lager_utils::getUuid());
@@ -100,8 +100,8 @@ TEST_F(ChpTests, AddMultipleKeys)
 TEST_F(ChpTests, ClientMapReceive)
 {
     context.reset(new zmq::context_t(1));
-    ChpServer s(12345);
-    ChpClient c("localhost", 12345, 1000);
+    ClusteredHashmapServer s(12345);
+    ClusteredHashmapClient c("localhost", 12345, 1000);
 
     s.init(context);
     c.init(context, lager_utils::getUuid());
@@ -122,9 +122,9 @@ TEST_F(ChpTests, ClientMapReceive)
 TEST_F(ChpTests, ServerDuplicateKeys)
 {
     context.reset(new zmq::context_t(1));
-    ChpServer s(12345);
-    ChpClient c("localhost", 12345, 1000);
-    ChpClient cDupe("localhost", 12345, 1000);
+    ClusteredHashmapServer s(12345);
+    ClusteredHashmapClient c("localhost", 12345, 1000);
+    ClusteredHashmapClient cDupe("localhost", 12345, 1000);
 
     s.init(context);
     c.init(context, lager_utils::getUuid());
@@ -148,7 +148,7 @@ TEST_F(ChpTests, ClientNoHugz)
 {
     context.reset(new zmq::context_t(1));
 
-    ChpClient c("localhost", 12345, 1000);
+    ClusteredHashmapClient c("localhost", 12345, 1000);
 
     c.init(context, lager_utils::getUuid());
 

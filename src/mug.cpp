@@ -6,17 +6,23 @@ Mug::Mug(): running(false)
 
 Mug::~Mug()
 {
-    zmq_term((void*)*context.get());
 }
 
-void Mug::init(const std::string& serverHost_in, int basePort)
+bool Mug::init(const std::string& serverHost_in, int basePort)
 {
-    // frontendPort = basePort;
     subscriberPort = basePort + FORWARDER_BACKEND_OFFSET;
+
+    if (subscriberPort < 0 || subscriberPort > 65535)
+    {
+        // @todo provide stream output of errors?
+        return false;
+    }
 
     serverHost = serverHost_in;
 
     context.reset(new zmq::context_t(1));
+
+    return true;
 }
 
 void Mug::start()

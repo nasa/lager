@@ -1,6 +1,6 @@
 #include "chp_server.h"
 
-ChpServer::ChpServer(int basePort): initialized(false), running(false), sequence(0)
+ClusteredHashmapServer::ClusteredHashmapServer(int basePort): initialized(false), running(false), sequence(0)
 {
     snapshotPort = basePort + CHP_SNAPSHOT_OFFSET;
     publisherPort = basePort + CHP_PUBLISHER_OFFSET;
@@ -9,36 +9,32 @@ ChpServer::ChpServer(int basePort): initialized(false), running(false), sequence
     updatedKeys.clear();
 }
 
-ChpServer::~ChpServer()
-{
-}
-
-void ChpServer::init(std::shared_ptr<zmq::context_t> context_in)
+void ClusteredHashmapServer::init(std::shared_ptr<zmq::context_t> context_in)
 {
     context = context_in;
 
     initialized = true;
 }
 
-void ChpServer::start()
+void ClusteredHashmapServer::start()
 {
     if (!initialized)
     {
-        throw std::runtime_error("ChpServer started before initialized");
+        throw std::runtime_error("ClusteredHashmapServer started before initialized");
     }
 
     running = true;
 
-    publisherThreadHandle = std::thread(&ChpServer::publisherThread, this);
-    snapshotThreadHandle = std::thread(&ChpServer::snapshotThread, this);
-    collectorThreadHandle = std::thread(&ChpServer::collectorThread, this);
+    publisherThreadHandle = std::thread(&ClusteredHashmapServer::publisherThread, this);
+    snapshotThreadHandle = std::thread(&ClusteredHashmapServer::snapshotThread, this);
+    collectorThreadHandle = std::thread(&ClusteredHashmapServer::collectorThread, this);
 
     publisherThreadHandle.detach();
     snapshotThreadHandle.detach();
     collectorThreadHandle.detach();
 }
 
-void ChpServer::stop()
+void ClusteredHashmapServer::stop()
 {
     std::unique_lock<std::mutex> lock(mutex);
 
@@ -60,19 +56,19 @@ void ChpServer::stop()
     }
 }
 
-void ChpServer::addOrUpdateKeyValue(const std::string& key, const std::string& value)
+void ClusteredHashmapServer::addOrUpdateKeyValue(const std::string& key, const std::string& value)
 {
     hashMap[key] = value;
     updatedKeys.push_back(key);
 }
 
-void ChpServer::removeKey(const std::string& key)
+void ClusteredHashmapServer::removeKey(const std::string& key)
 {
     hashMap[key] = "";
     updatedKeys.push_back(key);
 }
 
-void ChpServer::snapshotThread()
+void ClusteredHashmapServer::snapshotThread()
 {
     snapshotRunning = true;
 
@@ -121,7 +117,7 @@ void ChpServer::snapshotThread()
     }
 }
 
-void ChpServer::snapshotMap(const std::string& identity)
+void ClusteredHashmapServer::snapshotMap(const std::string& identity)
 {
     std::string empty("");
 
@@ -150,7 +146,7 @@ void ChpServer::snapshotMap(const std::string& identity)
     }
 }
 
-void ChpServer::snapshotBye(const std::string& identity)
+void ClusteredHashmapServer::snapshotBye(const std::string& identity)
 {
     std::string kthxbai("KTHXBAI");
     std::string empty("");
@@ -180,7 +176,7 @@ void ChpServer::snapshotBye(const std::string& identity)
     sequence++;
 }
 
-void ChpServer::publishUpdatedKeys()
+void ClusteredHashmapServer::publishUpdatedKeys()
 {
     std::string empty("");
     std::vector<std::string> removedKeys;
@@ -221,7 +217,7 @@ void ChpServer::publishUpdatedKeys()
     updatedKeys.clear();
 }
 
-void ChpServer::publisherThread()
+void ClusteredHashmapServer::publisherThread()
 {
     publisherRunning = true;
 
@@ -255,7 +251,7 @@ void ChpServer::publisherThread()
     }
 }
 
-void ChpServer::publishHugz()
+void ClusteredHashmapServer::publishHugz()
 {
     std::string hugz("HUGZ");
     std::string empty("");
@@ -280,7 +276,7 @@ void ChpServer::publishHugz()
     publisher->send(frame4);
 }
 
-void ChpServer::collectorThread()
+void ClusteredHashmapServer::collectorThread()
 {
     collectorRunning = true;
 

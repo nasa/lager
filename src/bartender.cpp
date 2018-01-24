@@ -4,19 +4,31 @@ Bartender::Bartender()
 {
 }
 
-Bartender::~Bartender()
+bool Bartender::init(int basePort)
 {
-}
+    if (basePort < 0 || basePort > 65535)
+    {
+        // @todo have user optional stream output?
+        return false;
+    }
 
-void Bartender::init(int basePort)
-{
-    context.reset(new zmq::context_t(1));
+    try
+    {
+        context.reset(new zmq::context_t(1));
 
-    registrar.reset(new ChpServer(basePort));
-    registrar->init(context);
+        registrar.reset(new ClusteredHashmapServer(basePort));
+        registrar->init(context);
 
-    forwarder.reset(new Forwarder(basePort));
-    forwarder->init(context);
+        forwarder.reset(new Forwarder(basePort));
+        forwarder->init(context);
+    }
+    catch (...)
+    {
+        // @todo have user optional stream output?
+        return false;
+    }
+
+    return true;
 }
 
 void Bartender::start()

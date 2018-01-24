@@ -1,6 +1,6 @@
 #include "chp_client.h"
 
-ChpClient::ChpClient(const std::string& serverHost_in, int basePort, int timeoutMillis_in):
+ClusteredHashmapClient::ClusteredHashmapClient(const std::string& serverHost_in, int basePort, int timeoutMillis_in):
     initialized(false), running(false), timedOut(false), sequence(-1), uuid("invalid")
 {
     snapshotPort = basePort + CHP_SNAPSHOT_OFFSET;
@@ -10,7 +10,7 @@ ChpClient::ChpClient(const std::string& serverHost_in, int basePort, int timeout
     serverHost = serverHost_in;
 }
 
-void ChpClient::init(std::shared_ptr<zmq::context_t> context_in, const std::string& uuid_in)
+void ClusteredHashmapClient::init(std::shared_ptr<zmq::context_t> context_in, const std::string& uuid_in)
 {
     context = context_in;
     uuid = uuid_in;
@@ -18,23 +18,23 @@ void ChpClient::init(std::shared_ptr<zmq::context_t> context_in, const std::stri
     initialized = true;
 }
 
-void ChpClient::start()
+void ClusteredHashmapClient::start()
 {
     if (!initialized)
     {
-        throw std::runtime_error("ChpClient started before initialized");
+        throw std::runtime_error("ClusteredHashmapClient started before initialized");
     }
 
     running = true;
 
-    snapshotThreadHandle = std::thread(&ChpClient::snapshotThread, this);
-    subscriberThreadHandle = std::thread(&ChpClient::subscriberThread, this);
+    snapshotThreadHandle = std::thread(&ClusteredHashmapClient::snapshotThread, this);
+    subscriberThreadHandle = std::thread(&ClusteredHashmapClient::subscriberThread, this);
 
     snapshotThreadHandle.detach();
     subscriberThreadHandle.detach();
 }
 
-void ChpClient::stop()
+void ClusteredHashmapClient::stop()
 {
     std::unique_lock<std::mutex> lock(mutex);
 
@@ -51,17 +51,17 @@ void ChpClient::stop()
     }
 }
 
-void ChpClient::addOrUpdateKeyValue(const std::string& key, const std::string& value)
+void ClusteredHashmapClient::addOrUpdateKeyValue(const std::string& key, const std::string& value)
 {
-    std::async(std::launch::async, &ChpClient::publisherThread, this, key, value);
+    std::async(std::launch::async, &ClusteredHashmapClient::publisherThread, this, key, value);
 }
 
-void ChpClient::removeKey(const std::string& key)
+void ClusteredHashmapClient::removeKey(const std::string& key)
 {
-    std::async(std::launch::async, &ChpClient::publisherThread, this, key, "");
+    std::async(std::launch::async, &ClusteredHashmapClient::publisherThread, this, key, "");
 }
 
-void ChpClient::subscriberThread()
+void ClusteredHashmapClient::subscriberThread()
 {
     timedOut = false;
     subscriberRunning = true;
@@ -141,7 +141,7 @@ void ChpClient::subscriberThread()
     }
 }
 
-void ChpClient::snapshotThread()
+void ClusteredHashmapClient::snapshotThread()
 {
     snapshotRunning = true;
     int hwm = 1;
@@ -248,7 +248,7 @@ void ChpClient::snapshotThread()
     snapshotCv.notify_one();
 }
 
-void ChpClient::publisherThread(const std::string& key, const std::string& value)
+void ClusteredHashmapClient::publisherThread(const std::string& key, const std::string& value)
 {
     int hwm = 1;
     int linger = 0;

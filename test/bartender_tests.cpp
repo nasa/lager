@@ -22,10 +22,18 @@ protected:
 TEST_F(BartenderTests, DoesItWork)
 {
     Bartender b;
-    b.init(12345);
+    EXPECT_TRUE(b.init(12345));
     b.start();
 
     lager_utils::sleep(1000);
 
     b.stop();
 }
+
+TEST_F(BartenderTests, BadPortNumber)
+{
+    Bartender b;
+    EXPECT_FALSE(b.init(-1));
+    EXPECT_FALSE(b.init(65536));
+}
+
