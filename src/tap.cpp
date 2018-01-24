@@ -16,7 +16,7 @@ bool Tap::init(const std::string& serverHost_in, int basePort)
 
     if (publisherPort < 0 || publisherPort > 65535)
     {
-        // @todo provide stream output of errors?
+        // TODO provide stream output of errors?
         return false;
     }
 

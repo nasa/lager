@@ -31,14 +31,15 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 # Build GoogleTest
 add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
 
-# @todo switch to use target_include_dir when conversion to library is made
+# TODO switch to use target_include_dir when conversion to library is made
 include_directories(
     ${ZeroMQ_INCLUDE_DIRS}
     ${LIBUUID_INCLUDE_DIRS}
     ${XercesC_INCLUDE_DIRS}
     src)
 
-# Sources (@todo make this a library later)
+# Sources 
+# TODO make this a library later
 set(BARTENDER_SRCS
     src/bartender.cpp
     src/chp_server.cpp 
@@ -87,7 +88,7 @@ target_link_libraries(test_mug
     ${CMAKE_THREAD_LIBS_INIT})
 
 # Copy format schema and test files
-# @todo later will install the schema file and not copy sample formats
+# TODO later will install the schema file and not copy sample formats
 add_custom_command(
     TARGET bartender POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PROJECT_SOURCE_DIR}/share/data_format.xsd 
@@ -130,7 +131,7 @@ if (WIN32)
 endif()
 
 # GoogleTest
-# @todo break out tests into individual add_test()s so it's easier to run
+# TODO break out tests into individual add_test()s so it's easier to run
 enable_testing()
 include_directories(${GTEST_INCLUDE_DIRS})
 file(GLOB TEST_SRCS test/*.cpp)

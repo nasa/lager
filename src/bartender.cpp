@@ -8,7 +8,7 @@ bool Bartender::init(int basePort)
 {
     if (basePort < 0 || basePort > 65535)
     {
-        // @todo have user optional stream output?
+        // TODO have user optional stream output?
         return false;
     }
 
@@ -24,7 +24,7 @@ bool Bartender::init(int basePort)
     }
     catch (...)
     {
-        // @todo have user optional stream output?
+        // TODO have user optional stream output?
         return false;
     }
 

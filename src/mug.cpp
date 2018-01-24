@@ -14,7 +14,7 @@ bool Mug::init(const std::string& serverHost_in, int basePort)
 
     if (subscriberPort < 0 || subscriberPort > 65535)
     {
-        // @todo provide stream output of errors?
+        // TODO provide stream output of errors?
         return false;
     }
 

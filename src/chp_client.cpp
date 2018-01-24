@@ -106,7 +106,7 @@ void ClusteredHashmapClient::subscriberThread()
 
                 if (key != "HUGZ")
                 {
-                    // @todo what should be the action here if sequence count fails?
+                    // TODO what should be the action here if sequence count fails?
                     if (sequence > this->sequence)
                     {
                         if (value.length() == 0)
@@ -205,7 +205,7 @@ void ClusteredHashmapClient::snapshotThread()
                     }
                     else
                     {
-                        // @todo throw error
+                        // TODO throw error
                         std::cout << "bad sequence check (new = " << sequence << ", old = " << this->sequence << ")" << std::endl;
                     }
                 }
@@ -259,7 +259,7 @@ void ClusteredHashmapClient::publisherThread(const std::string& key, const std::
 
     lager_utils::sleep(1000);
 
-    // @TODO implement properties
+    // TODO implement properties
     std::string properties("");
     double zero = 0;
 
