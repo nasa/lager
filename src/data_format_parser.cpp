@@ -172,7 +172,7 @@ void DataFormatParser::parse()
     }
 }
 
-bool DataFormatParser::createFromDataRefItems(std::vector<AbstractDataRefItem*> items)
+bool DataFormatParser::createFromDataRefItems(std::vector<AbstractDataRefItem*> items, const std::string& version)
 {
     std::stringstream ss;
 
@@ -190,7 +190,7 @@ bool DataFormatParser::createFromDataRefItems(std::vector<AbstractDataRefItem*> 
     DOMDocument* doc = impl->createDocument(0, tempStr, 0);
     DOMElement* root = doc->getDocumentElement();
 
-    xVersion = XMLString::transcode("BEERR01");
+    xVersion = XMLString::transcode(version.c_str());
     root->setAttribute(attVersion, xVersion);
 
     for (std::vector<AbstractDataRefItem*>::iterator i = items.begin(); i != items.end(); ++i)

@@ -39,11 +39,11 @@ void Tap::addItem(AbstractDataRefItem* item)
 
 void Tap::start(const std::string& key_in)
 {
-    // TODO set version
+    version = "BEERR01";
 
     DataFormatParser p;
 
-    if (p.createFromDataRefItems(dataRefItems))
+    if (p.createFromDataRefItems(dataRefItems, version))
     {
         formatStr = p.getXmlStr();
     }

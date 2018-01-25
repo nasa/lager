@@ -28,11 +28,11 @@ TEST_F(TapTests, BadPortNumber)
 
 TEST_F(TapTests, DoesItWorkFile)
 {
-    int i = 0;
+    uint32_t i = 0;
     Tap t;
     t.init("localhost", 12345);
     t.start("test_format");
-    t.addItem(new DataRefItem<int>("item1", i));
+    t.addItem(new DataRefItem<uint32_t>("item1", i));
 
     lager_utils::sleep(1000);
 
