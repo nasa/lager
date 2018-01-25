@@ -22,10 +22,7 @@ int main(int argc, char* argv[])
     t.addItem(new DataRefItem<uint32_t>("int1", int1));
     t.addItem(new DataRefItem<uint32_t>("int2", int2));
 
-    t.start("/sample_format", "sample_format.xml");
-
-    lager_utils::sleep(1000);
-
+    t.start("/sample_format");
 
     for (unsigned int i = 0; i < 1000; ++i)
     {

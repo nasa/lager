@@ -1,6 +1,6 @@
 #include "tap.h"
 
-Tap::Tap(): publisherPort(0), running(false), newData(false), useCompression(0)
+Tap::Tap(): publisherPort(0), running(false), newData(false), flags(0)
 {
 }
 
@@ -23,40 +23,25 @@ bool Tap::init(const std::string& serverHost_in, int basePort)
     uuid = lager_utils::getUuid();
     serverHost = serverHost_in;
 
-    // 2000 default timeout for testing
+    // TODO make this not magic 2000 default timeout for testing
     chpClient.reset(new ClusteredHashmapClient(serverHost_in, basePort, 2000));
     chpClient->init(context, uuid);
 
     return true;
 }
 
-// template<class T>
 void Tap::addItem(AbstractDataRefItem* item)
 {
     dataRefItems.push_back(item);
 }
 
 // defaults to use input file path, may re-think this later
-void Tap::start(const std::string& key_in, const std::string& formatStr_in, bool isFile)
+void Tap::start(const std::string& key_in)
 {
-    DataFormatParser p;
+    // TODO get xml from dataRefItems vector
+    // TODO set version and formatStr here
 
-    if (isFile)
-    {
-        format = p.parseFromFile(formatStr_in);
-        formatStr = p.getXmlStr();
-    }
-    else
-    {
-        format = p.parseFromString(formatStr_in);
-        formatStr = formatStr_in;
-    }
-
-    version = format->getVersion();
     key = key_in;
-
-    // payloadSize = format->getPayloadSize();
-    // payload.resize(payloadSize);
 
     running = true;
 
@@ -65,14 +50,6 @@ void Tap::start(const std::string& key_in, const std::string& formatStr_in, bool
 
     publisherThreadHandle = std::thread(&Tap::publisherThread, this);
     publisherThreadHandle.detach();
-}
-
-void Tap::updateData()
-{
-    mutex.lock();
-    timestamp = lager_utils::getCurrentTime();
-    newData = true;
-    mutex.unlock();
 }
 
 void Tap::stop()
@@ -93,7 +70,10 @@ void Tap::stop()
 
 void Tap::log()
 {
-    updateData();
+    mutex.lock();
+    timestamp = lager_utils::getCurrentTime();
+    newData = true;
+    mutex.unlock();
 }
 
 void Tap::publisherThread()
@@ -113,19 +93,19 @@ void Tap::publisherThread()
         {
             zmq::message_t uuidMsg(uuid.size());
             zmq::message_t versionMsg(version.size());
-            zmq::message_t compressionMsg(sizeof(useCompression));
+            zmq::message_t flagsMsg(sizeof(flags));
             zmq::message_t timestampMsg(sizeof(timestamp));
 
             mutex.lock();
 
             memcpy(uuidMsg.data(), uuid.c_str(), uuid.size());
             memcpy(versionMsg.data(), version.c_str(), version.size());
-            memcpy(compressionMsg.data(), (void*)&useCompression, sizeof(useCompression));
+            memcpy(flagsMsg.data(), (void*)&flags, sizeof(flags));
             memcpy(timestampMsg.data(), (void*)&timestamp, sizeof(timestamp));
 
             publisher.send(uuidMsg, ZMQ_SNDMORE);
             publisher.send(versionMsg, ZMQ_SNDMORE);
-            publisher.send(compressionMsg, ZMQ_SNDMORE);
+            publisher.send(flagsMsg, ZMQ_SNDMORE);
             publisher.send(timestampMsg, ZMQ_SNDMORE);
 
             for (unsigned int i = 0; i < dataRefItems.size(); ++i)

@@ -18,6 +18,8 @@ public:
         name(name_in), dataRef(dataRef_in), size(sizeof(dataRef_in)) {}
     ~DataRefItem() {}
 
+    const std::string getName() {return name;}
+    const std::string getType() {return type;}
     uint32_t getSize() {return size;}
     void* getData() {return (void*)&dataRef;}
 
