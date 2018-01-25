@@ -217,7 +217,7 @@ bool DataFormatParser::createFromDataRefItems(std::vector<AbstractDataRefItem*> 
         root->appendChild(item);
     }
 
-    std::cout << getStringFromDoc(doc) << std::endl;;
+    xmlStr = getStringFromDoc(doc);
 
     return true;
 }

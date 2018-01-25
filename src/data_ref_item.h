@@ -10,9 +10,9 @@ struct AbstractDataRefItem
     virtual uint32_t getSize() = 0;
     virtual uint32_t getOffset() = 0;
     virtual void setOffset(uint32_t offset_in) = 0;
+    virtual void* getData() = 0;
     virtual const std::string getName() = 0;
     virtual const std::string getType() = 0;
-    virtual void* getData() = 0;
 };
 
 template<class T>

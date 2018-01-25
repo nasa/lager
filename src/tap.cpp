@@ -32,20 +32,25 @@ bool Tap::init(const std::string& serverHost_in, int basePort)
 
 void Tap::addItem(AbstractDataRefItem* item)
 {
-    item->setOffset(offsetCount + item->getSize());
+    item->setOffset(offsetCount);
     dataRefItems.push_back(item);
     offsetCount += item->getSize();
 }
 
-// defaults to use input file path, may re-think this later
 void Tap::start(const std::string& key_in)
 {
-    // TODO get xml from dataRefItems vector
-    // TODO set version and formatStr here
+    // TODO set version
 
     DataFormatParser p;
 
-    p.createFromDataRefItems(dataRefItems);
+    if (p.createFromDataRefItems(dataRefItems))
+    {
+        formatStr = p.getXmlStr();
+    }
+    else
+    {
+        throw std::runtime_error("unable to build xml format of tap");
+    }
 
     key = key_in;
 

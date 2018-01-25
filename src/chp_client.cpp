@@ -118,8 +118,6 @@ void ClusteredHashmapClient::subscriberThread()
                             hashMap[key] = value;
                         }
                     }
-
-                    lager_utils::printHashMap(hashMap);
                 }
 
                 this->sequence = sequence;
@@ -240,7 +238,6 @@ void ClusteredHashmapClient::snapshotThread()
     if (updateMap.size() > 0)
     {
         this->sequence = sequence;
-        lager_utils::printHashMap(hashMap);
     }
 
     snapshot->close();
