@@ -48,7 +48,7 @@ public:
 
 private:
     void parse();
-    std::string getStringFromDoc(DOMDocument* doc);
+    std::string getStringFromDoc(xercesc::DOMDocument* doc);
 
     XercesDOMParser* parser;
     XercesErrorHandler* errHandler;
