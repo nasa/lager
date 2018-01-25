@@ -1,6 +1,6 @@
 #include "tap.h"
 
-Tap::Tap(): publisherPort(0), running(false), newData(false), flags(0)
+Tap::Tap(): publisherPort(0), running(false), newData(false), flags(0), offsetCount(0)
 {
 }
 
@@ -32,7 +32,9 @@ bool Tap::init(const std::string& serverHost_in, int basePort)
 
 void Tap::addItem(AbstractDataRefItem* item)
 {
+    item->setOffset(offsetCount + item->getSize());
     dataRefItems.push_back(item);
+    offsetCount += item->getSize();
 }
 
 // defaults to use input file path, may re-think this later
@@ -40,6 +42,10 @@ void Tap::start(const std::string& key_in)
 {
     // TODO get xml from dataRefItems vector
     // TODO set version and formatStr here
+
+    DataFormatParser p;
+
+    p.createFromDataRefItems(dataRefItems);
 
     key = key_in;
 

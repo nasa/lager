@@ -42,6 +42,7 @@ private:
     uint8_t flags;
 
     int publisherPort;
+    uint32_t offsetCount;
 
     bool newData;
     bool running;

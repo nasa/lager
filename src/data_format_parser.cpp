@@ -171,3 +171,74 @@ void DataFormatParser::parse()
         throw std::runtime_error(e.what());
     }
 }
+
+bool DataFormatParser::createFromDataRefItems(std::vector<AbstractDataRefItem*> items)
+{
+    std::stringstream ss;
+
+    XMLCh tempStr[100];
+    XMLCh* xVersion;
+    XMLCh* xName;
+    XMLCh* xType;
+    XMLCh* xSize;
+    XMLCh* xOffset;
+
+    XMLString::transcode("Range", tempStr, 99);
+    DOMImplementation* impl = DOMImplementationRegistry::getDOMImplementation(tempStr);
+
+    XMLString::transcode("format", tempStr, 99);
+    DOMDocument* doc = impl->createDocument(0, tempStr, 0);
+    DOMElement* root = doc->getDocumentElement();
+
+    xVersion = XMLString::transcode("BEERR01");
+    root->setAttribute(attVersion, xVersion);
+
+    for (std::vector<AbstractDataRefItem*>::iterator i = items.begin(); i != items.end(); ++i)
+    {
+        uint32_t size = (*i)->getSize();
+        uint32_t offset = (*i)->getOffset();
+
+        ss.str(std::string());
+        ss << size;
+        xSize = XMLString::transcode(ss.str().c_str());
+
+        ss.str(std::string());
+        ss << offset;
+        xOffset = XMLString::transcode(ss.str().c_str());
+
+        xName = XMLString::transcode((*i)->getName().c_str());
+        xType = XMLString::transcode((*i)->getType().c_str());
+
+        DOMElement* item = doc->createElement(tagItem);
+        item->setAttribute(attName, xName);
+        item->setAttribute(attType, xType);
+        item->setAttribute(attSize, xSize);
+        item->setAttribute(attOffset, xOffset);
+        root->appendChild(item);
+    }
+
+    std::cout << getStringFromDoc(doc) << std::endl;;
+
+    return true;
+}
+
+std::string DataFormatParser::getStringFromDoc(DOMDocument* doc)
+{
+    DOMImplementation* pImplement = NULL;
+    DOMLSSerializer* pSerializer = NULL;
+    XMLFormatTarget* pTarget = NULL;
+
+    XMLCh tempStr[100];
+    XMLString::transcode("LS", tempStr, 99);
+    pImplement = DOMImplementationRegistry::getDOMImplementation(tempStr);
+    pSerializer = ((DOMImplementationLS*)pImplement)->createLSSerializer();
+    pTarget = new MemBufFormatTarget();
+    DOMLSOutput* pDomLsOutput = ((DOMImplementationLS*)pImplement)->createLSOutput();
+    pDomLsOutput->setByteStream(pTarget);
+
+    pSerializer->write(doc, pDomLsOutput);
+
+    std::string xmlOutput((char*)((MemBufFormatTarget*)pTarget)->getRawBuffer());
+
+    return xmlOutput;
+}
