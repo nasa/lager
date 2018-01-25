@@ -17,7 +17,7 @@ public:
     virtual ~Tap();
 
     bool init(const std::string& serverHost_in, int basePort);
-    void addItem(DataRefItem item);
+    void addItem(AbstractDataRefItem* item);
     void start(const std::string& key_in, const std::string& formatStr_in, bool isFile = true);
     void stop();
     void log();
@@ -34,7 +34,7 @@ private:
     std::condition_variable publisherCv;
 
     std::shared_ptr<DataFormat> format;
-    std::vector<DataRefItem> dataRefItems;
+    std::vector<AbstractDataRefItem*> dataRefItems;
 
     std::string uuid;
     std::string key;

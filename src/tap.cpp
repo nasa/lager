@@ -30,7 +30,8 @@ bool Tap::init(const std::string& serverHost_in, int basePort)
     return true;
 }
 
-void Tap::addItem(DataRefItem item)
+// template<class T>
+void Tap::addItem(AbstractDataRefItem* item)
 {
     dataRefItems.push_back(item);
 }
@@ -129,8 +130,8 @@ void Tap::publisherThread()
 
             for (unsigned int i = 0; i < dataRefItems.size(); ++i)
             {
-                zmq::message_t tmp(dataRefItems[i].getSize());
-                memcpy(tmp.data(), dataRefItems[i].getData(), dataRefItems[i].getSize());
+                zmq::message_t tmp(dataRefItems[i]->getSize());
+                memcpy(tmp.data(), dataRefItems[i]->getData(), dataRefItems[i]->getSize());
 
                 if (i < dataRefItems.size() - 1)
                 {

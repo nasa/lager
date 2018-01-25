@@ -1,4 +1,5 @@
 #include <fstream>
+#include <stdint.h>
 #include <streambuf>
 #include <string>
 
@@ -6,6 +7,7 @@
 
 #include "tap.h"
 #include "lager_utils.h"
+#include "data_ref_item.h"
 
 int main(int argc, char* argv[])
 {
@@ -17,8 +19,8 @@ int main(int argc, char* argv[])
     uint32_t int1 = 0;
     uint32_t int2 = 0;
 
-    t.addItem(DataRefItem("int1", int1));
-    t.addItem(DataRefItem("int2", int2));
+    t.addItem(new DataRefItem<uint32_t>("int1", int1));
+    t.addItem(new DataRefItem<uint32_t>("int2", int2));
 
     t.start("/sample_format", "sample_format.xml");
 
