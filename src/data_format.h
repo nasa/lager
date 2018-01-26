@@ -24,8 +24,9 @@ public:
     DataFormat(const std::string& version);
     virtual ~DataFormat();
 
-    std::vector<DataItem> getItems() {return items;};
-    std::string getVersion() {return version;};
+    std::vector<DataItem> getItems() {return items;}
+    unsigned int getItemCount() {return items.size();}
+    std::string getVersion() {return version;}
 
     unsigned int getPayloadSize();
     void addItem(const DataItem& item);

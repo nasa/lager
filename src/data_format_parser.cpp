@@ -29,6 +29,7 @@ DataFormatParser::DataFormatParser() : DataFormatParser("data_format.xsd")
 }
 
 // note file path must be full path or same directory.  relative paths don't work
+// TODO documentation: throws
 DataFormatParser::DataFormatParser(const std::string& xsdFile_in)
 {
     XMLPlatformUtils::Initialize();
@@ -75,6 +76,7 @@ DataFormatParser::~DataFormatParser()
     XMLPlatformUtils::Terminate();
 }
 
+// TODO documentation: throws
 std::shared_ptr<DataFormat> DataFormatParser::parseFromFile(const std::string& xmlFile)
 {
     std::ifstream f(xmlFile);
@@ -92,6 +94,7 @@ std::shared_ptr<DataFormat> DataFormatParser::parseFromFile(const std::string& x
     return format;
 }
 
+// TODO documentation: throws via parse()
 std::shared_ptr<DataFormat> DataFormatParser::parseFromString(const std::string& xmlStr_in)
 {
     xmlStr = xmlStr_in;
@@ -112,7 +115,6 @@ void DataFormatParser::parse()
     {
         MemBufInputSource xmlBuf((const XMLByte*)xmlStr.c_str(), xmlStr.size(), "unused");
 
-        // parser->parse(xmlFile.c_str());
         parser->parse(xmlBuf);
 
         // because we passed in the XSD file, this error count will tell us if
@@ -219,6 +221,11 @@ bool DataFormatParser::createFromDataRefItems(std::vector<AbstractDataRefItem*> 
 
     xmlStr = getStringFromDoc(doc);
 
+    if (!isValid(xmlStr, items.size()))
+    {
+        return false;
+    }
+
     return true;
 }
 
@@ -241,4 +248,17 @@ std::string DataFormatParser::getStringFromDoc(DOMDocument* doc)
     std::string xmlOutput((char*)((MemBufFormatTarget*)pTarget)->getRawBuffer());
 
     return xmlOutput;
+}
+
+// TODO documentation: throws via parseFromString()
+bool DataFormatParser::isValid(const std::string& xml, unsigned int itemCount)
+{
+    std::shared_ptr<DataFormat> testFormat = parseFromString(xml);
+
+    if (testFormat->getItemCount() != itemCount)
+    {
+        return false;
+    }
+
+    return true;
 }

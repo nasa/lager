@@ -26,13 +26,14 @@ TEST_F(TapTests, BadPortNumber)
     EXPECT_FALSE(t.init("localhost", 65536));
 }
 
-TEST_F(TapTests, DoesItWorkFile)
+TEST_F(TapTests, DoesItWork)
 {
     uint32_t i = 0;
     Tap t;
     t.init("localhost", 12345);
-    t.start("test_format");
+
     t.addItem(new DataRefItem<uint32_t>("item1", i));
+    t.start("/test");
 
     lager_utils::sleep(1000);
 

@@ -45,6 +45,7 @@ public:
     std::shared_ptr<DataFormat> parseFromFile(const std::string& xmlFile);
     std::shared_ptr<DataFormat> parseFromString(const std::string& xmlStr_in);
     bool createFromDataRefItems(std::vector<AbstractDataRefItem*> items, const std::string& version);
+    bool isValid(const std::string& xml, unsigned int itemCount);
 
 private:
     void parse();
