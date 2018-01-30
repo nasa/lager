@@ -72,7 +72,8 @@ void Mug::subscriberThread()
         unsigned int compression;
         uint64_t timestamp;
         uint32_t int1;
-        uint32_t int2;
+        int32_t int2;
+        double double1;
 
         zmq::pollitem_t items[] = {{static_cast<void*>(*subscriber.get()), 0, ZMQ_POLLIN, 0}};
 
@@ -98,12 +99,18 @@ void Mug::subscriberThread()
                 timestamp = *(uint64_t*)msg.data();
 
                 subscriber->recv(&msg);
-                int1 = *(uint32_t*)msg.data();
+                uint32_t tmp = ntohl(*(uint32_t*)msg.data());
+                int1 = *reinterpret_cast<uint32_t*>(&tmp);
 
                 subscriber->recv(&msg);
-                int2 = *(uint32_t*)msg.data();
+                tmp = ntohl(*(uint32_t*)msg.data());
+                int2 = *reinterpret_cast<int32_t*>(&tmp);
 
-                std::cout << "int1: " << int1 << " int2: " << int2 << std::endl;
+                subscriber->recv(&msg);
+                uint64_t tmp64 = lager_utils::ntohll(*(uint64_t*)msg.data());
+                double1 = *reinterpret_cast<double*>(&tmp64);
+
+                std::cout << "uint1: " << int1 << " int2: " << int2 << " double1: " << double1 << std::endl;
                 std::cout << "timestamp: " << timestamp << std::endl;
             }
         }

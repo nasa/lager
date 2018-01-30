@@ -17,10 +17,12 @@ int main(int argc, char* argv[])
     t.init("localhost", 12345);
 
     uint32_t int1 = 0;
-    uint32_t int2 = 0;
+    int32_t int2 = -500;
+    double double1 = 0.001;
 
-    t.addItem(new DataRefItem<uint32_t>("int1", int1));
-    t.addItem(new DataRefItem<uint32_t>("int2", int2));
+    t.addItem(new DataRefItem<uint32_t>("int1", &int1));
+    t.addItem(new DataRefItem<int32_t>("int2", &int2));
+    t.addItem(new DataRefItem<double>("double1", &double1));
 
     t.start("/sample_format");
 
@@ -32,6 +34,7 @@ int main(int argc, char* argv[])
 
         int1 += 10;
         int2 += 100;
+        double1 += 0.001;
     }
 
     t.stop();

@@ -111,6 +111,8 @@ void Tap::publisherThread()
 
             memcpy(uuidMsg.data(), uuid.c_str(), uuid.size());
             memcpy(versionMsg.data(), version.c_str(), version.size());
+
+            // TODO endianness
             memcpy(flagsMsg.data(), (void*)&flags, sizeof(flags));
             memcpy(timestampMsg.data(), (void*)&timestamp, sizeof(timestamp));
 
@@ -122,7 +124,7 @@ void Tap::publisherThread()
             for (unsigned int i = 0; i < dataRefItems.size(); ++i)
             {
                 zmq::message_t tmp(dataRefItems[i]->getSize());
-                memcpy(tmp.data(), dataRefItems[i]->getDataRef(), dataRefItems[i]->getSize());
+                dataRefItems[i]->getNetworkDataRef(tmp.data());
 
                 if (i < dataRefItems.size() - 1)
                 {

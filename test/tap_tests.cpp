@@ -32,7 +32,7 @@ TEST_F(TapTests, DoesItWork)
     Tap t;
     t.init("localhost", 12345);
 
-    t.addItem(new DataRefItem<uint32_t>("item1", i));
+    t.addItem(new DataRefItem<uint32_t>("item1", &i));
     t.start("/test");
 
     lager_utils::sleepMillis(1000);

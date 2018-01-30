@@ -85,8 +85,8 @@ TEST_F(DataFormatTests, SchemaCheckerGood)
     std::vector<AbstractDataRefItem*> dataRefItems;
     uint32_t int1;
     uint32_t int2;
-    dataRefItems.push_back(new DataRefItem<uint32_t>("int1", int1));
-    dataRefItems.push_back(new DataRefItem<uint32_t>("int2", int2));
+    dataRefItems.push_back(new DataRefItem<uint32_t>("int1", &int1));
+    dataRefItems.push_back(new DataRefItem<uint32_t>("int2", &int2));
 
     EXPECT_NO_THROW(p.createFromDataRefItems(dataRefItems, "test"));
 
