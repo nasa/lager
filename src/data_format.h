@@ -24,8 +24,9 @@ public:
     DataFormat(const std::string& version);
     virtual ~DataFormat();
 
-    std::vector<DataItem> getItems() {return items;};
-    std::string getVersion() {return version;};
+    std::vector<DataItem> getItems() {return items;}
+    unsigned int getItemCount() {return items.size();}
+    std::string getVersion() {return version;}
 
     unsigned int getPayloadSize();
     void addItem(const DataItem& item);
@@ -34,7 +35,7 @@ public:
     {
         stream << "version: " << df.version << std::endl;
 
-        for (std::vector<DataItem>::const_iterator i = df.items.begin(); i != df.items.end(); ++i)
+        for (auto i = df.items.begin(); i != df.items.end(); ++i)
         {
             stream << (*i).name << " " << (*i).type << std::endl;
         }

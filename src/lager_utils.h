@@ -17,33 +17,13 @@
 
 namespace lager_utils
 {
-    // prints the current hashmap to stdout
-    static void printHashMap(const std::map<std::string, std::string>& map)
-    {
-        std::cout << "{";
-
-        for (auto i = map.begin(); i != map.end();)
-        {
-            std::cout << "'" << i->first << "':'" << i->second << "'";
-
-            ++i;
-
-            if (i != map.end())
-            {
-                std::cout << ", ";
-            }
-        }
-
-        std::cout << "}" << std::endl;
-    }
-
     // cross platform sleep
-    static void sleep(int ms)
+    static void sleepMillis(int duration)
     {
 #ifdef _WIN32
-        Sleep(ms);
+        Sleep(duration);
 #else
-        usleep(ms * 1000);
+        usleep(duration * 1000);
 #endif
     }
 

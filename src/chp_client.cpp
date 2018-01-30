@@ -118,8 +118,6 @@ void ClusteredHashmapClient::subscriberThread()
                             hashMap[key] = value;
                         }
                     }
-
-                    lager_utils::printHashMap(hashMap);
                 }
 
                 this->sequence = sequence;
@@ -240,7 +238,6 @@ void ClusteredHashmapClient::snapshotThread()
     if (updateMap.size() > 0)
     {
         this->sequence = sequence;
-        lager_utils::printHashMap(hashMap);
     }
 
     snapshot->close();
@@ -257,7 +254,7 @@ void ClusteredHashmapClient::publisherThread(const std::string& key, const std::
     publisher->setsockopt(ZMQ_LINGER, &linger, sizeof(int));
     publisher->connect(lager_utils::getRemoteUri(serverHost.c_str(), publisherPort).c_str());
 
-    lager_utils::sleep(1000);
+    lager_utils::sleepMillis(1000);
 
     // TODO implement properties
     std::string properties("");

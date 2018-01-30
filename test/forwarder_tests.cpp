@@ -30,7 +30,7 @@ TEST_F(ForwarderTests, DoesItWork)
     f.init(context);
     f.start();
 
-    lager_utils::sleep(1000);
+    lager_utils::sleepMillis(1000);
 
     context->close();
     f.stop();

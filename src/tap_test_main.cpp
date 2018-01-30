@@ -1,4 +1,5 @@
 #include <fstream>
+#include <stdint.h>
 #include <streambuf>
 #include <string>
 
@@ -6,6 +7,7 @@
 
 #include "tap.h"
 #include "lager_utils.h"
+#include "data_ref_item.h"
 
 int main(int argc, char* argv[])
 {
@@ -13,14 +15,23 @@ int main(int argc, char* argv[])
 
     Tap t;
     t.init("localhost", 12345);
-    t.start("/sample_format", "sample_format.xml");
 
-    lager_utils::sleep(1000);
+    uint32_t int1 = 0;
+    uint32_t int2 = 0;
 
-    for (unsigned int i = 0; i < 5; ++i)
+    t.addItem(new DataRefItem<uint32_t>("int1", int1));
+    t.addItem(new DataRefItem<uint32_t>("int2", int2));
+
+    t.start("/sample_format");
+
+    for (unsigned int i = 0; i < 1000; ++i)
     {
         t.log();
-        lager_utils::sleep(500);
+
+        lager_utils::sleepMillis(500);
+
+        int1 += 10;
+        int2 += 100;
     }
 
     t.stop();

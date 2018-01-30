@@ -29,6 +29,7 @@ DataFormatParser::DataFormatParser() : DataFormatParser("data_format.xsd")
 }
 
 // note file path must be full path or same directory.  relative paths don't work
+// TODO documentation: throws
 DataFormatParser::DataFormatParser(const std::string& xsdFile_in)
 {
     XMLPlatformUtils::Initialize();
@@ -75,6 +76,7 @@ DataFormatParser::~DataFormatParser()
     XMLPlatformUtils::Terminate();
 }
 
+// TODO documentation: throws
 std::shared_ptr<DataFormat> DataFormatParser::parseFromFile(const std::string& xmlFile)
 {
     std::ifstream f(xmlFile);
@@ -92,6 +94,7 @@ std::shared_ptr<DataFormat> DataFormatParser::parseFromFile(const std::string& x
     return format;
 }
 
+// TODO documentation: throws via parse()
 std::shared_ptr<DataFormat> DataFormatParser::parseFromString(const std::string& xmlStr_in)
 {
     xmlStr = xmlStr_in;
@@ -112,7 +115,6 @@ void DataFormatParser::parse()
     {
         MemBufInputSource xmlBuf((const XMLByte*)xmlStr.c_str(), xmlStr.size(), "unused");
 
-        // parser->parse(xmlFile.c_str());
         parser->parse(xmlBuf);
 
         // because we passed in the XSD file, this error count will tell us if
@@ -170,4 +172,107 @@ void DataFormatParser::parse()
     {
         throw std::runtime_error(e.what());
     }
+}
+
+bool DataFormatParser::createFromDataRefItems(const std::vector<AbstractDataRefItem*>& items, const std::string& version)
+{
+    std::stringstream ss;
+
+    XMLCh* xTempStr = nullptr;
+    XMLCh* xVersion = nullptr;
+    XMLCh* xName = nullptr;
+    XMLCh* xType = nullptr;
+    XMLCh* xSize = nullptr;
+    XMLCh* xOffset = nullptr;
+
+    xTempStr = XMLString::transcode("Range");
+    DOMImplementation* impl = DOMImplementationRegistry::getDOMImplementation(xTempStr);
+
+    if (!impl)
+    {
+        return false;
+    }
+
+    xTempStr = XMLString::transcode("format");
+    DOMDocument* doc = impl->createDocument(nullptr, xTempStr, nullptr);
+    DOMElement* root = doc->getDocumentElement();
+
+    xVersion = XMLString::transcode(version.c_str());
+    root->setAttribute(attVersion, xVersion);
+
+    for (auto i = items.begin(); i != items.end(); ++i)
+    {
+        uint32_t size = (*i)->getSize();
+        uint32_t offset = (*i)->getOffset();
+
+        ss.str(std::string());
+        ss << size;
+        xSize = XMLString::transcode(ss.str().c_str());
+
+        ss.str(std::string());
+        ss << offset;
+        xOffset = XMLString::transcode(ss.str().c_str());
+
+        xName = XMLString::transcode((*i)->getName().c_str());
+        xType = XMLString::transcode((*i)->getType().c_str());
+
+        DOMElement* item = doc->createElement(tagItem);
+        item->setAttribute(attName, xName);
+        item->setAttribute(attType, xType);
+        item->setAttribute(attSize, xSize);
+        item->setAttribute(attOffset, xOffset);
+        root->appendChild(item);
+    }
+
+    xmlStr = getStringFromDoc(doc);
+
+    XMLString::release(&xTempStr);
+    XMLString::release(&xVersion);
+    XMLString::release(&xName);
+    XMLString::release(&xType);
+    XMLString::release(&xSize);
+    XMLString::release(&xOffset);
+
+    if (!isValid(xmlStr, items.size()))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+std::string DataFormatParser::getStringFromDoc(DOMDocument* doc)
+{
+    DOMImplementation* pImplement = nullptr;
+    DOMLSSerializer* pSerializer = nullptr;
+    MemBufFormatTarget* pTarget = nullptr;
+
+    XMLCh* xTempStr;
+    xTempStr = XMLString::transcode("LS");
+    pImplement = DOMImplementationRegistry::getDOMImplementation(xTempStr);
+    pSerializer = ((DOMImplementationLS*)pImplement)->createLSSerializer();
+    pTarget = new MemBufFormatTarget();
+    DOMLSOutput* pDomLsOutput = ((DOMImplementationLS*)pImplement)->createLSOutput();
+    pDomLsOutput->setByteStream(pTarget);
+
+    pSerializer->write(doc, pDomLsOutput);
+
+    std::string xmlOutput((char*)pTarget->getRawBuffer(), pTarget->getLen());
+
+    XMLString::release(&xTempStr);
+
+    return xmlOutput;
+}
+
+// TODO documentation: throws via parseFromString()
+bool DataFormatParser::isValid(const std::string& xml, unsigned int itemCount)
+{
+    std::shared_ptr<DataFormat> testFormat = parseFromString(xml);
+
+    if (testFormat->getItemCount() != itemCount)
+    {
+        return false;
+    }
+
+    return true;
 }

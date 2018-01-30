@@ -20,6 +20,9 @@ bool Mug::init(const std::string& serverHost_in, int basePort)
 
     serverHost = serverHost_in;
 
+    // testing
+    payloads["test"].resize(8);
+
     context.reset(new zmq::context_t(1));
 
     return true;
@@ -68,7 +71,8 @@ void Mug::subscriberThread()
         std::string version;
         unsigned int compression;
         uint64_t timestamp;
-        std::vector<uint8_t> payload;
+        uint32_t int1;
+        uint32_t int2;
 
         zmq::pollitem_t items[] = {{static_cast<void*>(*subscriber.get()), 0, ZMQ_POLLIN, 0}};
 
@@ -94,19 +98,23 @@ void Mug::subscriberThread()
                 timestamp = *(uint64_t*)msg.data();
 
                 subscriber->recv(&msg);
-                // payload = *(std::vector<uint8_t>*)msg.data();
+                int1 = *(uint32_t*)msg.data();
+
+                subscriber->recv(&msg);
+                int2 = *(uint32_t*)msg.data();
+
+                std::cout << "int1: " << int1 << " int2: " << int2 << std::endl;
+                std::cout << "timestamp: " << timestamp << std::endl;
             }
         }
     }
     catch (zmq::error_t e)
     {
-        if (e.num() != ETERM)
+        if (e.num() == ETERM)
         {
-            std::cout << "subscriber socket failed: " << e.what() << std::endl;
+            subscriber->close();
+            subscriberRunning = false;
+            subscriberCv.notify_one();
         }
     }
-
-    subscriber->close();
-    subscriberRunning = false;
-    subscriberCv.notify_one();
 }

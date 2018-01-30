@@ -26,37 +26,21 @@ TEST_F(TapTests, BadPortNumber)
     EXPECT_FALSE(t.init("localhost", 65536));
 }
 
-TEST_F(TapTests, DoesItWorkFile)
+TEST_F(TapTests, DoesItWork)
 {
+    uint32_t i = 0;
     Tap t;
     t.init("localhost", 12345);
-    t.start("test_format", "good_format.xml");
 
-    lager_utils::sleep(1000);
+    t.addItem(new DataRefItem<uint32_t>("item1", i));
+    t.start("/test");
+
+    lager_utils::sleepMillis(1000);
 
     for (unsigned int i = 0; i < 5; ++i)
     {
         t.log();
-        lager_utils::sleep(500);
-    }
-
-    t.stop();
-}
-
-TEST_F(TapTests, DoesItWorkString)
-{
-    Tap t;
-    t.init("localhost", 12345);
-    t.start("test_format", "<?xml version=\"1.0\" encoding=\"UTF-8\"?><format version=\"BEERR01\">"
-            "<item name=\"column1\" type=\"string\" size=\"255\" offset=\"0\"/>"
-            "<item name=\"column2\" type=\"integer\" size=\"4\" offset=\"255\"/></format>", false);
-
-    lager_utils::sleep(1000);
-
-    for (unsigned int i = 0; i < 5; ++i)
-    {
-        t.log();
-        lager_utils::sleep(500);
+        lager_utils::sleepMillis(500);
     }
 
     t.stop();

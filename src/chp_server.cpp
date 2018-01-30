@@ -121,7 +121,7 @@ void ClusteredHashmapServer::snapshotMap(const std::string& identity)
 {
     std::string empty("");
 
-    for (std::map<std::string, std::string>::iterator i = hashMap.begin(); i != hashMap.end(); ++i)
+    for (auto i = hashMap.begin(); i != hashMap.end(); ++i)
     {
         zmq::message_t identityMsg(identity.size());
         zmq::message_t frame0(i->first.size());
@@ -181,7 +181,7 @@ void ClusteredHashmapServer::publishUpdatedKeys()
     std::string empty("");
     std::vector<std::string> removedKeys;
 
-    for (std::vector<std::string>::iterator i = updatedKeys.begin(); i != updatedKeys.end(); ++i)
+    for (auto i = updatedKeys.begin(); i != updatedKeys.end(); ++i)
     {
         zmq::message_t frame0((*i).size());
         zmq::message_t frame1(sizeof(double));
@@ -209,7 +209,7 @@ void ClusteredHashmapServer::publishUpdatedKeys()
         sequence++;
     }
 
-    for (std::vector<std::string>::iterator i = removedKeys.begin(); i != removedKeys.end(); ++i)
+    for (auto i = removedKeys.begin(); i != removedKeys.end(); ++i)
     {
         hashMap.erase(*i);
     }

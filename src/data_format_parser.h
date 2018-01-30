@@ -3,16 +3,20 @@
 
 #include <fstream>
 #include <memory>
+#include <stdint.h>
 #include <string>
+#include <vector>
 
 #include <xercesc/dom/DOM.hpp>
 #include <xercesc/parsers/XercesDOMParser.hpp>
 #include <xercesc/sax/HandlerBase.hpp>
 #include <xercesc/framework/MemBufInputSource.hpp>
+#include <xercesc/framework/MemBufFormatTarget.hpp>
 #include <xercesc/util/PlatformUtils.hpp>
 #include <xercesc/util/XMLString.hpp>
 
 #include "data_format.h"
+#include "data_ref_item.h"
 
 using namespace xercesc;
 
@@ -40,9 +44,12 @@ public:
 
     std::shared_ptr<DataFormat> parseFromFile(const std::string& xmlFile);
     std::shared_ptr<DataFormat> parseFromString(const std::string& xmlStr_in);
+    bool createFromDataRefItems(const std::vector<AbstractDataRefItem*>& items, const std::string& version);
+    bool isValid(const std::string& xml, unsigned int itemCount);
 
 private:
     void parse();
+    std::string getStringFromDoc(xercesc::DOMDocument* doc);
 
     XercesDOMParser* parser;
     XercesErrorHandler* errHandler;

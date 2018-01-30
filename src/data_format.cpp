@@ -17,7 +17,7 @@ unsigned int DataFormat::getPayloadSize()
 {
     unsigned int totalSize = 0;
 
-    for (std::vector<DataItem>::iterator i = items.begin(); i != items.end(); ++i)
+    for (auto i = items.begin(); i != items.end(); ++i)
     {
         totalSize += (*i).size;
     }

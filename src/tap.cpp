@@ -1,6 +1,6 @@
 #include "tap.h"
 
-Tap::Tap(): publisherPort(0), running(false), newData(false), useCompression(0)
+Tap::Tap(): publisherPort(0), running(false), newData(false), flags(0), offsetCount(0)
 {
 }
 
@@ -23,34 +23,36 @@ bool Tap::init(const std::string& serverHost_in, int basePort)
     uuid = lager_utils::getUuid();
     serverHost = serverHost_in;
 
-    // 2000 default timeout for testing
+    // TODO make this not magic 2000 default timeout for testing
     chpClient.reset(new ClusteredHashmapClient(serverHost_in, basePort, 2000));
     chpClient->init(context, uuid);
 
     return true;
 }
 
-// defaults to use input file path, may re-think this later
-void Tap::start(const std::string& key_in, const std::string& formatStr_in, bool isFile)
+void Tap::addItem(AbstractDataRefItem* item)
 {
+    item->setOffset(offsetCount);
+    dataRefItems.push_back(item);
+    offsetCount += item->getSize();
+}
+
+void Tap::start(const std::string& key_in)
+{
+    version = "BEERR01";
+
     DataFormatParser p;
 
-    if (isFile)
+    if (p.createFromDataRefItems(dataRefItems, version))
     {
-        format = p.parseFromFile(formatStr_in);
         formatStr = p.getXmlStr();
     }
     else
     {
-        format = p.parseFromString(formatStr_in);
-        formatStr = formatStr_in;
+        throw std::runtime_error("unable to build xml format of tap");
     }
 
-    version = format->getVersion();
     key = key_in;
-
-    payloadSize = format->getPayloadSize();
-    payload.resize(payloadSize);
 
     running = true;
 
@@ -59,14 +61,6 @@ void Tap::start(const std::string& key_in, const std::string& formatStr_in, bool
 
     publisherThreadHandle = std::thread(&Tap::publisherThread, this);
     publisherThreadHandle.detach();
-}
-
-void Tap::updateData()
-{
-    mutex.lock();
-    timestamp = lager_utils::getCurrentTime();
-    newData = true;
-    mutex.unlock();
 }
 
 void Tap::stop()
@@ -87,7 +81,10 @@ void Tap::stop()
 
 void Tap::log()
 {
-    updateData();
+    mutex.lock();
+    timestamp = lager_utils::getCurrentTime();
+    newData = true;
+    mutex.unlock();
 }
 
 void Tap::publisherThread()
@@ -99,7 +96,7 @@ void Tap::publisherThread()
     publisher.setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
     publisher.connect(lager_utils::getRemoteUri(serverHost, publisherPort).c_str());
 
-    lager_utils::sleep(1000);
+    lager_utils::sleepMillis(1000);
 
     while (running)
     {
@@ -107,24 +104,38 @@ void Tap::publisherThread()
         {
             zmq::message_t uuidMsg(uuid.size());
             zmq::message_t versionMsg(version.size());
-            zmq::message_t compressionMsg(sizeof(useCompression));
+            zmq::message_t flagsMsg(sizeof(flags));
             zmq::message_t timestampMsg(sizeof(timestamp));
-            zmq::message_t payloadMsg(payload.size());
 
             mutex.lock();
+
             memcpy(uuidMsg.data(), uuid.c_str(), uuid.size());
             memcpy(versionMsg.data(), version.c_str(), version.size());
-            memcpy(compressionMsg.data(), (void*)&useCompression, sizeof(useCompression));
+            memcpy(flagsMsg.data(), (void*)&flags, sizeof(flags));
             memcpy(timestampMsg.data(), (void*)&timestamp, sizeof(timestamp));
-            memcpy(payloadMsg.data(), (void*)&payload, payload.size());
-            newData = false;
-            mutex.unlock();
 
             publisher.send(uuidMsg, ZMQ_SNDMORE);
             publisher.send(versionMsg, ZMQ_SNDMORE);
-            publisher.send(compressionMsg, ZMQ_SNDMORE);
+            publisher.send(flagsMsg, ZMQ_SNDMORE);
             publisher.send(timestampMsg, ZMQ_SNDMORE);
-            publisher.send(payloadMsg);
+
+            for (unsigned int i = 0; i < dataRefItems.size(); ++i)
+            {
+                zmq::message_t tmp(dataRefItems[i]->getSize());
+                memcpy(tmp.data(), dataRefItems[i]->getDataRef(), dataRefItems[i]->getSize());
+
+                if (i < dataRefItems.size() - 1)
+                {
+                    publisher.send(tmp, ZMQ_SNDMORE);
+                }
+                else
+                {
+                    publisher.send(tmp);
+                }
+            }
+
+            newData = false;
+            mutex.unlock();
         }
     }
 

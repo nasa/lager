@@ -165,7 +165,7 @@ endif()
 set_target_properties(unit_tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/test)
 add_test(NAME test_all COMMAND unit_tests WORKING_DIRECTORY ${TEST_DIR})
 
-file(GLOB TEST_FILES test/*.xml test/*.xsd)
+file(GLOB TEST_FILES test/*.xml test/*.xsd share/*.xsd)
 foreach(TEST_FILE ${TEST_FILES})
     add_custom_command(TARGET unit_tests POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
