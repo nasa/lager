@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
     {
         t.log();
 
-        lager_utils::sleep(500);
+        lager_utils::sleepMillis(500);
 
         int1 += 10;
         int2 += 100;

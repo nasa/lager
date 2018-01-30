@@ -41,10 +41,10 @@ TEST_F(ChpTests, ServerAddRemoveKeys)
     c.start();
     EXPECT_EQ(c.getHashMap().size(), 0);
     c.addOrUpdateKeyValue("testkey", "testvalue");
-    lager_utils::sleep(100);
+    lager_utils::sleepMillis(100);
     EXPECT_STREQ(c.getHashMap()["testkey"].c_str(), "testvalue");
     c.removeKey("testkey");
-    lager_utils::sleep(100);
+    lager_utils::sleepMillis(100);
     EXPECT_EQ(c.getHashMap().size(), 0);
     context->close();
     c.stop();
@@ -63,10 +63,10 @@ TEST_F(ChpTests, BothAddRemoveKeys)
     c.start();
     EXPECT_EQ(s.getHashMap().size(), 0);
     c.addOrUpdateKeyValue("testkey", "testvalue");
-    lager_utils::sleep(100);
+    lager_utils::sleepMillis(100);
     EXPECT_STREQ(s.getHashMap()["testkey"].c_str(), "testvalue");
     c.removeKey("testkey");
-    lager_utils::sleep(100);
+    lager_utils::sleepMillis(100);
     EXPECT_EQ(s.getHashMap().size(), 0);
     context->close();
     c.stop();
@@ -87,10 +87,10 @@ TEST_F(ChpTests, AddMultipleKeys)
     EXPECT_EQ(s.getHashMap().size(), 0);
     c.addOrUpdateKeyValue("testkey1", "testvalue1");
     c.addOrUpdateKeyValue("testkey2", "testvalue2");
-    lager_utils::sleep(100);
+    lager_utils::sleepMillis(100);
     EXPECT_STREQ(s.getHashMap()["testkey1"].c_str(), "testvalue1");
     c.removeKey("testkey1");
-    lager_utils::sleep(100);
+    lager_utils::sleepMillis(100);
     EXPECT_EQ(s.getHashMap().size(), 1);
     context->close();
     c.stop();
@@ -109,10 +109,10 @@ TEST_F(ChpTests, ClientMapReceive)
     s.start();
     EXPECT_EQ(s.getHashMap().size(), 0);
     s.addOrUpdateKeyValue("testkey1", "testvalue1");
-    lager_utils::sleep(100);
+    lager_utils::sleepMillis(100);
     EXPECT_STREQ(s.getHashMap()["testkey1"].c_str(), "testvalue1");
     c.start();
-    lager_utils::sleep(1000);
+    lager_utils::sleepMillis(1000);
     EXPECT_EQ(c.getHashMap().size(), 1);
     context->close();
     c.stop();
@@ -135,9 +135,9 @@ TEST_F(ChpTests, ServerDuplicateKeys)
     cDupe.start();
     EXPECT_EQ(s.getHashMap().size(), 0);
     c.addOrUpdateKeyValue("testkey1", "testvalue1");
-    lager_utils::sleep(1000);
+    lager_utils::sleepMillis(1000);
     cDupe.addOrUpdateKeyValue("testkey1", "testvalue1");
-    lager_utils::sleep(1000);
+    lager_utils::sleepMillis(1000);
     EXPECT_EQ(c.getHashMap().size(), 1);
     context->close();
     c.stop();
@@ -154,7 +154,7 @@ TEST_F(ChpTests, ClientNoHugz)
 
     c.start();
 
-    lager_utils::sleep(2500);
+    lager_utils::sleepMillis(2500);
 
     EXPECT_TRUE(c.isTimedOut());
 

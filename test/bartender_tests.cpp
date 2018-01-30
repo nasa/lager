@@ -25,7 +25,7 @@ TEST_F(BartenderTests, DoesItWork)
     EXPECT_TRUE(b.init(12345));
     b.start();
 
-    lager_utils::sleep(1000);
+    lager_utils::sleepMillis(1000);
 
     b.stop();
 }

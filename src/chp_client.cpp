@@ -254,7 +254,7 @@ void ClusteredHashmapClient::publisherThread(const std::string& key, const std::
     publisher->setsockopt(ZMQ_LINGER, &linger, sizeof(int));
     publisher->connect(lager_utils::getRemoteUri(serverHost.c_str(), publisherPort).c_str());
 
-    lager_utils::sleep(1000);
+    lager_utils::sleepMillis(1000);
 
     // TODO implement properties
     std::string properties("");

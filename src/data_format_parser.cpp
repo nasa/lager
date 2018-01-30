@@ -174,28 +174,33 @@ void DataFormatParser::parse()
     }
 }
 
-bool DataFormatParser::createFromDataRefItems(std::vector<AbstractDataRefItem*> items, const std::string& version)
+bool DataFormatParser::createFromDataRefItems(const std::vector<AbstractDataRefItem*>& items, const std::string& version)
 {
     std::stringstream ss;
 
-    XMLCh tempStr[100];
-    XMLCh* xVersion;
-    XMLCh* xName;
-    XMLCh* xType;
-    XMLCh* xSize;
-    XMLCh* xOffset;
+    XMLCh* xTempStr = nullptr;
+    XMLCh* xVersion = nullptr;
+    XMLCh* xName = nullptr;
+    XMLCh* xType = nullptr;
+    XMLCh* xSize = nullptr;
+    XMLCh* xOffset = nullptr;
 
-    XMLString::transcode("Range", tempStr, 99);
-    DOMImplementation* impl = DOMImplementationRegistry::getDOMImplementation(tempStr);
+    xTempStr = XMLString::transcode("Range");
+    DOMImplementation* impl = DOMImplementationRegistry::getDOMImplementation(xTempStr);
 
-    XMLString::transcode("format", tempStr, 99);
-    DOMDocument* doc = impl->createDocument(0, tempStr, 0);
+    if (!impl)
+    {
+        return false;
+    }
+
+    xTempStr = XMLString::transcode("format");
+    DOMDocument* doc = impl->createDocument(nullptr, xTempStr, nullptr);
     DOMElement* root = doc->getDocumentElement();
 
     xVersion = XMLString::transcode(version.c_str());
     root->setAttribute(attVersion, xVersion);
 
-    for (std::vector<AbstractDataRefItem*>::iterator i = items.begin(); i != items.end(); ++i)
+    for (auto i = items.begin(); i != items.end(); ++i)
     {
         uint32_t size = (*i)->getSize();
         uint32_t offset = (*i)->getOffset();
@@ -221,6 +226,13 @@ bool DataFormatParser::createFromDataRefItems(std::vector<AbstractDataRefItem*> 
 
     xmlStr = getStringFromDoc(doc);
 
+    XMLString::release(&xTempStr);
+    XMLString::release(&xVersion);
+    XMLString::release(&xName);
+    XMLString::release(&xType);
+    XMLString::release(&xSize);
+    XMLString::release(&xOffset);
+
     if (!isValid(xmlStr, items.size()))
     {
         return false;
@@ -231,13 +243,13 @@ bool DataFormatParser::createFromDataRefItems(std::vector<AbstractDataRefItem*> 
 
 std::string DataFormatParser::getStringFromDoc(DOMDocument* doc)
 {
-    DOMImplementation* pImplement = NULL;
-    DOMLSSerializer* pSerializer = NULL;
-    XMLFormatTarget* pTarget = NULL;
+    DOMImplementation* pImplement = nullptr;
+    DOMLSSerializer* pSerializer = nullptr;
+    MemBufFormatTarget* pTarget = nullptr;
 
-    XMLCh tempStr[100];
-    XMLString::transcode("LS", tempStr, 99);
-    pImplement = DOMImplementationRegistry::getDOMImplementation(tempStr);
+    XMLCh* xTempStr;
+    xTempStr = XMLString::transcode("LS");
+    pImplement = DOMImplementationRegistry::getDOMImplementation(xTempStr);
     pSerializer = ((DOMImplementationLS*)pImplement)->createLSSerializer();
     pTarget = new MemBufFormatTarget();
     DOMLSOutput* pDomLsOutput = ((DOMImplementationLS*)pImplement)->createLSOutput();
@@ -245,7 +257,9 @@ std::string DataFormatParser::getStringFromDoc(DOMDocument* doc)
 
     pSerializer->write(doc, pDomLsOutput);
 
-    std::string xmlOutput((char*)((MemBufFormatTarget*)pTarget)->getRawBuffer());
+    std::string xmlOutput((char*)pTarget->getRawBuffer(), pTarget->getLen());
+
+    XMLString::release(&xTempStr);
 
     return xmlOutput;
 }

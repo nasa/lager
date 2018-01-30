@@ -10,7 +10,7 @@ struct AbstractDataRefItem
     virtual uint32_t getSize() = 0;
     virtual uint32_t getOffset() = 0;
     virtual void setOffset(uint32_t offset_in) = 0;
-    virtual void* getData() = 0;
+    virtual void* getDataRef() = 0;
     virtual const std::string getName() = 0;
     virtual const std::string getType() = 0;
 };
@@ -41,7 +41,9 @@ public:
     uint32_t getSize() {return size;}
     uint32_t getOffset() {return offset;}
     void setOffset(uint32_t offset_in) {offset = offset_in;}
-    void* getData() {return (void*)&dataRef;}
+
+    void* getDataRef() { return (void*)&dataRef; }
+    template<uint32_t> void* getDataRef() { return (void*)&htonl(dataRef); }
 
 private:
     T& dataRef;

@@ -11,7 +11,7 @@ int main(int argc, char* argv[])
     m.init("localhost", 12345);
     m.start();
 
-    lager_utils::sleep(60000);
+    lager_utils::sleepMillis(60000);
 
     m.stop();
 

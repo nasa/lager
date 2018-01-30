@@ -32,7 +32,7 @@ TEST_F(MugTests, DoesItWork)
     m.init("localhost", 12345);
     m.start();
 
-    lager_utils::sleep(1000);
+    lager_utils::sleepMillis(1000);
 
     m.stop();
 }

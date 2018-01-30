@@ -96,7 +96,7 @@ void Tap::publisherThread()
     publisher.setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
     publisher.connect(lager_utils::getRemoteUri(serverHost, publisherPort).c_str());
 
-    lager_utils::sleep(1000);
+    lager_utils::sleepMillis(1000);
 
     while (running)
     {
@@ -122,7 +122,7 @@ void Tap::publisherThread()
             for (unsigned int i = 0; i < dataRefItems.size(); ++i)
             {
                 zmq::message_t tmp(dataRefItems[i]->getSize());
-                memcpy(tmp.data(), dataRefItems[i]->getData(), dataRefItems[i]->getSize());
+                memcpy(tmp.data(), dataRefItems[i]->getDataRef(), dataRefItems[i]->getSize());
 
                 if (i < dataRefItems.size() - 1)
                 {

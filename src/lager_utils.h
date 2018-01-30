@@ -18,7 +18,7 @@
 namespace lager_utils
 {
     // cross platform sleep
-    static void sleep(int duration)
+    static void sleepMillis(int duration)
     {
 #ifdef _WIN32
         Sleep(duration);

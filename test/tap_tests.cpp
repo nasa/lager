@@ -35,12 +35,12 @@ TEST_F(TapTests, DoesItWork)
     t.addItem(new DataRefItem<uint32_t>("item1", i));
     t.start("/test");
 
-    lager_utils::sleep(1000);
+    lager_utils::sleepMillis(1000);
 
     for (unsigned int i = 0; i < 5; ++i)
     {
         t.log();
-        lager_utils::sleep(500);
+        lager_utils::sleepMillis(500);
     }
 
     t.stop();
