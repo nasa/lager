@@ -126,7 +126,7 @@ void Mug::subscriberThread()
                 ushort1 = *reinterpret_cast<uint16_t*>(&tmp);
 
                 subscriber->recv(&msg);
-                tmp = ntohs(*(int16_t*)msg.data());
+                tmp = ntohs(*(uint16_t*)msg.data());
                 short1 = *reinterpret_cast<int16_t*>(&tmp);
 
                 subscriber->recv(&msg);
