@@ -165,6 +165,25 @@ private:
 };
 
 template<>
+class DataRefItem<float> : public AbstractDataRefItem
+{
+public:
+    DataRefItem(const std::string& name_in, float* dataRef_in):
+        AbstractDataRefItem(name_in, "float", sizeof(float)),
+        dataRef(dataRef_in) {}
+
+    ~DataRefItem() {}
+
+    void getNetworkDataRef(void* data)
+    {
+        *(uint32_t*)data = htonl(*reinterpret_cast<uint32_t*>(dataRef));
+    }
+
+private:
+    float* dataRef;
+};
+
+template<>
 class DataRefItem<uint64_t> : public AbstractDataRefItem
 {
 public:

@@ -84,6 +84,7 @@ void Mug::subscriberThread()
         int16_t short1;
         uint8_t ubyte1;
         int8_t byte1;
+        float float1;
 
         zmq::pollitem_t items[] = {{static_cast<void*>(*subscriber.get()), 0, ZMQ_POLLIN, 0}};
 
@@ -134,8 +135,13 @@ void Mug::subscriberThread()
                 subscriber->recv(&msg);
                 byte1 = *(int8_t*)msg.data();
 
+                subscriber->recv(&msg);
+                tmp = ntohs(*(uint32_t*)msg.data());
+                float1 = *reinterpret_cast<float*>(&tmp);
+
                 std::cout << "uint1: " << uint1 << std::endl;
                 std::cout << "int1: " << int1 << std::endl;
+                std::cout << "float1: " << float1 << std::endl;
                 std::cout << "double1: " << double1 << std::endl;
                 std::cout << "ushort1: " << ushort1 << std::endl;
                 std::cout << "short1: " << short1 << std::endl;
