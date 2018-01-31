@@ -26,7 +26,23 @@ public:
     {
         size_t typeCode = typeid(T).hash_code();
 
-        if (typeCode == typeid(uint32_t).hash_code())
+        if (typeCode == typeid(uint8_t).hash_code())
+        {
+            type = std::string("uint8_t");
+        }
+        else if (typeCode == typeid(int8_t).hash_code())
+        {
+            type = std::string("int8_t");
+        }
+        else if (typeCode == typeid(uint16_t).hash_code())
+        {
+            type = std::string("uint16_t");
+        }
+        else if (typeCode == typeid(int16_t).hash_code())
+        {
+            type = std::string("int16_t");
+        }
+        else if (typeCode == typeid(uint32_t).hash_code())
         {
             type = std::string("uint32_t");
         }
@@ -73,7 +89,9 @@ public:
                 break;
 
             default:
-                throw std::runtime_error("unsupported data size");
+                std::stringstream ss;
+                ss << "unsupported data size: " << size;
+                throw std::runtime_error(ss.str());
         }
     }
 
