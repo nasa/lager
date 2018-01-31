@@ -1,18 +1,21 @@
 #ifndef LAGER_UTILS
 #define LAGER_UTILS
 
-#include <arpa/inet.h>
 #include <iostream>
 #include <map>
 #include <sstream>
 
 
 #ifdef _WIN32
+#include <winsock2.h>
 // for uuid in Windows
 #pragma comment(lib, "rpcrt4.lib")
+// for winsock2
+#pragma comment(lib, "Ws2_32.lib")
 #else
-#include <uuid/uuid.h>
+#include <arpa/inet.h>
 #include <unistd.h>
+#include <uuid/uuid.h>
 #endif
 
 #include <zmq.hpp>

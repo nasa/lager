@@ -22,7 +22,7 @@ class DataRefItem : public AbstractDataRefItem
 {
 public:
     DataRefItem(const std::string& name_in, T* dataRef_in):
-        name(name_in), dataRef(dataRef_in), size(sizeof(dataRef_in))
+        name(name_in), dataRef(dataRef_in), size(sizeof(T))
     {
         size_t typeCode = typeid(T).hash_code();
 
@@ -57,7 +57,7 @@ public:
         switch (size)
         {
             case 1:
-                *(uint8_t*)data = *dataRef;
+                *(uint8_t*)data = *reinterpret_cast<uint8_t*>(dataRef);
                 break;
 
             case 2:
