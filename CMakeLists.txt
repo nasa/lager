@@ -35,25 +35,32 @@ add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
 include_directories(
     ${ZeroMQ_INCLUDE_DIRS}
     ${LIBUUID_INCLUDE_DIRS}
-    ${XercesC_INCLUDE_DIRS})
+    ${XercesC_INCLUDE_DIRS}
+    src)
 
 # Sources 
 # TODO make this a library later
-set(SRCS
+set(BARTENDER_SRCS
     src/bartender.cpp
-    src/data_ref_item.cpp
     src/chp_server.cpp 
-    src/chp_client.cpp
-    src/forwarder.cpp
+    src/forwarder.cpp)
+
+set(TAP_SRCS
     src/tap.cpp
+    src/data_ref_item.cpp
+    src/chp_client.cpp)
+
+set(MUG_SRCS
     src/mug.cpp
+    src/chp_client.cpp)
+
+set(DATA_FORMAT_SRCS
     src/data_format.cpp
-    src/data_format_parser.cpp
-)
+    src/data_format_parser.cpp)
 
 # Targets for bartender and test tap
 add_executable(bartender 
-    ${SRCS}
+    ${BARTENDER_SRCS}
     src/bartender_main.cpp)
 
 target_link_libraries(bartender 
@@ -62,7 +69,8 @@ target_link_libraries(bartender
     ${CMAKE_THREAD_LIBS_INIT})
 
 add_executable(test_tap
-    ${SRCS}
+    ${TAP_SRCS}
+    ${DATA_FORMAT_SRCS}
     src/tap_test_main.cpp)
 
 target_link_libraries(test_tap
@@ -72,7 +80,7 @@ target_link_libraries(test_tap
     ${CMAKE_THREAD_LIBS_INIT})
 
 add_executable(test_mug
-    ${SRCS}
+    ${MUG_SRCS}
     src/mug_test_main.cpp)
 
 target_link_libraries(test_mug
@@ -130,7 +138,10 @@ include_directories(${GTEST_INCLUDE_DIRS})
 file(GLOB TEST_SRCS test/*.cpp)
 add_executable(unit_tests 
     ${TEST_SRCS}
-    ${SRCS})
+    ${BARTENDER_SRCS}
+    ${TAP_SRCS}
+    ${MUG_SRCS}
+    ${DATA_FORMAT_SRCS})
 target_compile_definitions(unit_tests PRIVATE -DZMQ_VER="${ZeroMQ_VER}")
 target_link_libraries(unit_tests 
     ${ZeroMQ_LIBRARIES} 
