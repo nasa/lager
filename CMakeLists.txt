@@ -41,6 +41,7 @@ include_directories(
 # TODO make this a library later
 set(SRCS
     src/bartender.cpp
+    src/data_ref_item.cpp
     src/chp_server.cpp 
     src/chp_client.cpp
     src/forwarder.cpp
