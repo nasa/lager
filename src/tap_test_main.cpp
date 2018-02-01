@@ -23,7 +23,7 @@ int main(int argc, char* argv[])
     uint32_t uint1 = 0;
     int32_t int1 = -1000;
     double double1 = 0.001;
-    float float1 = 0.001;
+    float float1 = 0.001f;
 
     t.addItem(new DataRefItem<uint32_t>("uint1", &uint1));
     t.addItem(new DataRefItem<int32_t>("int1", &int1));
@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
         uint1 += 10;
         int1 += 100;
         double1 += 0.001;
-        float1 += 0.010;
+        float1 += 0.010f;
     }
 
     t.stop();

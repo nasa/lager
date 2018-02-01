@@ -47,7 +47,6 @@ set(BARTENDER_SRCS
 
 set(TAP_SRCS
     src/tap.cpp
-    src/data_ref_item.cpp
     src/chp_client.cpp)
 
 set(MUG_SRCS
