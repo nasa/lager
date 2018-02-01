@@ -9,6 +9,8 @@ find_package(ZeroMQ REQUIRED)
 find_package(LibUuid REQUIRED)
 find_package(XercesC REQUIRED)
 
+option(ENABLE_COVERAGE "Enable code coverage support")
+
 # Fix for cmake versions without UPDATE_DISCONNECTED
 if (CMAKE_VERSION VERSION_LESS 3.2)
     set(UPDATE_DISCONNECTED_IF_AVAILABLE "")
@@ -57,35 +59,34 @@ set(DATA_FORMAT_SRCS
     src/data_format.cpp
     src/data_format_parser.cpp)
 
-# Targets for bartender and test tap
-add_executable(bartender 
-    ${BARTENDER_SRCS}
-    src/bartender_main.cpp)
-
+add_library(bartender SHARED ${BARTENDER_SRCS})
 target_link_libraries(bartender 
     ${ZeroMQ_LIBRARIES}
     ${LIBUUID_LIBRARIES}
     ${CMAKE_THREAD_LIBS_INIT})
 
-add_executable(test_tap
-    ${TAP_SRCS}
-    ${DATA_FORMAT_SRCS}
-    src/tap_test_main.cpp)
-
-target_link_libraries(test_tap
+add_library(tap SHARED ${TAP_SRCS} ${DATA_FORMAT_SRCS})
+target_link_libraries(tap
     ${ZeroMQ_LIBRARIES}
     ${LIBUUID_LIBRARIES}
     ${XercesC_LIBRARIES}
     ${CMAKE_THREAD_LIBS_INIT})
 
-add_executable(test_mug
-    ${MUG_SRCS}
-    src/mug_test_main.cpp)
-
-target_link_libraries(test_mug
+add_library(mug SHARED ${MUG_SRCS})
+target_link_libraries(mug
     ${ZeroMQ_LIBRARIES}
     ${LIBUUID_LIBRARIES}
     ${CMAKE_THREAD_LIBS_INIT})
+
+# Targets for bartender and test tap
+add_executable(test_bartender src/bartender_main.cpp)
+target_link_libraries(test_bartender bartender)
+
+add_executable(test_tap src/tap_test_main.cpp)
+target_link_libraries(test_tap tap)
+
+add_executable(test_mug src/mug_test_main.cpp)
+target_link_libraries(test_mug mug)
 
 # Copy format schema and test files
 # TODO later will install the schema file and not copy sample formats
@@ -173,7 +174,8 @@ foreach(TEST_FILE ${TEST_FILES})
 endforeach()
 
 # Code coverage
-if (CMAKE_BUILD_TYPE MATCHES Debug)
+if (ENABLE_COVERAGE)
+    set(CMAKE_BUILD_TYPE Debug)
     include(CodeCoverage)
     setup_target_for_coverage(coverage unit_tests ${CMAKE_BINARY_DIR}/test coverage)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
