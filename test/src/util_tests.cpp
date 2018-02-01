@@ -27,3 +27,9 @@ TEST_F(LagerUtilTests, ZmqVersion)
 {
     ASSERT_STREQ(lager_utils::getZmqVersion().c_str(), ZMQ_VER);
 }
+
+int main(int argc, char* argv[])
+{
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}

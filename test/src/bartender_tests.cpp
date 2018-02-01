@@ -37,3 +37,8 @@ TEST_F(BartenderTests, BadPortNumber)
     EXPECT_FALSE(b.init(65536));
 }
 
+int main(int argc, char* argv[])
+{
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}
