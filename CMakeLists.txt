@@ -12,6 +12,17 @@ find_package(XercesC REQUIRED)
 option(ENABLE_COVERAGE "Enable code coverage support")
 option(BUILD_TESTS "Build unit tests" ON)
 
+if (WIN32)
+    # Automatically creates the module definition files in windows
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
+    # because cmake in windows doesn't set build type unless you explicitly set it
+    if(NOT CMAKE_BUILD_TYPE)
+        message(STATUS "Setting default build type to Debug")
+        set(CMAKE_BUILD_TYPE Debug)
+    endif()
+endif()
+
 # TODO switch to use target_include_dir when conversion to library is made
 include_directories(
     ${ZeroMQ_INCLUDE_DIRS}

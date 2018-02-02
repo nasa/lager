@@ -1,4 +1,6 @@
 # Fix for cmake versions without UPDATE_DISCONNECTED
+# The update disconnected keeps cmake from re-downloading
+# the repository every time you build
 if (CMAKE_VERSION VERSION_LESS 3.2)
     set(UPDATE_DISCONNECTED_IF_AVAILABLE "")
 else()
@@ -20,25 +22,19 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 # Build GoogleTest
 add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
 
-# GoogleTest
+# Include GoogleTest
 include_directories(
     ${googletest_SOURCE_DIR}/googletest/include
     ${googletest_SOURCE_DIR}/googlemock/include)
 
+# Account for windows build types
 if (WIN32)
     set(TEST_DIR ${CMAKE_BINARY_DIR}/test/${CMAKE_BUILD_TYPE})
-    add_custom_command(TARGET unit_tests POST_BUILD
-        DEPENDS bartender
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${XercesC_BINARIES} $<TARGET_FILE_DIR:unit_tests>)
-    add_custom_command(TARGET unit_tests POST_BUILD
-        DEPENDS bartender
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${ZMQ_BINARIES} $<TARGET_FILE_DIR:unit_tests>)
 else()
     set(TEST_DIR ${CMAKE_BINARY_DIR}/test)
 endif()
 
+# The test targets
 add_executable(bartender_tests src/bartender_tests.cpp)
 target_link_libraries(bartender_tests bartender gtest)
 set_target_properties(bartender_tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/test)
@@ -82,6 +78,7 @@ target_compile_definitions(util_tests PRIVATE -DZMQ_VER="${ZeroMQ_VER}")
 set_target_properties(util_tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/test)
 add_test(NAME util_tests COMMAND util_tests WORKING_DIRECTORY ${TEST_DIR})
 
+# Copy the test files
 file(GLOB TEST_FILES share/*.xml share/*.xsd ../share/*.xsd)
 foreach(TEST_FILE ${TEST_FILES})
     add_custom_command(TARGET data_format_tests POST_BUILD
@@ -89,8 +86,20 @@ foreach(TEST_FILE ${TEST_FILES})
         "${TEST_FILE}" $<TARGET_FILE_DIR:data_format_tests>)
 endforeach()
 
-# Code coverage
-if (CMAKE_BUILD_TYPE MATCHES Coverage)
+if (WIN32)
+    # Adds pathing necessary in windows for ctest to find all the binaries and the xml files
+    set(TEST_PATH "PATH=${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE};${TEST_DIR};$ENV{PATH}")
+    set_tests_properties(bartender_tests PROPERTIES ENVIRONMENT "${TEST_PATH}")
+    set_tests_properties(chp_tests PROPERTIES ENVIRONMENT "${TEST_PATH}")
+    set_tests_properties(data_format_tests PROPERTIES ENVIRONMENT "${TEST_PATH}")
+    set_tests_properties(forwarder_tests PROPERTIES ENVIRONMENT "${TEST_PATH}")
+    set_tests_properties(mug_tests PROPERTIES ENVIRONMENT "${TEST_PATH}")
+    set_tests_properties(tap_tests PROPERTIES ENVIRONMENT "${TEST_PATH}")
+    set_tests_properties(util_tests PROPERTIES ENVIRONMENT "${TEST_PATH}")
+endif()
+
+# Code coverage (don't attempt to run in windows)
+if (CMAKE_BUILD_TYPE MATCHES Coverage AND NOT WIN32)
     message(STATUS "Coverage Enabled")
     set(COVERAGE_WORKING_DIR ${TEST_DIR})
     set(COVERAGE_SCAN_PATH "${PROJECT_SOURCE_DIR}/src/*")
