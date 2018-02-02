@@ -1,199 +1,101 @@
-# Copyright (c) 2012 - 2015, Lars Bilke
-# All rights reserved.
+####
+# Code Coverage (lcov) reporting targets and functions.
+# Add project execs to be covered with `coverage_add_exec()`
+# Add project targets to be covered with `coverage_add_target()`
 #
-# Redistribution and use in source and binary forms, with or without modification,
-# are permitted provided that the following conditions are met:
+# Generate coverage report by calling the `run_coverage` target.
+# Reports generated in the `coverage` directory in the build directory.
 #
-# 1. Redistributions of source code must retain the above copyright notice, this
-#    list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright notice,
-#    this list of conditions and the following disclaimer in the documentation
-#    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its contributors
-#    may be used to endorse or promote products derived from this software without
-#    specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-#
-#
-# 2012-01-31, Lars Bilke
-# - Enable Code Coverage
-#
-# 2013-09-17, Joakim Söderberg
-# - Added support for Clang.
-# - Some additional usage instructions.
-#
-# USAGE:
+# Requires the use of -DCMAKE_BUILD_TYPE=Coverage
+####
 
-# 0. (Mac only) If you use Xcode 5.1 make sure to patch geninfo as described here:
-#      http://stackoverflow.com/a/22404544/80480
-#
-# 1. Copy this file into your cmake modules path.
-#
-# 2. Add the following line to your CMakeLists.txt:
-#      INCLUDE(CodeCoverage)
-#
-# 3. Set compiler flags to turn off optimization and enable coverage:
-#    SET(CMAKE_CXX_FLAGS "-g -O0 -fprofile-arcs -ftest-coverage")
-#    SET(CMAKE_C_FLAGS "-g -O0 -fprofile-arcs -ftest-coverage")
-#
-# 3. Use the function SETUP_TARGET_FOR_COVERAGE to create a custom make target
-#    which runs your test executable and produces a lcov code coverage report:
-#    Example:
-#    SETUP_TARGET_FOR_COVERAGE(
-#               my_coverage_target  # Name for custom target.
-#               test_driver         # Name of the test driver executable that runs the tests.
-#                                   # NOTE! This should always have a ZERO as exit code
-#                                   # otherwise the coverage generation will not complete.
-#               coverage            # Name of output directory.
-#               )
-#
-# 4. Build a Debug build:
-#    cmake -DCMAKE_BUILD_TYPE=Debug ..
-#    make
-#    make my_coverage_target
-#
-#
+# Set up program paths and compiler settings
 
-# Check prereqs
-FIND_PROGRAM( GCOV_PATH gcov )
-FIND_PROGRAM( LCOV_PATH lcov )
-FIND_PROGRAM( GENHTML_PATH genhtml )
-FIND_PROGRAM( GCOVR_PATH gcovr PATHS ${CMAKE_SOURCE_DIR}/tests)
+find_program(GCOV_PATH gcov)
+find_program(LCOV_PATH lcov)
+find_program(GENHTML_PATH genhtml)
 
-IF(NOT GCOV_PATH)
-    MESSAGE(FATAL_ERROR "gcov not found! Aborting...")
-ENDIF() # NOT GCOV_PATH
+if (NOT ${CMAKE_BUILD_TYPE} STREQUAL "Coverage")
+    message(ERROR "Code coverage results will fail without a Coverage build-type.")
+endif()
 
-IF("${CMAKE_CXX_COMPILER_ID}" MATCHES "(Apple)?[Cc]lang")
-    IF("${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS 3)
-        MESSAGE(FATAL_ERROR "Clang version must be 3.0.0 or greater! Aborting...")
-    ENDIF()
-ELSEIF(NOT CMAKE_COMPILER_IS_GNUCXX)
-    MESSAGE(FATAL_ERROR "Compiler is not GNU gcc! Aborting...")
-ENDIF() # CHECK VALID COMPILER
-
-SET(CMAKE_CXX_FLAGS_COVERAGE
+set(CMAKE_CXX_FLAGS_COVERAGE
     "-g -O0 --coverage -fprofile-arcs -ftest-coverage"
     CACHE STRING "Flags used by the C++ compiler during coverage builds."
-    FORCE )
-SET(CMAKE_C_FLAGS_COVERAGE
+    FORCE
+)
+set(CMAKE_C_FLAGS_COVERAGE
     "-g -O0 --coverage -fprofile-arcs -ftest-coverage"
     CACHE STRING "Flags used by the C compiler during coverage builds."
-    FORCE )
-SET(CMAKE_EXE_LINKER_FLAGS_COVERAGE
+    FORCE
+)
+set(CMAKE_EXE_LINKER_FLAGS_COVERAGE
     ""
     CACHE STRING "Flags used for linking binaries during coverage builds."
-    FORCE )
-SET(CMAKE_SHARED_LINKER_FLAGS_COVERAGE
+    FORCE
+)
+set(CMAKE_SHARED_LINKER_FLAGS_COVERAGE
     ""
     CACHE STRING "Flags used by the shared libraries linker during coverage builds."
-    FORCE )
-MARK_AS_ADVANCED(
+    FORCE
+)
+mark_as_advanced(
     CMAKE_CXX_FLAGS_COVERAGE
     CMAKE_C_FLAGS_COVERAGE
     CMAKE_EXE_LINKER_FLAGS_COVERAGE
-    CMAKE_SHARED_LINKER_FLAGS_COVERAGE )
+    CMAKE_SHARED_LINKER_FLAGS_COVERAGE
+)
 
-IF ( NOT (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "Coverage"))
-  MESSAGE( WARNING "Code coverage results with an optimized (non-Debug) build may be misleading" )
-ENDIF() # NOT CMAKE_BUILD_TYPE STREQUAL "Debug"
+set(COVERAGE_DIR ${CMAKE_BINARY_DIR}/coverage)
 
+# User settable options
 
-# Param _targetname     The name of new the custom make target
-# Param _testrunner     The name of the target which runs the tests.
-#                       MUST return ZERO always, even on errors.
-#                       If not, no coverage report will be created!
-# Param _outputname     lcov output is generated as _outputname.info
-#                       HTML report is generated in _outputname/index.html
-# Param _workingdir     Working directory of test command
-# Optional fifth parameter is passed as arguments to _testrunner
-#   Pass them in list form, e.g.: "-j;2" for -j 2
-FUNCTION(SETUP_TARGET_FOR_COVERAGE _targetname _testrunner _workingdir _outputname)
+if(NOT COVERAGE_SCAN_PATH)
+    set(COVERAGE_SCAN_PATH "${PROJECT_SOURCE_DIR}/*")
+endif()
 
-    IF(NOT LCOV_PATH)
-        MESSAGE(FATAL_ERROR "lcov not found! Aborting...")
-    ENDIF() # NOT LCOV_PATH
+if(NOT COVERAGE_WORKING_DIR)
+    set(COVERAGE_WORKING_DIR "${COVERAGE_DIR}")
+endif()
 
-    IF(NOT GENHTML_PATH)
-        MESSAGE(FATAL_ERROR "genhtml not found! Aborting...")
-    ENDIF() # NOT GENHTML_PATH
+# Set up coverage targets
 
-    SET(coverage_info "${_workingdir}/${_outputname}.info")
-    SET(coverage_cleaned "${coverage_info}.cleaned")
-    SET(output_path "${CMAKE_BINARY_DIR}/${_outputname}")
+add_custom_target(${PROJECT_NAME}_coverage_dir
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${COVERAGE_DIR}
+)
 
-    SEPARATE_ARGUMENTS(test_command UNIX_COMMAND "${_testrunner}")
+add_custom_target(${PROJECT_NAME}_coverage_prep
+    COMMAND ${LCOV_PATH} --quiet --directory ${CMAKE_BINARY_DIR} --zerocounters
 
-    # Setup target
-    ADD_CUSTOM_TARGET(${_targetname}
+    WORKING_DIRECTORY ${COVERAGE_WORKING_DIR}
+    DEPENDS ${PROJECT_NAME}_coverage_dir
+)
 
-        # Cleanup lcov
-        ${LCOV_PATH} --directory . --zerocounters
+add_custom_target(${PROJECT_NAME}_coverage_exec)
 
-        # Run tests
-        COMMAND ${test_command} ${ARGV4}
+add_custom_target(run_coverage
+    COMMAND ${LCOV_PATH} --directory ${CMAKE_BINARY_DIR} --base-directory ${PROJECT_SOURCE_DIR} --capture --output-file ${PROJECT_NAME}.info
+    COMMAND ${LCOV_PATH} --extract ${PROJECT_NAME}.info ${COVERAGE_SCAN_PATH} --no-external --output-file ${PROJECT_NAME}.info.cleaned
+    COMMAND ${GENHTML_PATH} -o ${COVERAGE_DIR} --show-details --legend ${PROJECT_NAME}.info.cleaned
+    COMMAND ${CMAKE_COMMAND} -E remove ${PROJECT_NAME}.info ${PROJECT_NAME}.info.cleaned
+    COMMAND ${CMAKE_COMMAND} -E echo "Coverage report found in: ${COVERAGE_DIR}"
+ 
+    WORKING_DIRECTORY ${COVERAGE_WORKING_DIR}
+    DEPENDS ${PROJECT_NAME}_coverage_exec
+)
 
-        # Capturing lcov counters and generating report
-        COMMAND ${LCOV_PATH} --directory ${CMAKE_BINARY_DIR} --capture --output-file ${coverage_info}
-        COMMAND ${LCOV_PATH} --remove ${coverage_info} 'test/*' '/usr/*' --no-external --output-file ${coverage_cleaned}
-        COMMAND ${GENHTML_PATH} -o ${output_path} ${coverage_cleaned}
-        COMMAND ${CMAKE_COMMAND} -E remove ${coverage_info} ${coverage_cleaned}
+# Functions for adding executables to the coverage analysis
 
-        WORKING_DIRECTORY ${_workingdir}
-        COMMENT "Resetting code coverage counters to zero.\nProcessing code coverage counters and generating report."
+function(coverage_add_exec exec)
+    add_custom_target(${PROJECT_NAME}_coverage_exec_${exec}
+        COMMAND ${exec}
+        WORKING_DIRECTORY ${COVERAGE_WORKING_DIR}
+        DEPENDS ${PROJECT_NAME}_coverage_prep ${exec}
     )
+    add_dependencies(${PROJECT_NAME}_coverage_exec ${PROJECT_NAME}_coverage_exec_${exec})
+endfunction()
 
-    # Show info where to find the report
-    ADD_CUSTOM_COMMAND(TARGET ${_targetname} POST_BUILD
-        COMMAND ;
-        COMMENT "Open ./${_outputname}/index.html in your browser to view the coverage report."
-    )
-
-ENDFUNCTION() # SETUP_TARGET_FOR_COVERAGE
-
-# Param _targetname     The name of new the custom make target
-# Param _testrunner     The name of the target which runs the tests
-# Param _outputname     cobertura output is generated as _outputname.xml
-# Optional fourth parameter is passed as arguments to _testrunner
-#   Pass them in list form, e.g.: "-j;2" for -j 2
-FUNCTION(SETUP_TARGET_FOR_COVERAGE_COBERTURA _targetname _testrunner _outputname)
-
-    IF(NOT PYTHON_EXECUTABLE)
-        MESSAGE(FATAL_ERROR "Python not found! Aborting...")
-    ENDIF() # NOT PYTHON_EXECUTABLE
-
-    IF(NOT GCOVR_PATH)
-        MESSAGE(FATAL_ERROR "gcovr not found! Aborting...")
-    ENDIF() # NOT GCOVR_PATH
-
-    ADD_CUSTOM_TARGET(${_targetname}
-
-        # Run tests
-        ${_testrunner} ${ARGV3}
-
-        # Running gcovr
-        COMMAND ${GCOVR_PATH} -x -r ${CMAKE_SOURCE_DIR} -e '${CMAKE_SOURCE_DIR}/tests/'  -o ${_outputname}.xml
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-        COMMENT "Running gcovr to produce Cobertura code coverage report."
-    )
-
-    # Show info where to find the report
-    ADD_CUSTOM_COMMAND(TARGET ${_targetname} POST_BUILD
-        COMMAND ;
-        COMMENT "Cobertura code coverage report saved in ${_outputname}.xml."
-    )
-
-ENDFUNCTION() # SETUP_TARGET_FOR_COVERAGE_COBERTURA
+function(coverage_add_target tgt)
+    add_dependencies(${tgt} ${PROJECT_NAME}_coverage_prep)
+    add_dependencies(${PROJECT_NAME}_coverage_exec ${tgt})
+endfunction()

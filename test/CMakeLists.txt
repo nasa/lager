@@ -88,3 +88,18 @@ foreach(TEST_FILE ${TEST_FILES})
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${TEST_FILE}" $<TARGET_FILE_DIR:data_format_tests>)
 endforeach()
+
+# Code coverage
+if (CMAKE_BUILD_TYPE MATCHES Coverage)
+    message(STATUS "Coverage Enabled")
+    set(COVERAGE_WORKING_DIR ${TEST_DIR})
+    set(COVERAGE_SCAN_PATH "${PROJECT_SOURCE_DIR}/src/*")
+    include(CodeCoverage)
+    coverage_add_exec(bartender_tests)
+    coverage_add_exec(chp_tests)
+    coverage_add_exec(data_format_tests)
+    coverage_add_exec(mug_tests)
+    coverage_add_exec(forwarder_tests)
+    coverage_add_exec(tap_tests)
+    coverage_add_exec(util_tests)
+endif()

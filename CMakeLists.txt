@@ -113,11 +113,3 @@ if (BUILD_TESTS)
     enable_testing()
     add_subdirectory(test)
 endif()
-
-# Code coverage
-if (ENABLE_COVERAGE)
-    set(CMAKE_BUILD_TYPE Debug)
-    include(CodeCoverage)
-    setup_target_for_coverage(coverage unit_tests ${CMAKE_BINARY_DIR}/test coverage)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
-endif()
