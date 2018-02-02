@@ -50,8 +50,8 @@ set(COVERAGE_DIR ${CMAKE_BINARY_DIR}/coverage)
 
 # User settable options
 
-if(NOT COVERAGE_SCAN_PATH)
-    set(COVERAGE_SCAN_PATH "${PROJECT_SOURCE_DIR}/*")
+if(NOT COVERAGE_SCAN_FILTER)
+    set(COVERAGE_SCAN_FILTER "${PROJECT_SOURCE_DIR}/*")
 endif()
 
 if(NOT COVERAGE_WORKING_DIR)
@@ -75,7 +75,7 @@ add_custom_target(${PROJECT_NAME}_coverage_exec)
 
 add_custom_target(run_coverage
     COMMAND ${LCOV_PATH} --directory ${CMAKE_BINARY_DIR} --base-directory ${PROJECT_SOURCE_DIR} --capture --output-file ${PROJECT_NAME}.info
-    COMMAND ${LCOV_PATH} --extract ${PROJECT_NAME}.info ${COVERAGE_SCAN_PATH} --no-external --output-file ${PROJECT_NAME}.info.cleaned
+    COMMAND ${LCOV_PATH} --extract ${PROJECT_NAME}.info ${COVERAGE_SCAN_FILTER} --no-external --output-file ${PROJECT_NAME}.info.cleaned
     COMMAND ${GENHTML_PATH} -o ${COVERAGE_DIR} --show-details --legend ${PROJECT_NAME}.info.cleaned
     COMMAND ${CMAKE_COMMAND} -E remove ${PROJECT_NAME}.info ${PROJECT_NAME}.info.cleaned
     COMMAND ${CMAKE_COMMAND} -E echo "Coverage report found in: ${COVERAGE_DIR}"
