@@ -121,7 +121,11 @@ void ClusteredHashmapClient::subscriberThread()
                         else
                         {
                             hashMap[key] = value;
-                            hashMapUpdated();
+
+                            if (hashMapUpdated)
+                            {
+                                hashMapUpdated();
+                            }
                         }
                     }
                 }
