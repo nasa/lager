@@ -9,27 +9,18 @@ find_package(ZeroMQ REQUIRED)
 find_package(LibUuid REQUIRED)
 find_package(XercesC REQUIRED)
 
-# Fix for cmake versions without UPDATE_DISCONNECTED
-if (CMAKE_VERSION VERSION_LESS 3.2)
-    set(UPDATE_DISCONNECTED_IF_AVAILABLE "")
-else()
-    set(UPDATE_DISCONNECTED_IF_AVAILABLE "UPDATE_DISCONNECTED 1")
+option(BUILD_TESTS "Build unit tests" ON)
+
+if (WIN32)
+    # Automatically creates the module definition files in windows
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
+    # because cmake in windows doesn't set build type unless you explicitly set it
+    if(NOT CMAKE_BUILD_TYPE)
+        message(STATUS "Setting default build type to Debug")
+        set(CMAKE_BUILD_TYPE Debug)
+    endif()
 endif()
-
-# Get GoogleTest
-include(DownloadProject)
-download_project(
-    PROJ googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG release-1.8.0
-    ${UPDATE_DISCONNECTED_IF_AVAILABLE})
-
-# Prevent GoogleTest from overriding our compiler/linker options
-# when building with Visual Studio
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-
-# Build GoogleTest
-add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
 
 # TODO switch to use target_include_dir when conversion to library is made
 include_directories(
@@ -39,53 +30,51 @@ include_directories(
     src)
 
 # Sources 
-# TODO make this a library later
 set(BARTENDER_SRCS
     src/bartender.cpp
-    src/chp_server.cpp 
     src/forwarder.cpp)
 
 set(TAP_SRCS
-    src/tap.cpp
-    src/chp_client.cpp)
+    src/tap.cpp)
 
 set(MUG_SRCS
-    src/mug.cpp
-    src/chp_client.cpp)
+    src/mug.cpp)
 
 set(DATA_FORMAT_SRCS
     src/data_format.cpp
     src/data_format_parser.cpp)
 
+set(CHP_SRCS
+    src/chp_server.cpp
+    src/chp_client.cpp)
+
+add_library(chp SHARED ${CHP_SRCS})
+target_link_libraries(chp
+    ${LIBUUID_LIBRARIES}
+    ${ZeroMQ_LIBRARIES}    
+    ${CMAKE_THREAD_LIBS_INIT})
+
+add_library(dataformat SHARED ${DATA_FORMAT_SRCS})
+target_link_libraries(dataformat ${XercesC_LIBRARIES})
+
+add_library(bartender SHARED ${BARTENDER_SRCS})
+target_link_libraries(bartender chp)
+
+add_library(tap SHARED ${TAP_SRCS} ${DATA_FORMAT_SRCS})
+target_link_libraries(tap dataformat chp)
+
+add_library(mug SHARED ${MUG_SRCS})
+target_link_libraries(mug chp)
+
 # Targets for bartender and test tap
-add_executable(bartender 
-    ${BARTENDER_SRCS}
-    src/bartender_main.cpp)
+add_executable(test_bartender src/bartender_main.cpp)
+target_link_libraries(test_bartender bartender)
 
-target_link_libraries(bartender 
-    ${ZeroMQ_LIBRARIES}
-    ${LIBUUID_LIBRARIES}
-    ${CMAKE_THREAD_LIBS_INIT})
+add_executable(test_tap src/tap_test_main.cpp)
+target_link_libraries(test_tap tap)
 
-add_executable(test_tap
-    ${TAP_SRCS}
-    ${DATA_FORMAT_SRCS}
-    src/tap_test_main.cpp)
-
-target_link_libraries(test_tap
-    ${ZeroMQ_LIBRARIES}
-    ${LIBUUID_LIBRARIES}
-    ${XercesC_LIBRARIES}
-    ${CMAKE_THREAD_LIBS_INIT})
-
-add_executable(test_mug
-    ${MUG_SRCS}
-    src/mug_test_main.cpp)
-
-target_link_libraries(test_mug
-    ${ZeroMQ_LIBRARIES}
-    ${LIBUUID_LIBRARIES}
-    ${CMAKE_THREAD_LIBS_INIT})
+add_executable(test_mug src/mug_test_main.cpp)
+target_link_libraries(test_mug mug)
 
 # Copy format schema and test files
 # TODO later will install the schema file and not copy sample formats
@@ -130,51 +119,7 @@ if (WIN32)
     endforeach()    
 endif()
 
-# GoogleTest
-# TODO break out tests into individual add_test()s so it's easier to run
-enable_testing()
-include_directories(${GTEST_INCLUDE_DIRS})
-file(GLOB TEST_SRCS test/*.cpp)
-add_executable(unit_tests 
-    ${TEST_SRCS}
-    ${BARTENDER_SRCS}
-    ${TAP_SRCS}
-    ${MUG_SRCS}
-    ${DATA_FORMAT_SRCS})
-target_compile_definitions(unit_tests PRIVATE -DZMQ_VER="${ZeroMQ_VER}")
-target_link_libraries(unit_tests 
-    ${ZeroMQ_LIBRARIES} 
-    ${XercesC_LIBRARIES}
-    ${LIBUUID_LIBRARIES}
-    gtest)
-
-if (WIN32)
-    set(TEST_DIR ${CMAKE_BINARY_DIR}/test/${CMAKE_BUILD_TYPE})
-    add_custom_command(TARGET unit_tests POST_BUILD
-        DEPENDS bartender
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${XercesC_BINARIES} $<TARGET_FILE_DIR:unit_tests>)
-    add_custom_command(TARGET unit_tests POST_BUILD
-        DEPENDS bartender
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${ZMQ_BINARIES} $<TARGET_FILE_DIR:unit_tests>)
-else()
-    set(TEST_DIR ${CMAKE_BINARY_DIR}/test)
-endif()
-
-set_target_properties(unit_tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/test)
-add_test(NAME test_all COMMAND unit_tests WORKING_DIRECTORY ${TEST_DIR})
-
-file(GLOB TEST_FILES test/*.xml test/*.xsd share/*.xsd)
-foreach(TEST_FILE ${TEST_FILES})
-    add_custom_command(TARGET unit_tests POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${TEST_FILE}" $<TARGET_FILE_DIR:unit_tests>)
-endforeach()
-
-# Code coverage
-if (CMAKE_BUILD_TYPE MATCHES Debug)
-    include(CodeCoverage)
-    setup_target_for_coverage(coverage unit_tests ${CMAKE_BINARY_DIR}/test coverage)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
+if (BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(test)
 endif()

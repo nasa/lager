@@ -25,6 +25,10 @@ bool Mug::init(const std::string& serverHost_in, int basePort)
 
     context.reset(new zmq::context_t(1));
 
+    // TODO make this not magic 2000 default timeout for testing
+    chpClient.reset(new ClusteredHashmapClient(serverHost_in, basePort, 2000));
+    chpClient->init(context, uuid);
+
     return true;
 }
 
@@ -34,6 +38,8 @@ void Mug::start()
 
     subscriberThreadHandle = std::thread(&Mug::subscriberThread, this);
     subscriberThreadHandle.detach();
+
+    chpClient->start();
 }
 
 void Mug::stop()
@@ -49,7 +55,7 @@ void Mug::stop()
         subscriberCv.wait(lock);
     }
 
-    // chpClient->stop();
+    chpClient->stop();
 }
 
 void Mug::subscriberThread()
@@ -71,8 +77,14 @@ void Mug::subscriberThread()
         std::string version;
         unsigned int compression;
         uint64_t timestamp;
-        uint32_t int1;
-        uint32_t int2;
+        uint32_t uint1;
+        int32_t int1;
+        double double1;
+        uint16_t ushort1;
+        int16_t short1;
+        uint8_t ubyte1;
+        int8_t byte1;
+        float float1;
 
         zmq::pollitem_t items[] = {{static_cast<void*>(*subscriber.get()), 0, ZMQ_POLLIN, 0}};
 
@@ -98,12 +110,43 @@ void Mug::subscriberThread()
                 timestamp = *(uint64_t*)msg.data();
 
                 subscriber->recv(&msg);
-                int1 = *(uint32_t*)msg.data();
+                uint32_t tmp = ntohl(*(uint32_t*)msg.data());
+                uint1 = *reinterpret_cast<uint32_t*>(&tmp);
 
                 subscriber->recv(&msg);
-                int2 = *(uint32_t*)msg.data();
+                tmp = ntohl(*(uint32_t*)msg.data());
+                int1 = *reinterpret_cast<int32_t*>(&tmp);
 
-                std::cout << "int1: " << int1 << " int2: " << int2 << std::endl;
+                subscriber->recv(&msg);
+                uint64_t tmp64 = lager_utils::ntohll(*(uint64_t*)msg.data());
+                double1 = *reinterpret_cast<double*>(&tmp64);
+
+                subscriber->recv(&msg);
+                tmp = ntohs(*(uint16_t*)msg.data());
+                ushort1 = *reinterpret_cast<uint16_t*>(&tmp);
+
+                subscriber->recv(&msg);
+                tmp = ntohs(*(uint16_t*)msg.data());
+                short1 = *reinterpret_cast<int16_t*>(&tmp);
+
+                subscriber->recv(&msg);
+                ubyte1 = *(uint8_t*)msg.data();
+
+                subscriber->recv(&msg);
+                byte1 = *(int8_t*)msg.data();
+
+                subscriber->recv(&msg);
+                tmp = ntohl(*(uint32_t*)msg.data());
+                float1 = *reinterpret_cast<float*>(&tmp);
+
+                std::cout << "uint1: " << uint1 << std::endl;
+                std::cout << "int1: " << int1 << std::endl;
+                std::cout << "float1: " << float1 << std::endl;
+                std::cout << "double1: " << double1 << std::endl;
+                std::cout << "ushort1: " << ushort1 << std::endl;
+                std::cout << "short1: " << short1 << std::endl;
+                std::cout << "ubyte1: " << (uint16_t)ubyte1 << std::endl;
+                std::cout << "byte1: " << (int16_t)byte1 << std::endl;
                 std::cout << "timestamp: " << timestamp << std::endl;
             }
         }

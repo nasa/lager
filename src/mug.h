@@ -23,7 +23,7 @@ public:
 private:
     void subscriberThread();
 
-    // std::shared_ptr<ChpClient> chpClient;
+    std::shared_ptr<ClusteredHashmapClient> chpClient;
     std::shared_ptr<zmq::context_t> context;
     std::shared_ptr<zmq::socket_t> subscriber;
 

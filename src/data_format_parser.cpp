@@ -127,7 +127,7 @@ void DataFormatParser::parse()
             throw std::runtime_error(ss.str());
         }
 
-        DOMDocument* doc = parser->getDocument();
+        xercesc::DOMDocument* doc = parser->getDocument();
         DOMElement* formatElement = doc->getDocumentElement();
 
         const XMLCh* xVersion = formatElement->getAttribute(attVersion);
@@ -194,7 +194,7 @@ bool DataFormatParser::createFromDataRefItems(const std::vector<AbstractDataRefI
     }
 
     xTempStr = XMLString::transcode("format");
-    DOMDocument* doc = impl->createDocument(nullptr, xTempStr, nullptr);
+    xercesc::DOMDocument* doc = impl->createDocument(nullptr, xTempStr, nullptr);
     DOMElement* root = doc->getDocumentElement();
 
     xVersion = XMLString::transcode(version.c_str());
@@ -241,7 +241,7 @@ bool DataFormatParser::createFromDataRefItems(const std::vector<AbstractDataRefI
     return true;
 }
 
-std::string DataFormatParser::getStringFromDoc(DOMDocument* doc)
+std::string DataFormatParser::getStringFromDoc(xercesc::DOMDocument* doc)
 {
     DOMImplementation* pImplement = nullptr;
     DOMLSSerializer* pSerializer = nullptr;

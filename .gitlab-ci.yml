@@ -25,8 +25,7 @@ windows:
     - cd build
     - cmake -G "Visual Studio 15 2017" ..
     - cmake --build . --config Debug
-    - cd test\Debug
-    - .\unit_tests.exe
+    - ctest -C Debug
   tags:
     - lager
     - windows
@@ -37,7 +36,7 @@ coverage:
   script:   
     - mkdir build
     - cd build
-    - cmake -DCMAKE_BUILD_TYPE=Debug .. && make coverage
+    - cmake -DCMAKE_BUILD_TYPE=Coverage .. && make && make run_coverage
   coverage: '/lines[\.]+\: (\d+\.\d+)\%/'
   artifacts:
     paths:

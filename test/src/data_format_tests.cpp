@@ -1,9 +1,12 @@
 #include <memory>
 
+#include <zmq.hpp>
+
 #include <gtest/gtest.h>
 
 #include "data_format.h"
 #include "data_format_parser.h"
+#include "lager_utils.h"
 
 class DataFormatTests : public ::testing::Test {};
 
@@ -85,10 +88,16 @@ TEST_F(DataFormatTests, SchemaCheckerGood)
     std::vector<AbstractDataRefItem*> dataRefItems;
     uint32_t int1;
     uint32_t int2;
-    dataRefItems.push_back(new DataRefItem<uint32_t>("int1", int1));
-    dataRefItems.push_back(new DataRefItem<uint32_t>("int2", int2));
+    dataRefItems.push_back(new DataRefItem<uint32_t>("int1", &int1));
+    dataRefItems.push_back(new DataRefItem<uint32_t>("int2", &int2));
 
     EXPECT_NO_THROW(p.createFromDataRefItems(dataRefItems, "test"));
 
     EXPECT_TRUE(p.isValid(p.getXmlStr(), dataRefItems.size()));
+}
+
+int main(int argc, char* argv[])
+{
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

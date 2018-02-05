@@ -7,7 +7,6 @@
 
 #include "chp_client.h"
 #include "data_format_parser.h"
-#include "data_ref_item.h"
 
 class Tap
 {
@@ -42,7 +41,7 @@ private:
     uint8_t flags;
 
     int publisherPort;
-    uint32_t offsetCount;
+    off_t offsetCount;
 
     bool newData;
     bool running;

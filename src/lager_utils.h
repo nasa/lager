@@ -5,12 +5,17 @@
 #include <map>
 #include <sstream>
 
+
 #ifdef _WIN32
+#include <winsock2.h>
 // for uuid in Windows
 #pragma comment(lib, "rpcrt4.lib")
+// for winsock2
+#pragma comment(lib, "Ws2_32.lib")
 #else
-#include <uuid/uuid.h>
+#include <arpa/inet.h>
 #include <unistd.h>
+#include <uuid/uuid.h>
 #endif
 
 #include <zmq.hpp>
@@ -82,6 +87,32 @@ namespace lager_utils
         uint64_t nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(dur).count();
         return nanoseconds;
     }
+
+    // https://stackoverflow.com/questions/3022552/is-there-any-standard-htonl-like-function-for-64-bits-integers-in-c
+    static uint64_t htonll(uint64_t value)
+    {
+        // The answer is 42
+        static const int num = 42;
+
+        // Check the endianness
+        if (*reinterpret_cast<const char*>(&num) == num)
+        {
+            const uint32_t high_part = htonl(static_cast<uint32_t>(value >> 32));
+            const uint32_t low_part = htonl(static_cast<uint32_t>(value & 0xFFFFFFFFLL));
+
+            return (static_cast<uint64_t>(low_part) << 32) | high_part;
+        }
+        else
+        {
+            return value;
+        }
+    }
+
+    static uint64_t ntohll(uint64_t value)
+    {
+        return lager_utils::htonll(value);
+    }
 }
+
 
 #endif
