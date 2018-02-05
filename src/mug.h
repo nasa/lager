@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "chp_client.h"
+#include "data_format_parser.h"
 
 class Mug
 {
@@ -18,7 +19,6 @@ public:
     bool init(const std::string& serverHost_in, int basePort);
     void start();
     void stop();
-    void log(int data);
 
 private:
     void subscriberThread();
@@ -33,7 +33,11 @@ private:
     std::mutex mutex;
     std::condition_variable subscriberCv;
 
-    std::map<std::string, std::vector<uint8_t> > payloads;
+    std::map<std::string, std::string> hashMap; // <topic name, xml format>
+    std::map<std::string, std::shared_ptr<DataFormat>> formatMap; // <uuid, dataformat>
+    std::map<std::string, std::vector<uint8_t>> dataMap; // <uuid, data>
+    std::vector<std::string> subscribedList; // <topic name>
+    std::shared_ptr<DataFormatParser> formatParser;
 
     std::string serverHost;
     std::string uuid;

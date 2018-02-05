@@ -27,8 +27,8 @@ public:
     std::vector<DataItem> getItems() {return items;}
     unsigned int getItemCount() {return items.size();}
     std::string getVersion() {return version;}
+    size_t getItemsSize() {return itemsSize;}
 
-    unsigned int getPayloadSize();
     void addItem(const DataItem& item);
 
     friend std::ostream& operator<<(std::ostream& stream, const DataFormat& df)
@@ -46,6 +46,7 @@ public:
 private:
     std::vector<DataItem> items;
     std::string version;
+    size_t itemsSize;
 };
 
 #endif

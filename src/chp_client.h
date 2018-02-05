@@ -32,6 +32,7 @@ public:
     void stop();
     bool isTimedOut() {return timedOut;};
     std::map<std::string, std::string> getHashMap() {return hashMap;}
+    std::map<std::string, std::string> getUuidMap() {return uuidMap;}
 
 private:
     void snapshotThread();
@@ -52,7 +53,8 @@ private:
     std::condition_variable subscriberCv;
     std::mutex mutex;
 
-    std::map<std::string, std::string> hashMap;
+    std::map<std::string, std::string> hashMap; // <topic name, xml format>
+    std::map<std::string, std::string> uuidMap; // <uuid, topic name>
 
     std::string uuid;
     std::string serverHost;

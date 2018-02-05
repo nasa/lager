@@ -41,6 +41,9 @@ set(TAP_SRCS
 set(MUG_SRCS
     src/mug.cpp)
 
+set(KEG_SRCS
+    src/keg.cpp)
+
 set(DATA_FORMAT_SRCS
     src/data_format.cpp
     src/data_format_parser.cpp)
@@ -65,7 +68,10 @@ add_library(tap SHARED ${TAP_SRCS} ${DATA_FORMAT_SRCS})
 target_link_libraries(tap dataformat chp)
 
 add_library(mug SHARED ${MUG_SRCS})
-target_link_libraries(mug chp)
+target_link_libraries(mug chp dataformat)
+
+add_library(keg SHARED ${KEG_SRCS})
+target_link_libraries(keg dataformat)
 
 # Targets for bartender and test tap
 add_executable(test_bartender src/bartender_main.cpp)

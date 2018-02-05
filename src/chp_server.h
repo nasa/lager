@@ -54,9 +54,9 @@ private:
     std::condition_variable collectorCv;
     std::mutex mutex;
 
-    std::map<std::string, std::string> hashMap;
-    std::map<std::string, std::string> uuidMap;
-    std::vector<std::string> updatedKeys;
+    std::map<std::string, std::string> hashMap; // <topic name, xml format>
+    std::map<std::string, std::string> uuidMap; // <uuid, topic name>
+    std::vector<std::string> updatedKeys; // <topic name>
 
     int snapshotPort;
     int publisherPort;

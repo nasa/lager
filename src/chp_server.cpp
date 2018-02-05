@@ -120,20 +120,32 @@ void ClusteredHashmapServer::snapshotThread()
 void ClusteredHashmapServer::snapshotMap(const std::string& identity)
 {
     std::string empty("");
+    std::string tmpUuid("");
 
     for (auto i = hashMap.begin(); i != hashMap.end(); ++i)
     {
+        for (auto u = uuidMap.begin(); u != uuidMap.end(); ++u)
+        {
+            if (u->second == i->first)
+            {
+                tmpUuid = u->first;
+                break;
+            }
+        }
+
+        // TODO throw here if uuid not found, shouldn't happen?
+
         zmq::message_t identityMsg(identity.size());
         zmq::message_t frame0(i->first.size());
         zmq::message_t frame1(sizeof(double));
-        zmq::message_t frame2(empty.size());
+        zmq::message_t frame2(tmpUuid.size());
         zmq::message_t frame3(empty.size());
         zmq::message_t frame4(i->second.size());
 
         memcpy(identityMsg.data(), identity.c_str(), identity.size());
         memcpy(frame0.data(), i->first.c_str(), i->first.size());
         memcpy(frame1.data(), (void*)&sequence, sizeof(double));
-        memcpy(frame2.data(), empty.c_str(), empty.size());
+        memcpy(frame2.data(), tmpUuid.c_str(), tmpUuid.size());
         memcpy(frame3.data(), empty.c_str(), empty.size());
         memcpy(frame4.data(), i->second.c_str(), i->second.size());
 
@@ -179,19 +191,31 @@ void ClusteredHashmapServer::snapshotBye(const std::string& identity)
 void ClusteredHashmapServer::publishUpdatedKeys()
 {
     std::string empty("");
+    std::string tmpUuid("");
     std::vector<std::string> removedKeys;
 
     for (auto i = updatedKeys.begin(); i != updatedKeys.end(); ++i)
     {
+        for (auto u = uuidMap.begin(); u != uuidMap.end(); ++u)
+        {
+            if (u->second == *i)
+            {
+                tmpUuid = u->first;
+                break;
+            }
+        }
+
+        // TODO throw here if uuid not found, shouldn't happen?
+
         zmq::message_t frame0((*i).size());
         zmq::message_t frame1(sizeof(double));
-        zmq::message_t frame2(empty.size());
+        zmq::message_t frame2(tmpUuid.size());
         zmq::message_t frame3(empty.size());
         zmq::message_t frame4(hashMap[*i].size());
 
         memcpy(frame0.data(), (*i).c_str(), (*i).size());
         memcpy(frame1.data(), (void*)&sequence, sizeof(double));
-        memcpy(frame2.data(), empty.c_str(), empty.size());
+        memcpy(frame2.data(), tmpUuid.c_str(), tmpUuid.size());
         memcpy(frame3.data(), empty.c_str(), empty.size());
         memcpy(frame4.data(), hashMap[*i].c_str(), hashMap[*i].size());
 

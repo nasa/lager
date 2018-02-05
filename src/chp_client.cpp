@@ -80,6 +80,7 @@ void ClusteredHashmapClient::subscriberThread()
     std::string key("");
     std::string empty("");
     std::string value("");
+    std::string uuid("");
     double sequence = 0;
 
     zmq::pollitem_t items[] = {{static_cast<void*>(*subscriber.get()), 0, ZMQ_POLLIN, 0}};
@@ -101,7 +102,7 @@ void ClusteredHashmapClient::subscriberThread()
                 sequence = *(double*)msg.data();
 
                 subscriber->recv(&msg);
-                empty = std::string(static_cast<char*>(msg.data()), msg.size());
+                uuid = std::string(static_cast<char*>(msg.data()), msg.size());
 
                 subscriber->recv(&msg);
                 empty = std::string(static_cast<char*>(msg.data()), msg.size());
@@ -121,6 +122,7 @@ void ClusteredHashmapClient::subscriberThread()
                         else
                         {
                             hashMap[key] = value;
+                            uuidMap[uuid] = key;
 
                             if (hashMapUpdated)
                             {
@@ -160,11 +162,13 @@ void ClusteredHashmapClient::snapshotThread()
     snapshot->connect(lager_utils::getRemoteUri(serverHost.c_str(), snapshotPort).c_str());
 
     std::map<std::string, std::string> updateMap;
+    std::map<std::string, std::string> updateUuids;
     std::string icanhaz("ICANHAZ?");
     std::string subtree("");
     std::string value("");
     std::string key("");
     std::string empty("");
+    std::string uuid("");
     double sequence = 0;
 
     try
@@ -196,7 +200,7 @@ void ClusteredHashmapClient::snapshotThread()
                     sequence = *(double*)replyMsg.data();
 
                     snapshot->recv(&replyMsg);
-                    empty = std::string(static_cast<char*>(replyMsg.data()), replyMsg.size());
+                    uuid = std::string(static_cast<char*>(replyMsg.data()), replyMsg.size());
 
                     snapshot->recv(&replyMsg);
                     empty = std::string(static_cast<char*>(replyMsg.data()), replyMsg.size());
@@ -209,6 +213,7 @@ void ClusteredHashmapClient::snapshotThread()
                         if (value.length() > 0)
                         {
                             updateMap[key] = value;
+                            updateUuids[uuid] = key;
                         }
                     }
                     else
@@ -221,6 +226,7 @@ void ClusteredHashmapClient::snapshotThread()
                 {
                     // only process a complete set
                     updateMap.clear();
+                    updateUuids.clear();
                     std::cout << "no reply from snapshot server in " << timeoutMillis << "ms, retrying infinite times" << std::endl;
                 }
             }
@@ -243,6 +249,11 @@ void ClusteredHashmapClient::snapshotThread()
     for (auto i = updateMap.begin(); i != updateMap.end(); ++i)
     {
         hashMap[i->first] = i->second;
+    }
+
+    for (auto i = updateUuids.begin(); i != updateUuids.end(); ++i)
+    {
+        uuidMap[i->first] = i->second;
     }
 
     if (updateMap.size() > 0)

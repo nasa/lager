@@ -20,9 +20,6 @@ bool Mug::init(const std::string& serverHost_in, int basePort)
 
     serverHost = serverHost_in;
 
-    // testing
-    payloads["test"].resize(8);
-
     context.reset(new zmq::context_t(1));
 
     // TODO make this not magic 2000 default timeout for testing
@@ -30,6 +27,8 @@ bool Mug::init(const std::string& serverHost_in, int basePort)
     chpClient->init(context, uuid);
     hashMapUpdatedHandle = std::bind(&Mug::hashMapUpdated, this);
     chpClient->setCallback(hashMapUpdatedHandle);
+
+    formatParser.reset(new DataFormatParser);
 
     return true;
 }
@@ -62,7 +61,35 @@ void Mug::stop()
 
 void Mug::hashMapUpdated()
 {
-    std::cout << "hashMapUpdated" << std::endl;
+    std::map<std::string, std::string> tmpUuidMap;
+    std::shared_ptr<DataFormat> tmpDataFormat;
+
+    mutex.lock();
+    hashMap = chpClient->getHashMap();
+    tmpUuidMap = chpClient->getUuidMap();
+
+    // TODO later only parse the subscribed topic names
+    for (auto i = hashMap.begin(); i != hashMap.end(); ++i)
+    {
+        // parse the xml data format into a DataFormat object
+        tmpDataFormat = formatParser->parseFromString(i->second);
+
+        // look for our DataFormat object's topic name in the uuid map
+        for (auto j = tmpUuidMap.begin(); j != tmpUuidMap.end(); ++j)
+        {
+            if (j->second == i->first)
+            {
+                // index the formats by uuid for ease of use as the data comes in
+                formatMap[j->first] = tmpDataFormat;
+
+                // set the data buffer size (including the timestamp)
+                dataMap[j->first].resize(tmpDataFormat->getItemsSize() + TIMESTAMP_SIZE_BYTES);
+                break;
+            }
+        }
+    }
+
+    mutex.unlock();
 }
 
 void Mug::subscriberThread()
@@ -84,24 +111,24 @@ void Mug::subscriberThread()
         std::string version;
         unsigned int compression;
         uint64_t timestamp;
-        uint32_t uint1;
-        int32_t int1;
-        double double1;
-        uint16_t ushort1;
-        int16_t short1;
-        uint8_t ubyte1;
-        int8_t byte1;
-        float float1;
+
+        uint8_t tmp8;
+        uint16_t tmp16;
+        uint32_t tmp32;
+        uint64_t tmp64;
+        off_t offset;
 
         zmq::pollitem_t items[] = {{static_cast<void*>(*subscriber.get()), 0, ZMQ_POLLIN, 0}};
 
         while (running)
         {
-            // 1000 ms to wait here if nothing is ready, check if this should be different or setable by user
+            // TODO check if this timeout should be different or setable by user
             zmq::poll(&items[0], 1, 1000);
 
             if (items[0].revents & ZMQ_POLLIN)
             {
+                offset = 0;
+
                 zmq::message_t msg;
 
                 subscriber->recv(&msg);
@@ -116,45 +143,53 @@ void Mug::subscriberThread()
                 subscriber->recv(&msg);
                 timestamp = *(uint64_t*)msg.data();
 
-                subscriber->recv(&msg);
-                uint32_t tmp = ntohl(*(uint32_t*)msg.data());
-                uint1 = *reinterpret_cast<uint32_t*>(&tmp);
+                *(reinterpret_cast<uint64_t*>(dataMap[uuid].data() + offset)) = timestamp;
+                offset += TIMESTAMP_SIZE_BYTES;
 
-                subscriber->recv(&msg);
-                tmp = ntohl(*(uint32_t*)msg.data());
-                int1 = *reinterpret_cast<int32_t*>(&tmp);
+                if (!formatMap[uuid])
+                {
+                    continue;
+                }
 
-                subscriber->recv(&msg);
-                uint64_t tmp64 = lager_utils::ntohll(*(uint64_t*)msg.data());
-                double1 = *reinterpret_cast<double*>(&tmp64);
+                for (unsigned int i = 0; i != formatMap[uuid]->getItemCount(); ++i)
+                {
+                    subscriber->recv(&msg);
 
-                subscriber->recv(&msg);
-                tmp = ntohs(*(uint16_t*)msg.data());
-                ushort1 = *reinterpret_cast<uint16_t*>(&tmp);
+                    mutex.lock();
 
-                subscriber->recv(&msg);
-                tmp = ntohs(*(uint16_t*)msg.data());
-                short1 = *reinterpret_cast<int16_t*>(&tmp);
+                    switch (msg.size())
+                    {
+                        case 1:
+                            tmp8 = *(uint8_t*)msg.data();
+                            dataMap[uuid][offset] = tmp8;
+                            offset++;
+                            break;
 
-                subscriber->recv(&msg);
-                ubyte1 = *(uint8_t*)msg.data();
+                        case 2:
+                            tmp16 = ntohs(*(uint16_t*)msg.data());
+                            *(reinterpret_cast<uint16_t*>(dataMap[uuid].data() + offset)) = tmp16;
+                            offset += 2;
+                            break;
 
-                subscriber->recv(&msg);
-                byte1 = *(int8_t*)msg.data();
+                        case 4:
+                            tmp32 = ntohl(*(uint32_t*)msg.data());
+                            *(reinterpret_cast<uint32_t*>(dataMap[uuid].data() + offset)) = tmp32;
+                            offset += 4;
+                            break;
 
-                subscriber->recv(&msg);
-                tmp = ntohl(*(uint32_t*)msg.data());
-                float1 = *reinterpret_cast<float*>(&tmp);
+                        case 8:
+                            tmp64 = lager_utils::ntohll(*(uint64_t*)msg.data());
+                            *(reinterpret_cast<uint64_t*>(dataMap[uuid].data() + offset)) = tmp64;
+                            offset += 8;
+                            break;
 
-                std::cout << "uint1: " << uint1 << std::endl;
-                std::cout << "int1: " << int1 << std::endl;
-                std::cout << "float1: " << float1 << std::endl;
-                std::cout << "double1: " << double1 << std::endl;
-                std::cout << "ushort1: " << ushort1 << std::endl;
-                std::cout << "short1: " << short1 << std::endl;
-                std::cout << "ubyte1: " << (uint16_t)ubyte1 << std::endl;
-                std::cout << "byte1: " << (int16_t)byte1 << std::endl;
-                std::cout << "timestamp: " << timestamp << std::endl;
+                        default:
+                            throw std::runtime_error("received unsupported zmq message size");
+                            break;
+                    }
+
+                    mutex.unlock();
+                }
             }
         }
     }
