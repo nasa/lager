@@ -9,7 +9,6 @@ find_package(ZeroMQ REQUIRED)
 find_package(LibUuid REQUIRED)
 find_package(XercesC REQUIRED)
 
-option(ENABLE_COVERAGE "Enable code coverage support")
 option(BUILD_TESTS "Build unit tests" ON)
 
 if (WIN32)
