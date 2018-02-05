@@ -136,7 +136,7 @@ void Mug::subscriberThread()
                 byte1 = *(int8_t*)msg.data();
 
                 subscriber->recv(&msg);
-                tmp = ntohs(*(uint32_t*)msg.data());
+                tmp = ntohl(*(uint32_t*)msg.data());
                 float1 = *reinterpret_cast<float*>(&tmp);
 
                 std::cout << "uint1: " << uint1 << std::endl;
