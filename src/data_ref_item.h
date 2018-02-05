@@ -96,7 +96,7 @@ template<> inline void DataRefItem<uint32_t>::getNetworkDataRef(void* data)
 }
 
 template<> inline DataRefItem<float>::DataRefItem(const std::string& name_in, float* dataRef_in):
-    AbstractDataRefItem(name_in, "float", sizeof(float)),
+    AbstractDataRefItem(name_in, "float32", sizeof(float)),
     dataRef(dataRef_in) {}
 
 template<> inline void DataRefItem<float>::getNetworkDataRef(void* data)
@@ -132,7 +132,7 @@ template<> inline void DataRefItem<int64_t>::getNetworkDataRef(void* data)
 }
 
 template<> inline DataRefItem<double>::DataRefItem(const std::string& name_in, double* dataRef_in):
-    AbstractDataRefItem(name_in, "double", sizeof(double)),
+    AbstractDataRefItem(name_in, "float64", sizeof(double)),
     dataRef(dataRef_in) {}
 
 template<> inline void DataRefItem<double>::getNetworkDataRef(void* data)
