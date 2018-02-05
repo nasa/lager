@@ -22,10 +22,12 @@ public:
 
 private:
     void subscriberThread();
+    void hashMapUpdated();
 
     std::shared_ptr<ClusteredHashmapClient> chpClient;
     std::shared_ptr<zmq::context_t> context;
     std::shared_ptr<zmq::socket_t> subscriber;
+    std::function<void()> hashMapUpdatedHandle;
 
     std::thread subscriberThreadHandle;
     std::mutex mutex;

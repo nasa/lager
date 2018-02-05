@@ -28,6 +28,8 @@ bool Mug::init(const std::string& serverHost_in, int basePort)
     // TODO make this not magic 2000 default timeout for testing
     chpClient.reset(new ClusteredHashmapClient(serverHost_in, basePort, 2000));
     chpClient->init(context, uuid);
+    hashMapUpdatedHandle = std::bind(&Mug::hashMapUpdated, this);
+    chpClient->setCallback(hashMapUpdatedHandle);
 
     return true;
 }
@@ -56,6 +58,11 @@ void Mug::stop()
     }
 
     chpClient->stop();
+}
+
+void Mug::hashMapUpdated()
+{
+    std::cout << "hashMapUpdated" << std::endl;
 }
 
 void Mug::subscriberThread()

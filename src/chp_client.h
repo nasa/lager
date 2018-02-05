@@ -27,6 +27,7 @@ public:
     void init(std::shared_ptr<zmq::context_t> context_in, const std::string& uuid);
     void addOrUpdateKeyValue(const std::string& key, const std::string& value);
     void removeKey(const std::string& key);
+    void setCallback(const std::function<void()>& func);
     void start();
     void stop();
     bool isTimedOut() {return timedOut;};
@@ -42,6 +43,7 @@ private:
     std::shared_ptr<zmq::socket_t> snapshot;
     std::shared_ptr<zmq::socket_t> subscriber;
     std::shared_ptr<zmq::socket_t> publisher;
+    std::function<void()> hashMapUpdated;
 
     std::thread snapshotThreadHandle;
     std::thread subscriberThreadHandle;

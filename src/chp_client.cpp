@@ -61,6 +61,11 @@ void ClusteredHashmapClient::removeKey(const std::string& key)
     std::async(std::launch::async, &ClusteredHashmapClient::publisherThread, this, key, "");
 }
 
+void ClusteredHashmapClient::setCallback(const std::function<void()>& func)
+{
+    hashMapUpdated = func;
+}
+
 void ClusteredHashmapClient::subscriberThread()
 {
     timedOut = false;
@@ -116,6 +121,7 @@ void ClusteredHashmapClient::subscriberThread()
                         else
                         {
                             hashMap[key] = value;
+                            hashMapUpdated();
                         }
                     }
                 }
