@@ -1,27 +1,36 @@
 #ifndef KEG
 #define KEG
 
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <sstream>
 #include <string>
 #include <vector>
-#include <map>
+#include <sys/stat.h>
 
-struct KegItem
-{
-    std::string topicName;
-    std::string formatStr;
-    std::vector<std::vector<uint8_t>> data;
-};
+#include "keg_utils.h"
+#include "lager_utils.h"
 
 class Keg
 {
 public:
     Keg(const std::string& baseDir_in);
-    void addItem(const std::string& name, const std::string& format);
+    void start();
+    void stop();
+    void write(const std::vector<uint8_t>& data, size_t size);
+    void addFormat(const std::string& uuid, const std::string& formatStr);
 
 private:
-    std::map<std::string, KegItem> items;
+    std::fstream logFile;
 
+    std::map<std::string, std::string> formatMap; // <uuid, format xml>
+    std::vector<uint8_t> data;
+
+    std::string logFileName;
     std::string baseDir;
+
+    uint16_t version;
 };
 
 #endif

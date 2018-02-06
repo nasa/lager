@@ -70,7 +70,7 @@ add_library(mug SHARED ${MUG_SRCS})
 target_link_libraries(mug chp dataformat)
 
 add_library(keg SHARED ${KEG_SRCS})
-target_link_libraries(keg dataformat)
+target_link_libraries(keg dataformat chp)
 
 # Targets for bartender and test tap
 add_executable(test_bartender src/bartender_main.cpp)
@@ -81,6 +81,9 @@ target_link_libraries(test_tap tap)
 
 add_executable(test_mug src/mug_test_main.cpp)
 target_link_libraries(test_mug mug)
+
+add_executable(test_keg src/keg_test_main.cpp)
+target_link_libraries(test_keg keg)
 
 # Copy format schema and test files
 # TODO later will install the schema file and not copy sample formats

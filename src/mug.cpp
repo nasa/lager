@@ -81,9 +81,6 @@ void Mug::hashMapUpdated()
             {
                 // index the formats by uuid for ease of use as the data comes in
                 formatMap[j->first] = tmpDataFormat;
-
-                // set the data buffer size (including the timestamp)
-                dataMap[j->first].resize(tmpDataFormat->getItemsSize() + TIMESTAMP_SIZE_BYTES);
                 break;
             }
         }
@@ -111,12 +108,16 @@ void Mug::subscriberThread()
         std::string version;
         unsigned int compression;
         uint64_t timestamp;
+        std::vector<uint8_t> data;
 
         uint8_t tmp8;
         uint16_t tmp16;
         uint32_t tmp32;
         uint64_t tmp64;
         off_t offset;
+
+        uint32_t rcvMore = 0;
+        size_t moreSize = sizeof(rcvMore);
 
         zmq::pollitem_t items[] = {{static_cast<void*>(*subscriber.get()), 0, ZMQ_POLLIN, 0}};
 
@@ -143,43 +144,55 @@ void Mug::subscriberThread()
                 subscriber->recv(&msg);
                 timestamp = *(uint64_t*)msg.data();
 
-                *(reinterpret_cast<uint64_t*>(dataMap[uuid].data() + offset)) = timestamp;
-                offset += TIMESTAMP_SIZE_BYTES;
+                subscriber->getsockopt(ZMQ_RCVMORE, &rcvMore, &moreSize);
 
-                if (!formatMap[uuid])
+                for (auto i = 0; i < uuid.size(); ++i)
                 {
-                    continue;
+                    data.push_back(uuid[i]);
                 }
 
-                for (unsigned int i = 0; i != formatMap[uuid]->getItemCount(); ++i)
+                offset += UUID_SIZE_BYTES;
+
+                *(reinterpret_cast<uint64_t*>(data.data() + offset)) = timestamp;
+
+                offset += TIMESTAMP_SIZE_BYTES;
+
+                while (rcvMore != 0)
                 {
                     subscriber->recv(&msg);
 
-                    mutex.lock();
-
+                    // TODO eventually move to a size + blob architecture, if necessary,
+                    // since these reallocs may be expensive
                     switch (msg.size())
                     {
                         case 1:
+                            data.resize(data.size() + 1);
                             tmp8 = *(uint8_t*)msg.data();
-                            dataMap[uuid][offset] = tmp8;
-                            offset++;
+                            data.push_back(tmp8);
+                            offset += 1;
                             break;
 
                         case 2:
-                            tmp16 = ntohs(*(uint16_t*)msg.data());
-                            *(reinterpret_cast<uint16_t*>(dataMap[uuid].data() + offset)) = tmp16;
+                            data.resize(data.size() + 2);
+                            tmp16 = *(uint16_t*)msg.data();
+                            // tmp16 = ntohs(*(uint16_t*)msg.data());
+                            *(reinterpret_cast<uint16_t*>(data.data() + offset)) = tmp16;
                             offset += 2;
                             break;
 
                         case 4:
-                            tmp32 = ntohl(*(uint32_t*)msg.data());
-                            *(reinterpret_cast<uint32_t*>(dataMap[uuid].data() + offset)) = tmp32;
+                            data.resize(data.size() + 4);
+                            tmp32 = *(uint32_t*)msg.data();
+                            // tmp32 = ntohl(*(uint32_t*)msg.data());
+                            *(reinterpret_cast<uint32_t*>(data.data() + offset)) = tmp32;
                             offset += 4;
                             break;
 
                         case 8:
-                            tmp64 = lager_utils::ntohll(*(uint64_t*)msg.data());
-                            *(reinterpret_cast<uint64_t*>(dataMap[uuid].data() + offset)) = tmp64;
+                            data.resize(data.size() + 8);
+                            tmp64 = *(uint64_t*)msg.data();
+                            // tmp64 = lager_utils::ntohll(*(uint64_t*)msg.data());
+                            *(reinterpret_cast<uint64_t*>(data.data() + offset)) = tmp64;
                             offset += 8;
                             break;
 
@@ -188,7 +201,7 @@ void Mug::subscriberThread()
                             break;
                     }
 
-                    mutex.unlock();
+                    subscriber->getsockopt(ZMQ_RCVMORE, &rcvMore, &moreSize);
                 }
             }
         }

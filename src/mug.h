@@ -9,6 +9,7 @@
 
 #include "chp_client.h"
 #include "data_format_parser.h"
+#include "keg.h"
 
 class Mug
 {
@@ -35,7 +36,6 @@ private:
 
     std::map<std::string, std::string> hashMap; // <topic name, xml format>
     std::map<std::string, std::shared_ptr<DataFormat>> formatMap; // <uuid, dataformat>
-    std::map<std::string, std::vector<uint8_t>> dataMap; // <uuid, data>
     std::vector<std::string> subscribedList; // <topic name>
     std::shared_ptr<DataFormatParser> formatParser;
 
