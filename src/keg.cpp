@@ -23,7 +23,7 @@ void Keg::start()
 
     // TODO check for file open
 
-    logFile = std::fstream(logFileName.c_str(), std::ios::out | std::ios::binary);
+    logFile.open(logFileName.c_str(), std::ios::out | std::ios::binary);
 }
 
 void Keg::stop()
