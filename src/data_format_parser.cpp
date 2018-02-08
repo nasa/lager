@@ -46,12 +46,18 @@ DataFormatParser::DataFormatParser(const std::string& xsdFile_in)
     }
 
     tagFormat = XMLString::transcode("format");
+    tagFormats = XMLString::transcode("formats");
+    tagMeta = XMLString::transcode("meta");
+    tagMetaData = XMLString::transcode("metadata");
     tagItem = XMLString::transcode("item");
     attVersion = XMLString::transcode("version");
     attName = XMLString::transcode("name");
     attType = XMLString::transcode("type");
     attSize = XMLString::transcode("size");
     attOffset = XMLString::transcode("offset");
+    attUuid = XMLString::transcode("uuid");
+    attKey = XMLString::transcode("key");
+    attValue = XMLString::transcode("value");
 
     parser = new XercesDOMParser;
     errHandler = new XercesErrorHandler;
@@ -72,6 +78,12 @@ DataFormatParser::~DataFormatParser()
     XMLString::release(&attType);
     XMLString::release(&attSize);
     XMLString::release(&attOffset);
+    XMLString::release(&tagFormats);
+    XMLString::release(&tagMeta);
+    XMLString::release(&tagMetaData);
+    XMLString::release(&attUuid);
+    XMLString::release(&attKey);
+    XMLString::release(&attValue);
 
     XMLPlatformUtils::Terminate();
 }
@@ -237,6 +249,85 @@ bool DataFormatParser::createFromDataRefItems(const std::vector<AbstractDataRefI
     {
         return false;
     }
+
+    return true;
+}
+
+bool DataFormatParser::createFromUuidMap(const std::map<std::string, std::string>& map)
+{
+    std::stringstream ss;
+
+    XMLCh* xTempStr = nullptr;
+    XMLCh* xVersion = nullptr;
+    XMLCh* xName = nullptr;
+    XMLCh* xType = nullptr;
+    XMLCh* xSize = nullptr;
+    XMLCh* xOffset = nullptr;
+    XMLCh* xUuid = nullptr;
+
+    xTempStr = XMLString::transcode("Range");
+    DOMImplementation* impl = DOMImplementationRegistry::getDOMImplementation(xTempStr);
+
+    if (!impl)
+    {
+        return false;
+    }
+
+    xTempStr = XMLString::transcode("keg");
+    xercesc::DOMDocument* doc = impl->createDocument(nullptr, xTempStr, nullptr);
+    DOMElement* root = doc->getDocumentElement();
+
+    DOMElement* formatsElem = doc->createElement(tagFormats);
+
+    // set up the parser to parse the individual format strings
+    parser->loadGrammar(xsdFile.c_str(), Grammar::SchemaGrammarType);
+    parser->setErrorHandler(errHandler);
+    parser->setValidationScheme(XercesDOMParser::Val_Always);
+    parser->setDoNamespaces(true);
+    parser->setDoSchema(true);
+    parser->setExternalNoNamespaceSchemaLocation(xsdFile.c_str());
+
+    for (auto i = map.begin(); i != map.end(); ++i)
+    {
+        std::string tmpUuid = i->first;
+        std::string tmpXml = i->second;
+        std::string formatXml;
+
+        MemBufInputSource xmlBuf((const XMLByte*)tmpXml.c_str(), tmpXml.size(), "unused");
+
+        parser->parse(xmlBuf);
+
+        // because we passed in the XSD file, this error count will tell us if
+        // the xml file is valid per the schema
+        if (parser->getErrorCount() != 0)
+        {
+            std::stringstream ss;
+            ss << "error in xml: " << errHandler->getLastError();
+            errHandler->resetErrors();
+            throw std::runtime_error(ss.str());
+        }
+
+        xercesc::DOMDocument* tmpDoc = parser->getDocument();
+        DOMElement* tmpFormatRoot = tmpDoc->getDocumentElement();
+
+        xUuid = XMLString::transcode(tmpUuid.c_str());
+        tmpFormatRoot->setAttribute(attUuid, xUuid);
+
+        DOMElement* formatElem = (DOMElement*)doc->importNode(tmpFormatRoot, true);
+        formatsElem->appendChild(formatElem);
+    }
+
+    root->appendChild(formatsElem);
+
+    xmlStr = getStringFromDoc(doc);
+
+    XMLString::release(&xTempStr);
+    XMLString::release(&xVersion);
+    XMLString::release(&xName);
+    XMLString::release(&xType);
+    XMLString::release(&xSize);
+    XMLString::release(&xOffset);
+    XMLString::release(&xUuid);
 
     return true;
 }

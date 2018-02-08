@@ -8,7 +8,7 @@ Mug::~Mug()
 {
 }
 
-bool Mug::init(const std::string& serverHost_in, int basePort)
+bool Mug::init(const std::string& serverHost_in, int basePort, const std::string& kegDir)
 {
     subscriberPort = basePort + FORWARDER_BACKEND_OFFSET;
 
@@ -30,12 +30,16 @@ bool Mug::init(const std::string& serverHost_in, int basePort)
 
     formatParser.reset(new DataFormatParser);
 
+    keg.reset(new Keg(kegDir));
+
     return true;
 }
 
 void Mug::start()
 {
     running = true;
+
+    keg->start();
 
     subscriberThreadHandle = std::thread(&Mug::subscriberThread, this);
     subscriberThreadHandle.detach();
@@ -57,6 +61,7 @@ void Mug::stop()
     }
 
     chpClient->stop();
+    keg->stop();
 }
 
 void Mug::hashMapUpdated()
@@ -81,6 +86,7 @@ void Mug::hashMapUpdated()
             {
                 // index the formats by uuid for ease of use as the data comes in
                 formatMap[j->first] = tmpDataFormat;
+                keg->addFormat(j->first, i->second);
                 break;
             }
         }
@@ -201,6 +207,7 @@ void Mug::subscriberThread()
                             break;
                     }
 
+                    keg->write(data, data.size());
                     subscriber->getsockopt(ZMQ_RCVMORE, &rcvMore, &moreSize);
                 }
             }

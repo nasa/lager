@@ -259,6 +259,11 @@ void ClusteredHashmapClient::snapshotThread()
     if (updateMap.size() > 0)
     {
         this->sequence = sequence;
+
+        if (hashMapUpdated)
+        {
+            hashMapUpdated();
+        }
     }
 
     snapshot->close();

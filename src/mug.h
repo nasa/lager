@@ -17,7 +17,7 @@ public:
     Mug();
     virtual ~Mug();
 
-    bool init(const std::string& serverHost_in, int basePort);
+    bool init(const std::string& serverHost_in, int basePort, const std::string& kegDir = "./");
     void start();
     void stop();
 
@@ -25,6 +25,7 @@ private:
     void subscriberThread();
     void hashMapUpdated();
 
+    std::shared_ptr<Keg> keg;
     std::shared_ptr<ClusteredHashmapClient> chpClient;
     std::shared_ptr<zmq::context_t> context;
     std::shared_ptr<zmq::socket_t> subscriber;

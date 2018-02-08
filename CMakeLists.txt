@@ -60,6 +60,9 @@ target_link_libraries(chp
 add_library(dataformat SHARED ${DATA_FORMAT_SRCS})
 target_link_libraries(dataformat ${XercesC_LIBRARIES})
 
+add_library(keg SHARED ${KEG_SRCS})
+target_link_libraries(keg dataformat chp)
+
 add_library(bartender SHARED ${BARTENDER_SRCS})
 target_link_libraries(bartender chp)
 
@@ -67,10 +70,7 @@ add_library(tap SHARED ${TAP_SRCS} ${DATA_FORMAT_SRCS})
 target_link_libraries(tap dataformat chp)
 
 add_library(mug SHARED ${MUG_SRCS})
-target_link_libraries(mug chp dataformat)
-
-add_library(keg SHARED ${KEG_SRCS})
-target_link_libraries(keg dataformat chp)
+target_link_libraries(mug chp keg dataformat)
 
 # Targets for bartender and test tap
 add_executable(test_bartender src/bartender_main.cpp)

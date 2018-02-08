@@ -9,6 +9,7 @@
 #include <vector>
 #include <sys/stat.h>
 
+#include "data_format_parser.h"
 #include "keg_utils.h"
 #include "lager_utils.h"
 
@@ -22,6 +23,8 @@ public:
     void addFormat(const std::string& uuid, const std::string& formatStr);
 
 private:
+    void writeHeaderAndFormats();
+    std::string getFormatString();
     std::fstream logFile;
 
     std::map<std::string, std::string> formatMap; // <uuid, format xml>
@@ -31,6 +34,7 @@ private:
     std::string baseDir;
 
     uint16_t version;
+    bool running;
 };
 
 #endif
