@@ -13,6 +13,13 @@ TEST_F(LagerUtilTests, UuidLength)
 #endif
 }
 
+TEST_F(LagerUtilTests, UuidParseAndBack)
+{
+    std::string uuid = lager_utils::getUuid();
+    std::string uuidStr = lager_utils::getUuidString(uuid.c_str());
+    ASSERT_STREQ(uuid.c_str(), lager_utils::getUuid(uuidStr).c_str());
+}
+
 TEST_F(LagerUtilTests, LocalUri)
 {
     ASSERT_STREQ(lager_utils::getLocalUri(12345).c_str(), "tcp://*:12345");

@@ -289,7 +289,7 @@ bool DataFormatParser::createFromUuidMap(const std::map<std::string, std::string
 
     for (auto i = map.begin(); i != map.end(); ++i)
     {
-        std::string tmpUuid = i->first;
+        std::string tmpUuid = lager_utils::getUuidString(i->first);
         std::string tmpXml = i->second;
         std::string formatXml;
 

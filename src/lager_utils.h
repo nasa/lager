@@ -39,18 +39,51 @@ namespace lager_utils
     {
 #ifdef _WIN32
         UUID uuid;
-        char* uuidCstr;
-        std::string uuidStr;
-
         UuidCreate(&uuid);
-        UuidToStringA(&uuid, (RPC_CSTR*)&uuidCstr);
-        uuidStr = std::string(uuidCstr);
-        RpcStringFreeA((RPC_CSTR*)&uuidCstr);
-        return uuidStr;
+        return std::string(std::begin(uuid.Data4), std::end(uuid.data4));
 #else
         uuid_t uuid;
         uuid_generate(uuid);
-        char uuidStr[37];
+        return std::string(std::begin(uuid), std::end(uuid));
+#endif
+    }
+
+    // generates a unique id in a cross platform way
+    static std::string getUuid(const std::string& uuidStr)
+    {
+#ifdef _WIN32
+        UUID uuid;
+        UuidFromString(uuidStr, &uuid);
+        return std::string(std::begin(uuid.Data4), std::end(uuid.data4));
+#else
+        uuid_t uuid;
+        uuid_parse(uuidStr.c_str(), uuid);
+        return std::string(std::begin(uuid), std::end(uuid));
+#endif
+    }
+
+    static std::string getUuidString(const std::string& uuidIn)
+    {
+        if (uuidIn.size() != UUID_SIZE_BYTES)
+        {
+            throw std::runtime_error("invalid uuid size");
+        }
+
+#ifdef _WIN32
+        char* uuidCstr;
+        std::string uuidStr;
+        UuidToStringA(&uuidIn, (RPC_CSTR*)&uuidCstr);
+        uuidStr = std::string(uuidCstr);
+        RpcStringFreeA((RPC_CSTR*)&uuidCstr);
+#else
+        char uuidStr[36];
+        uuid_t uuid;
+
+        for (unsigned int i = 0; i < UUID_SIZE_BYTES; ++i)
+        {
+            uuid[i] = uuidIn[i];
+        }
+
         uuid_unparse_lower(uuid, uuidStr);
         return std::string(std::begin(uuidStr), std::end(uuidStr));
 #endif
