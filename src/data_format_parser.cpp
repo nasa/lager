@@ -310,9 +310,18 @@ bool DataFormatParser::createFromUuidMap(const std::map<std::string, std::string
         xercesc::DOMDocument* tmpDoc = parser->getDocument();
         DOMElement* tmpFormatRoot = tmpDoc->getDocumentElement();
 
-        xUuid = XMLString::transcode(tmpUuid.c_str());
-        tmpFormatRoot->setAttribute(attUuid, xUuid);
+        try
+        {
+            xUuid = XMLString::transcode(tmpUuid.c_str());
+        }
+        catch (TranscodingException& e)
+        {
+            std::stringstream ss;
+            ss << "error transcoding uuid: " << XMLString::transcode(e.getMessage());
+            throw std::runtime_error(ss.str());
+        }
 
+        tmpFormatRoot->setAttribute(attUuid, xUuid);
         DOMElement* formatElem = (DOMElement*)doc->importNode(tmpFormatRoot, true);
         formatsElem->appendChild(formatElem);
     }

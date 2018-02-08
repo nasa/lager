@@ -1,6 +1,7 @@
 #ifndef LAGER_UTILS
 #define LAGER_UTILS
 
+#include <chrono>
 #include <iomanip>
 #include <iostream>
 #include <map>
@@ -49,7 +50,9 @@ namespace lager_utils
 #else
         uuid_t uuid;
         uuid_generate(uuid);
-        return std::string(std::begin(uuid), std::end(uuid));
+        char uuidStr[37];
+        uuid_unparse_lower(uuid, uuidStr);
+        return std::string(std::begin(uuidStr), std::end(uuidStr));
 #endif
     }
 
@@ -94,15 +97,20 @@ namespace lager_utils
         auto tp = std::chrono::system_clock::now();
         auto timeT = std::chrono::system_clock::to_time_t(tp);
 
+        char outputBuffer[500];
         std::stringstream ss;
 
         if (local)
         {
-            ss << std::put_time(std::localtime(&timeT), format.c_str());
+            strftime(outputBuffer, 500, format.c_str(), std::localtime(&timeT));
+            ss << outputBuffer;
+            // ss << std::put_time(std::localtime(&timeT), format.c_str());
         }
         else
         {
-            ss << std::put_time(std::gmtime(&timeT), format.c_str());
+            strftime(outputBuffer, 500, format.c_str(), std::gmtime(&timeT));
+            ss << outputBuffer;
+            // ss << std::put_time(std::gmtime(&timeT), format.c_str());
         }
 
         return ss.str().c_str();

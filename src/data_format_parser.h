@@ -13,6 +13,7 @@
 #include <xercesc/framework/MemBufInputSource.hpp>
 #include <xercesc/framework/MemBufFormatTarget.hpp>
 #include <xercesc/util/PlatformUtils.hpp>
+#include <xercesc/util/TranscodingException.hpp>
 #include <xercesc/util/XMLString.hpp>
 
 #include "data_format.h"
