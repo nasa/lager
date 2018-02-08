@@ -18,7 +18,7 @@ void Keg::addFormat(const std::string& uuid, const std::string& formatStr)
 void Keg::start()
 {
     std::stringstream ss;
-    ss << baseDir << "/" << lager_utils::getCurrentTime() << ".lgr";
+    ss << baseDir << "/" << lager_utils::getCurrentTimeFormatted("%Y%m%d_%H%M%S") << ".lgr";
     logFileName = ss.str();
 
     // TODO check for file open

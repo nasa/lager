@@ -1,6 +1,7 @@
 #ifndef LAGER_UTILS
 #define LAGER_UTILS
 
+#include <iomanip>
 #include <iostream>
 #include <map>
 #include <sstream>
@@ -86,6 +87,25 @@ namespace lager_utils
         auto dur = tp.time_since_epoch();
         uint64_t nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(dur).count();
         return nanoseconds;
+    }
+
+    static const std::string getCurrentTimeFormatted(const std::string& format, bool local = true)
+    {
+        auto tp = std::chrono::system_clock::now();
+        auto timeT = std::chrono::system_clock::to_time_t(tp);
+
+        std::stringstream ss;
+
+        if (local)
+        {
+            ss << std::put_time(std::localtime(&timeT), format.c_str());
+        }
+        else
+        {
+            ss << std::put_time(std::gmtime(&timeT), format.c_str());
+        }
+
+        return ss.str().c_str();
     }
 
     // https://stackoverflow.com/questions/3022552/is-there-any-standard-htonl-like-function-for-64-bits-integers-in-c
