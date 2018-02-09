@@ -187,8 +187,10 @@ namespace lager_utils
         if (local)
         {
 #ifdef _WIN32
+            _tzset();
             localtime_s(&timeInfo, &timeT);
 #else
+            tzset();
             localtime_r(&timeT, &timeInfo);
 #endif
             strftime(outputBuffer, 500, format.c_str(), &timeInfo);
