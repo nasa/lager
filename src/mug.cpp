@@ -152,7 +152,7 @@ void Mug::subscriberThread()
 
                 subscriber->getsockopt(ZMQ_RCVMORE, &rcvMore, &moreSize);
 
-                for (auto i = 0; i < uuid.size(); ++i)
+                for (size_t i = 0; i < uuid.size(); ++i)
                 {
                     data.push_back(uuid[i]);
                 }

@@ -8,16 +8,15 @@ class LagerUtilTests : public ::testing::Test
 
 TEST_F(LagerUtilTests, UuidLength)
 {
-#ifndef _WIN32
     ASSERT_EQ(lager_utils::getUuid().size(), UUID_SIZE_BYTES);
-#endif
 }
 
 TEST_F(LagerUtilTests, UuidParseAndBack)
 {
     std::string uuid = lager_utils::getUuid();
-    std::string uuidStr = lager_utils::getUuidString(uuid.c_str());
-    ASSERT_STREQ(uuid.c_str(), lager_utils::getUuid(uuidStr).c_str());
+    std::string uuidStr = lager_utils::getUuidString(uuid);
+    std::string uuid2 = lager_utils::getUuid(uuidStr);
+    ASSERT_STREQ(uuid.c_str(), uuid2.c_str());
 }
 
 TEST_F(LagerUtilTests, LocalUri)

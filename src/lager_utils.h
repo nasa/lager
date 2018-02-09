@@ -34,13 +34,44 @@ namespace lager_utils
 #endif
     }
 
+#ifdef _WIN32
+    static std::string getBytesFromWindowsUuid(UUID uuid)
+    {
+        const unsigned char uuidOut[UUID_SIZE_BYTES] =
+        {
+            // these static casts were necessary to avoid narrowing warnings
+            static_cast<unsigned char>((uuid.Data1 >> 24) & 0xff),
+            static_cast<unsigned char>((uuid.Data1 >> 16) & 0xff),
+            static_cast<unsigned char>((uuid.Data1 >> 8) & 0xff),
+            static_cast<unsigned char>((uuid.Data1) & 0xff),
+
+            static_cast<unsigned char>((uuid.Data2 >> 8) & 0xff),
+            static_cast<unsigned char>((uuid.Data2) & 0xff),
+
+            static_cast<unsigned char>((uuid.Data3 >> 8) & 0xff),
+            static_cast<unsigned char>((uuid.Data3) & 0xff),
+
+            static_cast<unsigned char>(uuid.Data4[0]),
+            static_cast<unsigned char>(uuid.Data4[1]),
+            static_cast<unsigned char>(uuid.Data4[2]),
+            static_cast<unsigned char>(uuid.Data4[3]),
+            static_cast<unsigned char>(uuid.Data4[4]),
+            static_cast<unsigned char>(uuid.Data4[5]),
+            static_cast<unsigned char>(uuid.Data4[6]),
+            static_cast<unsigned char>(uuid.Data4[7])
+        };
+
+        return std::string(uuidOut, uuidOut + UUID_SIZE_BYTES);
+    }
+#endif
+
     // generates a unique id in a cross platform way
     static std::string getUuid()
     {
 #ifdef _WIN32
         UUID uuid;
         UuidCreate(&uuid);
-        return std::string(std::begin(uuid.Data4), std::end(uuid.data4));
+        return getBytesFromWindowsUuid(uuid);
 #else
         uuid_t uuid;
         uuid_generate(uuid);
@@ -48,13 +79,13 @@ namespace lager_utils
 #endif
     }
 
-    // generates a unique id in a cross platform way
+    // gets a uuid from a human readable string
     static std::string getUuid(const std::string& uuidStr)
     {
 #ifdef _WIN32
         UUID uuid;
-        UuidFromString(uuidStr, &uuid);
-        return std::string(std::begin(uuid.Data4), std::end(uuid.data4));
+        UuidFromStringA((RPC_CSTR)uuidStr.c_str(), &uuid);
+        return getBytesFromWindowsUuid(uuid);
 #else
         uuid_t uuid;
         uuid_parse(uuidStr.c_str(), uuid);
@@ -64,19 +95,38 @@ namespace lager_utils
 
     static std::string getUuidString(const std::string& uuidIn)
     {
-        if (uuidIn.size() != UUID_SIZE_BYTES)
-        {
-            throw std::runtime_error("invalid uuid size");
-        }
-
 #ifdef _WIN32
         char* uuidCstr;
         std::string uuidStr;
-        UuidToStringA(&uuidIn, (RPC_CSTR*)&uuidCstr);
+
+        UUID uuid;
+
+        uuid.Data1 =  (uuidIn[0] & 0xff) << 24;
+        uuid.Data1 += (uuidIn[1] & 0xff) << 16;
+        uuid.Data1 += (uuidIn[2] & 0xff) << 8;
+        uuid.Data1 += (uuidIn[3] & 0xff);
+
+        uuid.Data2 = (uuidIn[4] & 0xff) << 8;
+        uuid.Data2 += uuidIn[5] & 0xff;
+
+        uuid.Data3 = (uuidIn[6] & 0xff) << 8;
+        uuid.Data3 += uuidIn[7] & 0xff;
+
+        uuid.Data4[0] = uuidIn[8 + 0];
+        uuid.Data4[1] = uuidIn[8 + 1];
+        uuid.Data4[2] = uuidIn[8 + 2];
+        uuid.Data4[3] = uuidIn[8 + 3];
+        uuid.Data4[4] = uuidIn[8 + 4];
+        uuid.Data4[5] = uuidIn[8 + 5];
+        uuid.Data4[6] = uuidIn[8 + 6];
+        uuid.Data4[7] = uuidIn[8 + 7];
+
+        UuidToStringA(&uuid, (RPC_CSTR*)&uuidCstr);
         uuidStr = std::string(uuidCstr);
         RpcStringFreeA((RPC_CSTR*)&uuidCstr);
+        return uuidStr;
 #else
-        char uuidStr[36];
+        char uuidStr[37];
         uuid_t uuid;
 
         for (unsigned int i = 0; i < UUID_SIZE_BYTES; ++i)
@@ -132,18 +182,19 @@ namespace lager_utils
 
         char outputBuffer[500];
         std::stringstream ss;
+        struct tm timeInfo;
 
         if (local)
         {
-            strftime(outputBuffer, 500, format.c_str(), std::localtime(&timeT));
+            localtime_s(&timeInfo, &timeT);
+            strftime(outputBuffer, 500, format.c_str(), &timeInfo);
             ss << outputBuffer;
-            // ss << std::put_time(std::localtime(&timeT), format.c_str());
         }
         else
         {
-            strftime(outputBuffer, 500, format.c_str(), std::gmtime(&timeT));
+            gmtime_s(&timeInfo, &timeT);
+            strftime(outputBuffer, 500, format.c_str(), &timeInfo);
             ss << outputBuffer;
-            // ss << std::put_time(std::gmtime(&timeT), format.c_str());
         }
 
         return ss.str().c_str();
