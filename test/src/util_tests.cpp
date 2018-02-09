@@ -34,6 +34,12 @@ TEST_F(LagerUtilTests, ZmqVersion)
     ASSERT_STREQ(lager_utils::getZmqVersion().c_str(), ZMQ_VER);
 }
 
+TEST_F(LagerUtilTests, GetTime)
+{
+    std::string gmtTime = lager_utils::getCurrentTimeFormatted("%Y%m%d", false);
+    std::string localTime = lager_utils::getCurrentTimeFormatted("%Y%m%d");
+}
+
 int main(int argc, char* argv[])
 {
     ::testing::InitGoogleTest(&argc, argv);

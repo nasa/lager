@@ -78,6 +78,8 @@ std::string Keg::getFormatString()
     {
         return p.getXmlStr();
     }
-
-    return "<invalid_xml>unimplemented format</invalid_xml>";
+    else
+    {
+        throw std::runtime_error("Unable to generate XML format for Keg");
+    }
 }
