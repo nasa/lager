@@ -64,10 +64,11 @@ TEST_F(KegTests, DoesItWork)
 
     offset += TIMESTAMP_SIZE_BYTES;
 
+    data.resize(data.size() + 4);
     *(reinterpret_cast<uint32_t*>(data.data() + offset)) = htonl(column1);
-
     offset += 4;
 
+    data.resize(data.size() + 2);
     *(reinterpret_cast<uint16_t*>(data.data() + offset)) = htons(column2);
 
     k.write(data, data.size());
