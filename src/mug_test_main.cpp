@@ -13,8 +13,6 @@ int main(int argc, char* argv[])
 
     lager_utils::sleepMillis(10000);
 
-    std::vector<AbstractDataRefItem*> dataRefItems;
-
     m.stop();
 
     return 0;

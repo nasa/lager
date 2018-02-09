@@ -134,6 +134,7 @@ void Mug::subscriberThread()
 
             if (items[0].revents & ZMQ_POLLIN)
             {
+                data.clear();
                 offset = 0;
 
                 zmq::message_t msg;
@@ -150,8 +151,6 @@ void Mug::subscriberThread()
                 subscriber->recv(&msg);
                 timestamp = *(uint64_t*)msg.data();
 
-                subscriber->getsockopt(ZMQ_RCVMORE, &rcvMore, &moreSize);
-
                 for (size_t i = 0; i < uuid.size(); ++i)
                 {
                     data.push_back(uuid[i]);
@@ -159,9 +158,12 @@ void Mug::subscriberThread()
 
                 offset += UUID_SIZE_BYTES;
 
+                data.resize(data.size() + TIMESTAMP_SIZE_BYTES);
                 *(reinterpret_cast<uint64_t*>(data.data() + offset)) = timestamp;
 
                 offset += TIMESTAMP_SIZE_BYTES;
+
+                subscriber->getsockopt(ZMQ_RCVMORE, &rcvMore, &moreSize);
 
                 while (rcvMore != 0)
                 {
@@ -181,7 +183,6 @@ void Mug::subscriberThread()
                         case 2:
                             data.resize(data.size() + 2);
                             tmp16 = *(uint16_t*)msg.data();
-                            // tmp16 = ntohs(*(uint16_t*)msg.data());
                             *(reinterpret_cast<uint16_t*>(data.data() + offset)) = tmp16;
                             offset += 2;
                             break;
@@ -189,7 +190,6 @@ void Mug::subscriberThread()
                         case 4:
                             data.resize(data.size() + 4);
                             tmp32 = *(uint32_t*)msg.data();
-                            // tmp32 = ntohl(*(uint32_t*)msg.data());
                             *(reinterpret_cast<uint32_t*>(data.data() + offset)) = tmp32;
                             offset += 4;
                             break;
@@ -197,7 +197,6 @@ void Mug::subscriberThread()
                         case 8:
                             data.resize(data.size() + 8);
                             tmp64 = *(uint64_t*)msg.data();
-                            // tmp64 = lager_utils::ntohll(*(uint64_t*)msg.data());
                             *(reinterpret_cast<uint64_t*>(data.data() + offset)) = tmp64;
                             offset += 8;
                             break;
