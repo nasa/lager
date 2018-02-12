@@ -21,7 +21,7 @@ struct DataItem
 class DataFormat
 {
 public:
-    DataFormat(const std::string& version);
+    explicit DataFormat(const std::string& version);
     virtual ~DataFormat();
 
     std::vector<DataItem> getItems() {return items;}

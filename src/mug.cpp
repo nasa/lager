@@ -1,6 +1,6 @@
 #include "mug.h"
 
-Mug::Mug(): running(false)
+Mug::Mug(): running(false), subscriberPort(-1), subscriberRunning(false)
 {
 }
 
@@ -105,14 +105,6 @@ void Mug::subscriberThread()
         subscriber->connect(lager_utils::getRemoteUri(serverHost.c_str(), subscriberPort).c_str());
         subscriber->setsockopt(ZMQ_SUBSCRIBE, "", 0);
 
-        std::string key("");
-        std::string empty("");
-        std::string value("");
-        double sequence = 0;
-
-        std::string uuid;
-        std::string version;
-        unsigned int compression;
         uint64_t timestamp;
         std::vector<uint8_t> data;
 
@@ -142,11 +134,11 @@ void Mug::subscriberThread()
                 subscriber->recv(&msg);
                 std::string uuid(static_cast<char*>(msg.data()), msg.size());
 
+                // Version frame, string, currently unused
                 subscriber->recv(&msg);
-                std::string version(static_cast<char*>(msg.data()), msg.size());
 
+                // Compression frame, uint16_t, currently unused
                 subscriber->recv(&msg);
-                compression = *(int*)msg.data();
 
                 subscriber->recv(&msg);
                 timestamp = *(uint64_t*)msg.data();
@@ -212,7 +204,7 @@ void Mug::subscriberThread()
             }
         }
     }
-    catch (zmq::error_t e)
+    catch (const zmq::error_t& e)
     {
         if (e.num() == ETERM)
         {

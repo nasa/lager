@@ -38,7 +38,7 @@ class DataFormatParser
 {
 public:
     DataFormatParser();
-    DataFormatParser(const std::string& xsdFile_in);
+    explicit DataFormatParser(const std::string& xsdFile_in);
     ~DataFormatParser();
 
     std::string getXmlStr() {return xmlStr;};

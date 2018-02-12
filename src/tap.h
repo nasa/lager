@@ -46,10 +46,6 @@ private:
     bool newData;
     bool running;
     bool publisherRunning;
-
-    // demo
-    uint32_t int1;
-    uint32_t int2;
 };
 
 #endif

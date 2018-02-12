@@ -1,13 +1,12 @@
 #include "chp_client.h"
 
 ClusteredHashmapClient::ClusteredHashmapClient(const std::string& serverHost_in, int basePort, int timeoutMillis_in):
-    initialized(false), running(false), timedOut(false), sequence(-1), uuid("invalid")
+    initialized(false), running(false), snapshotRunning(false), subscriberRunning(false),
+    timedOut(false), sequence(-1), uuid("invalid"), serverHost(serverHost_in), timeoutMillis(timeoutMillis_in)
 {
     snapshotPort = basePort + CHP_SNAPSHOT_OFFSET;
     subscriberPort = basePort + CHP_PUBLISHER_OFFSET;
     publisherPort = basePort + CHP_COLLECTOR_OFFSET;
-    timeoutMillis = timeoutMillis_in;
-    serverHost = serverHost_in;
 }
 
 void ClusteredHashmapClient::init(std::shared_ptr<zmq::context_t> context_in, const std::string& uuid_in)
@@ -78,15 +77,15 @@ void ClusteredHashmapClient::subscriberThread()
     subscriber->connect(lager_utils::getRemoteUri(serverHost.c_str(), subscriberPort).c_str());
 
     std::string key("");
-    std::string empty("");
     std::string value("");
     std::string uuid("");
-    double sequence = 0;
 
     zmq::pollitem_t items[] = {{static_cast<void*>(*subscriber.get()), 0, ZMQ_POLLIN, 0}};
 
     try
     {
+        double sequence = 0;
+
         while (running)
         {
             zmq::poll(&items[0], 1, timeoutMillis);
@@ -104,8 +103,8 @@ void ClusteredHashmapClient::subscriberThread()
                 subscriber->recv(&msg);
                 uuid = std::string(static_cast<char*>(msg.data()), msg.size());
 
+                // this frame is empty so we just grab the message and do nothing with it
                 subscriber->recv(&msg);
-                empty = std::string(static_cast<char*>(msg.data()), msg.size());
 
                 subscriber->recv(&msg);
                 value = std::string(static_cast<char*>(msg.data()), msg.size());
@@ -167,12 +166,12 @@ void ClusteredHashmapClient::snapshotThread()
     std::string subtree("");
     std::string value("");
     std::string key("");
-    std::string empty("");
     std::string uuid("");
-    double sequence = 0;
 
     try
     {
+        double sequence = 0;
+
         while (running)
         {
             if (key != "KTHXBAI")
@@ -202,8 +201,8 @@ void ClusteredHashmapClient::snapshotThread()
                     snapshot->recv(&replyMsg);
                     uuid = std::string(static_cast<char*>(replyMsg.data()), replyMsg.size());
 
+                    // this frame is empty so we just grab the message and do nothing with it
                     snapshot->recv(&replyMsg);
-                    empty = std::string(static_cast<char*>(replyMsg.data()), replyMsg.size());
 
                     snapshot->recv(&replyMsg);
                     value = std::string(static_cast<char*>(replyMsg.data()), replyMsg.size());
@@ -258,8 +257,6 @@ void ClusteredHashmapClient::snapshotThread()
 
     if (updateMap.size() > 0)
     {
-        this->sequence = sequence;
-
         if (hashMapUpdated)
         {
             hashMapUpdated();

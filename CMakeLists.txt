@@ -127,6 +127,13 @@ if (WIN32)
     endforeach()    
 endif()
 
+# cppcheck
+if (NOT WIN32)
+    include(cppcheck)
+    add_custom_target(cppcheck DEPENDS ${CPPCHECK_OUTPUT}.touch)
+endif()
+
+# testing
 if (BUILD_TESTS)
     enable_testing()
     add_subdirectory(test)

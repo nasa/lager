@@ -3,7 +3,8 @@
 /**
  * @brief Ctor sets up ports for the three sockets used
  */
-ClusteredHashmapServer::ClusteredHashmapServer(int basePort): initialized(false), running(false), sequence(0)
+ClusteredHashmapServer::ClusteredHashmapServer(int basePort): initialized(false),
+    running(false), publisherRunning(false), snapshotRunning(false), collectorRunning(false), sequence(0)
 {
     snapshotPort = basePort + CHP_SNAPSHOT_OFFSET;
     publisherPort = basePort + CHP_PUBLISHER_OFFSET;
@@ -107,7 +108,6 @@ void ClusteredHashmapServer::snapshotThread()
 
         std::string identity("");
         std::string icanhaz("");
-        std::string subtree("");
 
         while (running)
         {
@@ -119,10 +119,13 @@ void ClusteredHashmapServer::snapshotThread()
 
                 snapshot->recv(&msg);
                 identity = std::string(static_cast<char*>(msg.data()), msg.size());
+
                 snapshot->recv(&msg);
                 icanhaz = std::string(static_cast<char*>(msg.data()), msg.size());
+
+                // This is the subtree frame which is not used by this implementation, so
+                // it is ignored.
                 snapshot->recv(&msg);
-                subtree = std::string(static_cast<char*>(msg.data()), msg.size());
 
                 if (icanhaz == "ICANHAZ?")
                 {
@@ -132,7 +135,7 @@ void ClusteredHashmapServer::snapshotThread()
             }
         }
     }
-    catch (zmq::error_t e)
+    catch (const zmq::error_t& e)
     {
         // This is the proper way of shutting down multithreaded ZMQ sockets.
         // The creator of the zmq context basically pulls the rug out from
@@ -316,7 +319,7 @@ void ClusteredHashmapServer::publisherThread()
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
-    catch (zmq::error_t e)
+    catch (const zmq::error_t& e)
     {
         // This is the proper way of shutting down multithreaded ZMQ sockets.
         // The creator of the zmq context basically pulls the rug out from
@@ -378,9 +381,7 @@ void ClusteredHashmapServer::collectorThread()
 
         std::string key("");
         std::string uuid("");
-        std::string properties("");
         std::string value("");
-        double sequence = 0;
         bool duplicateKey = false;
 
         while (running)
@@ -398,14 +399,14 @@ void ClusteredHashmapServer::collectorThread()
                 collector->recv(&msg);
                 key = std::string(static_cast<char*>(msg.data()), msg.size());
 
+                // This is the sequence number frame and has no significance in this piece of CHP
                 collector->recv(&msg);
-                sequence = *(double*)msg.data();
 
                 collector->recv(&msg);
                 uuid = std::string(static_cast<char*>(msg.data()), msg.size());
 
+                // This is the properties frame and is currently unused, so do nothing
                 collector->recv(&msg);
-                properties = std::string(static_cast<char*>(msg.data()), msg.size());
 
                 collector->recv(&msg);
                 value = std::string(static_cast<char*>(msg.data()), msg.size());
@@ -449,7 +450,7 @@ void ClusteredHashmapServer::collectorThread()
             }
         }
     }
-    catch (zmq::error_t e)
+    catch (const zmq::error_t& e)
     {
         // This is the proper way of shutting down multithreaded ZMQ sockets.
         // The creator of the zmq context basically pulls the rug out from

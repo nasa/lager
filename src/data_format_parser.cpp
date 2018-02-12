@@ -255,8 +255,6 @@ bool DataFormatParser::createFromDataRefItems(const std::vector<AbstractDataRefI
 
 bool DataFormatParser::createFromUuidMap(const std::map<std::string, std::string>& map)
 {
-    std::stringstream ss;
-
     XMLCh* xTempStr = nullptr;
     XMLCh* xVersion = nullptr;
     XMLCh* xName = nullptr;
@@ -291,7 +289,6 @@ bool DataFormatParser::createFromUuidMap(const std::map<std::string, std::string
     {
         std::string tmpUuid = lager_utils::getUuidString(i->first);
         std::string tmpXml = i->second;
-        std::string formatXml;
 
         MemBufInputSource xmlBuf((const XMLByte*)tmpXml.c_str(), tmpXml.size(), "unused");
 

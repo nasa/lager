@@ -14,7 +14,7 @@
 class Forwarder final
 {
 public:
-    Forwarder(int basePort);
+    explicit Forwarder(int basePort);
 
     void init(std::shared_ptr<zmq::context_t> context_in);
     void start();

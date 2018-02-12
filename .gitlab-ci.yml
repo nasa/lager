@@ -1,4 +1,5 @@
 stages:
+  - prebuild
   - build
   - deploy
 
@@ -8,7 +9,6 @@ trusty:
   script:
     - mkdir build
     - cd build
-    - cmake .. && make && make test
 
 xenial:
   stage: build
@@ -29,6 +29,15 @@ windows:
   tags:
     - lager
     - windows
+
+static-analysis:
+  stage: prebuild
+  image: js-er-code.jsc.nasa.gov:5005/lager/lager_image_base_xenial:stable
+  script:
+    - mkdir build
+    - cd build
+    - cmake ..
+    - make cppcheck
 
 coverage:
   stage: build

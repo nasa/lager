@@ -21,7 +21,7 @@
 class ClusteredHashmapServer final
 {
 public:
-    ClusteredHashmapServer(int basePort);
+    explicit ClusteredHashmapServer(int basePort);
 
     void init(std::shared_ptr<zmq::context_t> context_in);
     void addOrUpdateKeyValue(const std::string& key, const std::string& value);

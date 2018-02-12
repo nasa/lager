@@ -1,6 +1,7 @@
 #include "tap.h"
 
-Tap::Tap(): publisherPort(0), running(false), newData(false), flags(0), offsetCount(0)
+Tap::Tap(): publisherPort(0), running(false), newData(false), flags(0), offsetCount(0), timestamp(0),
+    publisherRunning(false)
 {
 }
 

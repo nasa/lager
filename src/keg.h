@@ -16,7 +16,7 @@
 class Keg
 {
 public:
-    Keg(const std::string& baseDir_in);
+    explicit Keg(const std::string& baseDir_in);
     void start();
     void stop();
     void write(const std::vector<uint8_t>& data, size_t size);
