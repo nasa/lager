@@ -125,6 +125,10 @@ if (WIN32)
     endforeach()    
 endif()
 
+# cppcheck
+include(cmake/cppcheck.cmake)
+add_custom_target(cppcheck DEPENDS ${CPPCHECK_OUTPUT}.touch)
+
 if (BUILD_TESTS)
     enable_testing()
     add_subdirectory(test)
