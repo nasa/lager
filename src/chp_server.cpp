@@ -1,5 +1,8 @@
 #include "chp_server.h"
 
+/**
+ * @brief Ctor sets up ports for the three sockets used
+ */
 ClusteredHashmapServer::ClusteredHashmapServer(int basePort): initialized(false), running(false), sequence(0)
 {
     snapshotPort = basePort + CHP_SNAPSHOT_OFFSET;
@@ -9,6 +12,10 @@ ClusteredHashmapServer::ClusteredHashmapServer(int basePort): initialized(false)
     updatedKeys.clear();
 }
 
+/**
+ * @brief Pulls in the user specified ZMQ context
+ * @param context_in is a shared_ptr to an initialized ZMQ context
+ */
 void ClusteredHashmapServer::init(std::shared_ptr<zmq::context_t> context_in)
 {
     context = context_in;
@@ -16,6 +23,10 @@ void ClusteredHashmapServer::init(std::shared_ptr<zmq::context_t> context_in)
     initialized = true;
 }
 
+/**
+ * @brief Starts up the three sockets needed with threads
+ * @throws std::runtime_error
+ */
 void ClusteredHashmapServer::start()
 {
     if (!initialized)
@@ -34,6 +45,9 @@ void ClusteredHashmapServer::start()
     collectorThreadHandle.detach();
 }
 
+/**
+ * @brief Stops the server and associated threads
+ */
 void ClusteredHashmapServer::stop()
 {
     std::unique_lock<std::mutex> lock(mutex);
@@ -56,18 +70,30 @@ void ClusteredHashmapServer::stop()
     }
 }
 
+/**
+ * @brief Updates the given key with the given value.  If the key doesn't exist, it is added.
+ * @param key is a string containing the "nice" topic name
+ * @param value is a string containing the XML data format of the topic
+ */
 void ClusteredHashmapServer::addOrUpdateKeyValue(const std::string& key, const std::string& value)
 {
     hashMap[key] = value;
     updatedKeys.push_back(key);
 }
 
+/**
+ * @brief Removes the given key from the hashmap.
+ * @param key is a string containing the "nice" topic name
+ */
 void ClusteredHashmapServer::removeKey(const std::string& key)
 {
     hashMap[key] = "";
     updatedKeys.push_back(key);
 }
 
+/**
+ * @brief The main loop for the snapshot portion of the Clustered Hashmap Protocol
+ */
 void ClusteredHashmapServer::snapshotThread()
 {
     snapshotRunning = true;
@@ -108,6 +134,9 @@ void ClusteredHashmapServer::snapshotThread()
     }
     catch (zmq::error_t e)
     {
+        // This is the proper way of shutting down multithreaded ZMQ sockets.
+        // The creator of the zmq context basically pulls the rug out from
+        // under the socket.
         if (e.num() == ETERM)
         {
             snapshot->close();
@@ -117,13 +146,19 @@ void ClusteredHashmapServer::snapshotThread()
     }
 }
 
+/**
+ * @brief Sends the actual hashmap on the snapshot connection
+ * @param identity is the identity of the originating peer so the ROUTER socket routes proprerly
+ */
 void ClusteredHashmapServer::snapshotMap(const std::string& identity)
 {
     std::string empty("");
     std::string tmpUuid("");
 
+    // Iterate the hashmap and send each entry
     for (auto i = hashMap.begin(); i != hashMap.end(); ++i)
     {
+        // Find the associated uuid that matches the topic name
         for (auto u = uuidMap.begin(); u != uuidMap.end(); ++u)
         {
             if (u->second == i->first)
@@ -135,6 +170,7 @@ void ClusteredHashmapServer::snapshotMap(const std::string& identity)
 
         // TODO throw here if uuid not found, shouldn't happen?
 
+        // Build the frames of the ZMQ message and send
         zmq::message_t identityMsg(identity.size());
         zmq::message_t frame0(i->first.size());
         zmq::message_t frame1(sizeof(double));
@@ -158,6 +194,10 @@ void ClusteredHashmapServer::snapshotMap(const std::string& identity)
     }
 }
 
+/**
+ * @brief Sends the final message after the hashmap is completed
+ * @param identity is the identity of the originating peer so the ROUTER socket routes proprerly
+ */
 void ClusteredHashmapServer::snapshotBye(const std::string& identity)
 {
     std::string kthxbai("KTHXBAI");
@@ -188,14 +228,19 @@ void ClusteredHashmapServer::snapshotBye(const std::string& identity)
     sequence++;
 }
 
+/**
+ * @brief Sends any keys which have been updated since the last update on the publisher
+ */
 void ClusteredHashmapServer::publishUpdatedKeys()
 {
     std::string empty("");
     std::string tmpUuid("");
     std::vector<std::string> removedKeys;
 
+    // Iterate the updated map and send each entry
     for (auto i = updatedKeys.begin(); i != updatedKeys.end(); ++i)
     {
+        // Find the associated uuid that matches the topic name
         for (auto u = uuidMap.begin(); u != uuidMap.end(); ++u)
         {
             if (u->second == *i)
@@ -225,14 +270,17 @@ void ClusteredHashmapServer::publishUpdatedKeys()
         publisher->send(frame3, ZMQ_SNDMORE);
         publisher->send(frame4);
 
+        // if the entry is empty that means it needs to be removed
         if (hashMap[*i].size() == 0)
         {
             removedKeys.push_back(*i);
         }
 
+        // clients should check for sequence to ensure they have the most recent version
         sequence++;
     }
 
+    // Remove any deleted keys from the hashmap
     for (auto i = removedKeys.begin(); i != removedKeys.end(); ++i)
     {
         hashMap.erase(*i);
@@ -241,6 +289,9 @@ void ClusteredHashmapServer::publishUpdatedKeys()
     updatedKeys.clear();
 }
 
+/**
+ * @brief Publisher main thread. Either sends HUGZ watchdog message or updated hashmap keys if they exist.
+ */
 void ClusteredHashmapServer::publisherThread()
 {
     publisherRunning = true;
@@ -261,11 +312,15 @@ void ClusteredHashmapServer::publisherThread()
                 publishHugz();
             }
 
+            // TODO this could probably run slower
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
     catch (zmq::error_t e)
     {
+        // This is the proper way of shutting down multithreaded ZMQ sockets.
+        // The creator of the zmq context basically pulls the rug out from
+        // under the socket.
         if (e.num() == ETERM)
         {
             publisher->close();
@@ -275,6 +330,9 @@ void ClusteredHashmapServer::publisherThread()
     }
 }
 
+/**
+ * @brief Sends the hugz watchdog message
+ */
 void ClusteredHashmapServer::publishHugz()
 {
     std::string hugz("HUGZ");
@@ -300,6 +358,9 @@ void ClusteredHashmapServer::publishHugz()
     publisher->send(frame4);
 }
 
+/**
+ * @brief Main thread for the collector socket
+ */
 void ClusteredHashmapServer::collectorThread()
 {
     collectorRunning = true;
@@ -308,8 +369,11 @@ void ClusteredHashmapServer::collectorThread()
     {
         collector.reset(new zmq::socket_t(*context.get(), ZMQ_SUB));
         collector->bind(lager_utils::getLocalUri(collectorPort).c_str());
+
+        // We want all messages on the socket
         collector->setsockopt(ZMQ_SUBSCRIBE, "", 0);
 
+        // Sets up a poller for the collector socket
         zmq::pollitem_t items[] = {{static_cast<void*>(*collector.get()), 0, ZMQ_POLLIN, 0}};
 
         std::string key("");
@@ -321,12 +385,16 @@ void ClusteredHashmapServer::collectorThread()
 
         while (running)
         {
+            // Poll the actual socket
             zmq::poll(&items[0], 1, 1000);
 
+            // Check for new data
             if (items[0].revents & ZMQ_POLLIN)
             {
                 zmq::message_t msg;
 
+                // Grab the new messages
+                // TODO should check ZMQ_RCVMORE to ensure we don't get stuck
                 collector->recv(&msg);
                 key = std::string(static_cast<char*>(msg.data()), msg.size());
 
@@ -342,15 +410,18 @@ void ClusteredHashmapServer::collectorThread()
                 collector->recv(&msg);
                 value = std::string(static_cast<char*>(msg.data()), msg.size());
 
+                // Uuid is required, if it's empty, ignore this message
+                // TODO should we really ignore this, or bubble up an error?
                 if (uuid.length() > 0)
                 {
+                    // Check to see if the uuid is already in use
                     if (uuidMap.find(uuid) == uuidMap.end())
                     {
                         duplicateKey = false;
 
                         for (auto i = uuidMap.begin(); i != uuidMap.end(); ++i)
                         {
-                            // Duplicate key exists in the map under another uuid
+                            // Duplicate key exists in the map under another uuid, for now we ignore it
                             if (i->second == key)
                             {
                                 duplicateKey = true;
@@ -358,6 +429,7 @@ void ClusteredHashmapServer::collectorThread()
                             }
                         }
 
+                        // add the key to the uuid map
                         if (!duplicateKey)
                         {
                             uuidMap[uuid] = key;
@@ -365,6 +437,7 @@ void ClusteredHashmapServer::collectorThread()
                     }
                 }
 
+                // If the value is an empty string it means to remove that key from the map
                 if (value.length() == 0)
                 {
                     removeKey(key);
@@ -378,6 +451,9 @@ void ClusteredHashmapServer::collectorThread()
     }
     catch (zmq::error_t e)
     {
+        // This is the proper way of shutting down multithreaded ZMQ sockets.
+        // The creator of the zmq context basically pulls the rug out from
+        // under the socket.
         if (e.num() == ETERM)
         {
             collector->close();

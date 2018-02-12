@@ -51,6 +51,7 @@ set(CHP_SRCS
     src/chp_server.cpp
     src/chp_client.cpp)
 
+# libraries
 add_library(chp SHARED ${CHP_SRCS})
 target_link_libraries(chp
     ${LIBUUID_LIBRARIES}
@@ -72,7 +73,8 @@ target_link_libraries(tap dataformat chp)
 add_library(mug SHARED ${MUG_SRCS})
 target_link_libraries(mug chp keg dataformat)
 
-# Targets for bartender and test tap
+# Targets for bartender and test apps
+# TODO remove these later
 add_executable(test_bartender src/bartender_main.cpp)
 target_link_libraries(test_bartender bartender)
 

@@ -7,6 +7,9 @@
 #include "chp_server.h"
 #include "forwarder.h"
 
+/**
+ * @brief Bartender provides a middleware layer for the Lager system
+ */
 class Bartender final
 {
 public:

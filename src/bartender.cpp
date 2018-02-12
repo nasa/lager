@@ -6,6 +6,7 @@ Bartender::Bartender()
 
 bool Bartender::init(int basePort)
 {
+    // make sure basePort is a valid port
     if (basePort < 0 || basePort > 65535)
     {
         // TODO have user optional stream output?
