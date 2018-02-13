@@ -21,7 +21,7 @@ bool Tap::init(const std::string& serverHost_in, int basePort)
 
     publisherPort = basePort + FORWARDER_FRONTEND_OFFSET;
 
-    if (publisherPort < 0 || publisherPort > 65535)
+    if (publisherPort < 0 || publisherPort > BASEPORT_MAX)
     {
         // TODO provide stream output of errors?
         return false;

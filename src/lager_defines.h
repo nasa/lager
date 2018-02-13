@@ -14,4 +14,7 @@ const unsigned int VERSION_SIZE_BYTES = 8;
 const unsigned int COMPRESSION_SIZE_BYTES = 4;
 const unsigned int TIMESTAMP_SIZE_BYTES = 8;
 
+// other
+const int BASEPORT_MAX = 65535;
+
 #endif

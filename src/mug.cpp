@@ -22,7 +22,7 @@ bool Mug::init(const std::string& serverHost_in, int basePort, const std::string
 {
     subscriberPort = basePort + FORWARDER_BACKEND_OFFSET;
 
-    if (subscriberPort < 0 || subscriberPort > 65535)
+    if (subscriberPort < 0 || subscriberPort > BASEPORT_MAX)
     {
         // TODO provide stream output of errors?
         return false;
