@@ -147,7 +147,8 @@ void Tap::publisherThread()
 
             // TODO endianness
             memcpy(flagsMsg.data(), (void*)&flags, sizeof(flags));
-            memcpy(timestampMsg.data(), (void*)&timestamp, sizeof(timestamp));
+            uint64_t networkTimestamp = lager_utils::htonll(timestamp);
+            memcpy(timestampMsg.data(), (void*)&networkTimestamp, sizeof(timestamp));
 
             publisher.send(uuidMsg, ZMQ_SNDMORE);
             publisher.send(versionMsg, ZMQ_SNDMORE);

@@ -203,7 +203,6 @@ void Mug::subscriberThread()
                     switch (msg.size())
                     {
                         case 1:
-                            data.resize(data.size() + 1);
                             tmp8 = *static_cast<uint8_t*>(msg.data());
                             data.push_back(tmp8);
                             offset += 1;
