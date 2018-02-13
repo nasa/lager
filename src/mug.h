@@ -11,6 +11,9 @@
 #include "data_format_parser.h"
 #include "keg.h"
 
+/**
+* @brief The data sink object for the lager system
+*/
 class Mug
 {
 public:

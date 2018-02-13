@@ -1,5 +1,8 @@
 #include "mug.h"
 
+/**
+* @brief Constructor, sets an invalid port to ensure the user initializes properly
+*/
 Mug::Mug(): running(false), subscriberPort(-1), subscriberRunning(false)
 {
 }
@@ -8,6 +11,13 @@ Mug::~Mug()
 {
 }
 
+/**
+* @brief Initializes the mug by creating the zmq context and starting up the CHP client
+* @param serverHost_in is a string containing the IP or hostname of the bartender to connect to
+* @param basePort is an integer containing a the port of the bartender to connect to
+* @param kegDir is a string containing a path to an accessible directory to store the keg files
+* @returns true on successful initialization, false on failure
+*/
 bool Mug::init(const std::string& serverHost_in, int basePort, const std::string& kegDir)
 {
     subscriberPort = basePort + FORWARDER_BACKEND_OFFSET;
@@ -35,6 +45,9 @@ bool Mug::init(const std::string& serverHost_in, int basePort, const std::string
     return true;
 }
 
+/**
+* @brief Starts the mug subscriber thread
+*/
 void Mug::start()
 {
     running = true;
@@ -47,6 +60,9 @@ void Mug::start()
     chpClient->start();
 }
 
+/**
+* @brief Closes the zmq context and stops the subscriber and chp threads
+*/
 void Mug::stop()
 {
     running = false;
@@ -64,9 +80,12 @@ void Mug::stop()
     keg->stop();
 }
 
+/**
+* @brief Callback function to update the hashmap and format maps whenever the chp client hashmap is updated
+*/
 void Mug::hashMapUpdated()
 {
-    std::map<std::string, std::string> tmpUuidMap;
+    std::map<std::string, std::string> tmpUuidMap; // <uuid, topic name>
     std::shared_ptr<DataFormat> tmpDataFormat;
 
     mutex.lock();
@@ -95,6 +114,9 @@ void Mug::hashMapUpdated()
     mutex.unlock();
 }
 
+/**
+* @brief The main data subscriber thread
+*/
 void Mug::subscriberThread()
 {
     subscriberRunning = true;
@@ -103,20 +125,26 @@ void Mug::subscriberThread()
     {
         subscriber.reset(new zmq::socket_t(*context.get(), ZMQ_SUB));
         subscriber->connect(lager_utils::getRemoteUri(serverHost.c_str(), subscriberPort).c_str());
+
+        // subscribe to everything (for now)
+        // TODO set up filter by uuid of subscribed topics
         subscriber->setsockopt(ZMQ_SUBSCRIBE, "", 0);
 
         uint64_t timestamp;
-        std::vector<uint8_t> data;
+        std::vector<uint8_t> data; // the main buffer we're keeping
 
+        // all data that comes from a tap will be one of these sizes
         uint8_t tmp8;
         uint16_t tmp16;
         uint32_t tmp32;
         uint64_t tmp64;
-        off_t offset;
+
+        off_t offset; // keeps track of the current offset of the buffer while recieving more frames
 
         uint32_t rcvMore = 0;
         size_t moreSize = sizeof(rcvMore);
 
+        // set up a poller for the subscriber socket
         zmq::pollitem_t items[] = {{static_cast<void*>(*subscriber.get()), 0, ZMQ_POLLIN, 0}};
 
         while (running)
@@ -126,6 +154,7 @@ void Mug::subscriberThread()
 
             if (items[0].revents & ZMQ_POLLIN)
             {
+                // clear the buffer each time
                 data.clear();
                 offset = 0;
 
@@ -143,6 +172,7 @@ void Mug::subscriberThread()
                 subscriber->recv(&msg);
                 timestamp = *(uint64_t*)msg.data();
 
+                // uuid is first in the buffer
                 for (size_t i = 0; i < uuid.size(); ++i)
                 {
                     data.push_back(uuid[i]);
@@ -150,11 +180,13 @@ void Mug::subscriberThread()
 
                 offset += UUID_SIZE_BYTES;
 
+                // timestamp is next in the buffer
                 data.resize(data.size() + TIMESTAMP_SIZE_BYTES);
                 *(reinterpret_cast<uint64_t*>(data.data() + offset)) = timestamp;
 
                 offset += TIMESTAMP_SIZE_BYTES;
 
+                // make sure we have more of the multipart zmq message waiting
                 subscriber->getsockopt(ZMQ_RCVMORE, &rcvMore, &moreSize);
 
                 while (rcvMore != 0)
@@ -198,7 +230,11 @@ void Mug::subscriberThread()
                             break;
                     }
 
+                    // write out the data
+                    // TODO this should probably be some kind of callback function
                     keg->write(data, data.size());
+
+                    // check for more multipart messages
                     subscriber->getsockopt(ZMQ_RCVMORE, &rcvMore, &moreSize);
                 }
             }
@@ -206,6 +242,9 @@ void Mug::subscriberThread()
     }
     catch (const zmq::error_t& e)
     {
+        // This is the proper way of shutting down multithreaded ZMQ sockets.
+        // The creator of the zmq context basically pulls the rug out from
+        // under the socket.
         if (e.num() == ETERM)
         {
             subscriber->close();

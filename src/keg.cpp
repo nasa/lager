@@ -1,5 +1,10 @@
 #include "keg.h"
 
+/**
+ * @brief Keg constructor
+ * @param baseDir_in is a string containing the path to an accessible directory to store the files in
+ * @throws runtime_error when directory is non-existent or inaccessible
+ */
 Keg::Keg(const std::string& baseDir_in): baseDir(baseDir_in), version(1), running(false)
 {
     if (!keg_utils::isDir(baseDir))
@@ -10,11 +15,19 @@ Keg::Keg(const std::string& baseDir_in): baseDir(baseDir_in), version(1), runnin
     }
 }
 
+/**
+ * @brief Adds the given data format to the format uuid map
+ * @param uuid is a string containing the 16 byte uuid of the data format
+ * @param formatStr is a string containing the xml of the data format
+ */
 void Keg::addFormat(const std::string& uuid, const std::string& formatStr)
 {
     formatMap[uuid] = formatStr;
 }
 
+/**
+ * @brief Opens the keg's output file and writes the initially blank version and offset values
+ */
 void Keg::start()
 {
     std::stringstream ss;
@@ -32,6 +45,9 @@ void Keg::start()
     running = true;
 }
 
+/**
+ * @brief Calls the update to the file header and closes the file
+ */
 void Keg::stop()
 {
     running = false;
@@ -39,6 +55,11 @@ void Keg::stop()
     logFile.close();
 }
 
+/**
+ * @brief Writes one "row" of data to the file
+ * @param data is an array of bytes to write to the file (which should already contain the correct header)
+ * @param size is the size of the given array
+ */
 void Keg::write(const std::vector<uint8_t>& data, size_t size)
 {
     // TODO check for file open
@@ -48,6 +69,9 @@ void Keg::write(const std::vector<uint8_t>& data, size_t size)
     }
 }
 
+/**
+ * @brief Updates the file header with the finalized version and format offsets
+ */
 void Keg::writeHeaderAndFormats()
 {
     uint64_t pos = logFile.tellp();
@@ -70,6 +94,10 @@ void Keg::writeHeaderAndFormats()
     logFile.write(reinterpret_cast<const char*>(formatStr.c_str()), formatStr.length());
 }
 
+/**
+ * @brief Helper function which calls the xml generator function to get the final xml format string
+ * @throws runtime_error if xml generator fails
+ */
 std::string Keg::getFormatString()
 {
     DataFormatParser p;

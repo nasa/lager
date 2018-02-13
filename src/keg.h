@@ -13,6 +13,9 @@
 #include "keg_utils.h"
 #include "lager_utils.h"
 
+/**
+ * @brief Object used to write lager data to non-volatile storage
+ */
 class Keg
 {
 public:

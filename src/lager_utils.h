@@ -24,7 +24,10 @@
 
 namespace lager_utils
 {
-    // cross platform sleep
+    /**
+    * @brief Cross platform sleep function
+    * @param duration is the number of milliseconds to sleep for
+    */
     static void sleepMillis(int duration)
     {
 #ifdef _WIN32
@@ -35,6 +38,11 @@ namespace lager_utils
     }
 
 #ifdef _WIN32
+    /**
+    * @brief Windows only helper function to translate a uuid into a human readable string
+    * @param uuid is a Windows UUID struct to translate
+    * @returns a string containing the human readable uuid
+    */
     static std::string getBytesFromWindowsUuid(UUID uuid)
     {
         const unsigned char uuidOut[UUID_SIZE_BYTES] =
@@ -65,7 +73,10 @@ namespace lager_utils
     }
 #endif
 
-    // generates a unique id in a cross platform way
+    /**
+    * @brief Generates a 16 byte uuid
+    * @returns a string containing the 16 byte uuid
+    */
     static std::string getUuid()
     {
 #ifdef _WIN32
@@ -79,7 +90,11 @@ namespace lager_utils
 #endif
     }
 
-    // gets a uuid from a human readable string
+    /**
+    * @brief Translates the given human readable string into a 16 byte uuid string
+    * @param uuidStr is a string containing the human readable string of the standard uuid format
+    * @returns a 16 byte uuid string
+    */
     static std::string getUuid(const std::string& uuidStr)
     {
 #ifdef _WIN32
@@ -93,6 +108,11 @@ namespace lager_utils
 #endif
     }
 
+    /**
+     * @brief Gets the human readable string from the given 16 byte uuid string
+     * @param uuidIn is a 16 byte uuid string of the standard uuid format
+     * @returns a string in the human readable standard uuid format
+     */
     static std::string getUuidString(const std::string& uuidIn)
     {
 #ifdef _WIN32
@@ -139,7 +159,11 @@ namespace lager_utils
 #endif
     }
 
-    // helper to format uris
+    /**
+    * @brief Helper to get a local zmq uri
+    * @param port is a port number generate the uri with
+    * @returns a string containing the uri
+    */
     static std::string getLocalUri(int port)
     {
         std::stringstream ss;
@@ -147,7 +171,12 @@ namespace lager_utils
         return ss.str();
     }
 
-    // helper to format uris
+    /**
+    * @brief Helper to get a remote zmq uri
+    * @param remoteUriBase is a string with the IP address or hostname to generate the uri with
+    * @param remotePort is a port number generate the uri with
+    * @returns a string containing the uri
+    */
     static std::string getRemoteUri(const std::string& remoteUriBase, int remotePort)
     {
         std::stringstream ss;
@@ -155,7 +184,10 @@ namespace lager_utils
         return ss.str();
     }
 
-    // grab zmq version for debugging purposes
+    /**
+    * @brief Get the zmq version
+    * @returns a string containing the major.minor.patch zmq version
+    */
     static std::string getZmqVersion()
     {
         std::stringstream ss;
@@ -167,6 +199,10 @@ namespace lager_utils
         return ss.str();
     }
 
+    /**
+    * @brief Gets the current system time as a 64 bit epoch nanoseconds
+    * @returns a uint64 containing the system's epoch in nanoseconds
+    */
     static uint64_t getCurrentTime()
     {
         auto tp = std::chrono::system_clock::now();
@@ -175,6 +211,12 @@ namespace lager_utils
         return nanoseconds;
     }
 
+    /**
+    * @brief Gets a formatted string containing the current system time
+    * @param format is a standard ctime based format specifier
+    * @param local is an option boolean parameter specifying whether the time should be local or gmt (defaults true)
+    * @returns a string containing the current system time formatted as per the input parameters
+    */
     static const std::string getCurrentTimeFormatted(const std::string& format, bool local = true)
     {
         auto tp = std::chrono::system_clock::now();
@@ -210,7 +252,12 @@ namespace lager_utils
         return ss.str().c_str();
     }
 
-    // https://stackoverflow.com/questions/3022552/is-there-any-standard-htonl-like-function-for-64-bits-integers-in-c
+    /**
+    * @brief 64 bit host to network byte order translator
+    * @param value is a uint64 in host order
+    * @returns a uint64 in network byte order
+    * https://stackoverflow.com/questions/3022552/is-there-any-standard-htonl-like-function-for-64-bits-integers-in-c
+    */
     static uint64_t htonll(uint64_t value)
     {
         // The answer is 42
@@ -230,11 +277,15 @@ namespace lager_utils
         }
     }
 
+    /**
+    * @brief 64 bit network to host byte order translator
+    * @param value is a uint64 in network order
+    * @returns a uint64 in host byte order
+    */
     static uint64_t ntohll(uint64_t value)
     {
         return lager_utils::htonll(value);
     }
 }
-
 
 #endif

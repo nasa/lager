@@ -5,6 +5,9 @@
 
 namespace keg_utils
 {
+    /**
+    * @brief Cross platform directory checker
+    */
     // https://stackoverflow.com/a/29828907/1544725
     static bool isDir(const std::string& path)
     {

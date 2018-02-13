@@ -9,6 +9,12 @@ Tap::~Tap()
 {
 }
 
+/**
+* @brief Starts the zmq context and initializes the tap with the given bartender information
+* @param serverHost_in is a string containing the IP address or hostname of the bartender to connect to
+* @param basePort is an integer containing the port of the bartender to connect to
+* @returns true on success, false on failure
+*/
 bool Tap::init(const std::string& serverHost_in, int basePort)
 {
     context.reset(new zmq::context_t(1));
@@ -31,15 +37,30 @@ bool Tap::init(const std::string& serverHost_in, int basePort)
     return true;
 }
 
+/**
+* @brief Adds a new data column item to the tap which contains a reference to actual user data being logged
+* @param item is an DataRefItem inherited, templated object containing the info about a particular column as
+* well as a reference to the actual data.
+*/
 void Tap::addItem(AbstractDataRefItem* item)
 {
+    // set the offset of the new item based on order of addition
     item->setOffset(offsetCount);
+
     dataRefItems.push_back(item);
+
+    // keeps track of the offset for later generation of the data format xml
     offsetCount += item->getSize();
 }
 
+/**
+* @brief Starts the tap by setting up the CHP connection to the bartender and starting the publisher thread
+* @param key_in is the "topic name" of this particular tap as it will be represented by the bartender
+* @throws runtime_error if the xml format of the tap was unable to be generated
+*/
 void Tap::start(const std::string& key_in)
 {
+    // TODO this should probably be compiled in from the cmake or something
     version = "BEERR01";
 
     DataFormatParser p;
@@ -57,6 +78,7 @@ void Tap::start(const std::string& key_in)
 
     running = true;
 
+    // sets the hashmap value so it will be sent to the bartender
     chpClient->addOrUpdateKeyValue(key, formatStr);
     chpClient->start();
 
@@ -64,6 +86,9 @@ void Tap::start(const std::string& key_in)
     publisherThreadHandle.detach();
 }
 
+/**
+* @brief Stops the tap by closing the zmq context and stopping chp and the publisher thread
+*/
 void Tap::stop()
 {
     running = false;
@@ -80,6 +105,10 @@ void Tap::stop()
     chpClient->stop();
 }
 
+/**
+* @brief Logs the data references set up by the tap with the current system timestamp
+* The newData flag indicates to the publisher thread that it needs to publish again
+*/
 void Tap::log()
 {
     mutex.lock();
@@ -88,6 +117,9 @@ void Tap::log()
     mutex.unlock();
 }
 
+/**
+* @brief Main publisher thread of the tap
+*/
 void Tap::publisherThread()
 {
     publisherRunning = true;
@@ -127,6 +159,7 @@ void Tap::publisherThread()
                 zmq::message_t tmp(dataRefItems[i]->getSize());
                 dataRefItems[i]->getNetworkDataRef(tmp.data());
 
+                // make sure to use the sndmore flag until the last message
                 if (i < dataRefItems.size() - 1)
                 {
                     publisher.send(tmp, ZMQ_SNDMORE);

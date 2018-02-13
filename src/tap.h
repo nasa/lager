@@ -8,6 +8,9 @@
 #include "chp_client.h"
 #include "data_format_parser.h"
 
+/**
+* @brief The data source object for the lager system
+*/
 class Tap
 {
 public:

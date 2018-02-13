@@ -3,6 +3,7 @@
 #include "mug.h"
 #include "lager_utils.h"
 
+// TODO this test application will be removed
 int main(int argc, char* argv[])
 {
     std::cout << "zmq version: " << lager_utils::getZmqVersion() << std::endl;

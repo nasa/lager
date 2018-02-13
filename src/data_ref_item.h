@@ -8,6 +8,9 @@
 
 #include "lager_utils.h"
 
+/**
+ * @brief Abstract class object used to define a column of data in the data format
+ */
 struct AbstractDataRefItem
 {
     AbstractDataRefItem(const std::string& name_in, const std::string& type_in, size_t size_in):
@@ -22,12 +25,16 @@ struct AbstractDataRefItem
     void setOffset(off_t offset_in) {offset = offset_in;}
 
 protected:
-    std::string name;
-    std::string type;
-    size_t size;
-    off_t offset;
+    std::string name; /*!< a descriptive name for this column of data */
+    std::string type; /*!< a lager data type */
+    size_t size; /*!< the size of the data type */
+    off_t offset; /*!< the offset of this column of data from zero */
 };
 
+/**
+ * @brief Main template overload of the abstract item, not intended for actual use.
+ * Use one of the specialized templates below.
+ */
 template<class T>
 class DataRefItem : public AbstractDataRefItem
 {
