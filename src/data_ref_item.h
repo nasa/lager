@@ -10,8 +10,8 @@
 
 struct AbstractDataRefItem
 {
-    AbstractDataRefItem(const std::string& name_in, const std::string& type_in, off_t size_in):
-        name(name_in), type(type_in), size(size_in) {}
+    AbstractDataRefItem(const std::string& name_in, const std::string& type_in, size_t size_in):
+        name(name_in), type(type_in), size(size_in), offset(0) {}
 
     virtual void getNetworkDataRef(void* data) = 0;
 
