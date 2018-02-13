@@ -19,6 +19,10 @@
 #include "lager_defines.h"
 #include "lager_utils.h"
 
+/**
+ * @brief Client implementation of ZMQ Clustered Hashmap Protocol
+ * https://rfc.zeromq.org/spec:12/CHP/
+ */
 class ClusteredHashmapClient final
 {
 public:

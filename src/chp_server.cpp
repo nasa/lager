@@ -104,6 +104,7 @@ void ClusteredHashmapServer::snapshotThread()
         snapshot.reset(new zmq::socket_t(*context.get(), ZMQ_ROUTER));
         snapshot->bind(lager_utils::getLocalUri(snapshotPort).c_str());
 
+        // Sets up a poller for the snapshot socket
         zmq::pollitem_t items[] = {{static_cast<void*>(*snapshot.get()), 0, ZMQ_POLLIN, 0}};
 
         std::string identity("");
@@ -386,7 +387,6 @@ void ClusteredHashmapServer::collectorThread()
 
         while (running)
         {
-            // Poll the actual socket
             zmq::poll(&items[0], 1, 1000);
 
             // Check for new data

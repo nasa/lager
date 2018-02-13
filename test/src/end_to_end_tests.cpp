@@ -53,6 +53,7 @@ TEST_F(EndToEndTests, SubscriberUpdates)
     b.stop();
 }
 
+// TODO fail if this hangs somehow
 TEST_F(EndToEndTests, DoesItWork)
 {
     uint32_t item1 = 0;

@@ -7,17 +7,23 @@
 
 #include "lager_defines.h"
 
+/**
+ * @brief Struct to hold info about a single column of data
+ */
 struct DataItem
 {
-    std::string name;
-    std::string type;
-    unsigned int size;
-    unsigned int offset;
+    std::string name; // description of data column
+    std::string type; // type as a string correspoding to accepted lager formats
+    size_t size; // size in bytes of the data type
+    off_t offset; // offset in bytes from zero of the column
 
     DataItem(const std::string& n, const std::string& t, unsigned int s, unsigned int o):
         name(n), type(t), size(s), offset(o) {}
 };
 
+/**
+ * @brief Data structure to store the format of a set of data
+ */
 class DataFormat
 {
 public:

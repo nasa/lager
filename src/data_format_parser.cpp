@@ -1,7 +1,9 @@
-#include <sstream>
-
 #include "data_format_parser.h"
 
+/**
+ * @brief Generates xml error string and stores in member lastError
+ * @param ex is a SAXParseException to process (Xerces re-uses the SAX in the DOM parsing)
+ */
 void XercesErrorHandler::reportParseException(const xercesc::SAXParseException& ex)
 {
     char* message = xercesc::XMLString::transcode(ex.getMessage());
@@ -11,25 +13,43 @@ void XercesErrorHandler::reportParseException(const xercesc::SAXParseException& 
     xercesc::XMLString::release(&message);
 }
 
+/**
+ * @brief XML parser warnings, have not found any XML case yet that fires this function
+ * @param ex is a SAXParseException to process
+ */
 void XercesErrorHandler::warning(const xercesc::SAXParseException& ex) {}
 
+/**
+ * @brief XML parser errors
+ * @param ex is a SAXParseException to process
+ */
 void XercesErrorHandler::error(const xercesc::SAXParseException& ex)
 {
     reportParseException(ex);
 }
 
+/**
+ * @brief XML parser errors
+ * @param ex is a SAXParseException to process
+ */
 void XercesErrorHandler::fatalError(const xercesc::SAXParseException& ex)
 {
     reportParseException(ex);
 }
 
-// defaulting to a standard xsd location, prob should formalize this somehow
+/**
+ * @brief Ctor with automatically filled in schema file
+ */
+// TODO should formalize this location somehow
 DataFormatParser::DataFormatParser() : DataFormatParser("data_format.xsd")
 {
 }
 
-// note file path must be full path or same directory.  relative paths don't work
-// TODO documentation: throws
+/**
+ * @brief Ctor with schema file parameter
+ * @param xsdFile_in is a *full path* to a xsd schema file to use (relative path's don't work)
+ * @throws runtime_error on inability to open file
+ */
 DataFormatParser::DataFormatParser(const std::string& xsdFile_in)
 {
     XMLPlatformUtils::Initialize();
@@ -63,6 +83,9 @@ DataFormatParser::DataFormatParser(const std::string& xsdFile_in)
     errHandler = new XercesErrorHandler;
 }
 
+/**
+ * @brief Dtor, releases xerces releated items
+ */
 DataFormatParser::~DataFormatParser()
 {
     if (parser != NULL)
@@ -88,7 +111,12 @@ DataFormatParser::~DataFormatParser()
     XMLPlatformUtils::Terminate();
 }
 
-// TODO documentation: throws
+/**
+ * @brief Parses a given file and returns a structure to the parsed DataFormat
+ * @param xmlFile is a string with a path to an xml file to parse
+ * @returns shared_ptr to a DataFormat containing the parsed data
+ * @throws runtime_error on inability to open file or on bad parse or schema violation
+ */
 std::shared_ptr<DataFormat> DataFormatParser::parseFromFile(const std::string& xmlFile)
 {
     std::ifstream f(xmlFile);
@@ -103,10 +131,16 @@ std::shared_ptr<DataFormat> DataFormatParser::parseFromFile(const std::string& x
     xmlStr = std::string((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
 
     parse();
+
     return format;
 }
 
-// TODO documentation: throws via parse()
+/**
+ * @brief Parses a given xml string and returns a structure to the parsed DataFormat
+ * @param xmlStr_in is a string with the xml data format to parse
+ * @returns shared_ptr to a DataFormat containing the parsed data
+ * @throws runtime_error on a bad parse or schema violation
+ */
 std::shared_ptr<DataFormat> DataFormatParser::parseFromString(const std::string& xmlStr_in)
 {
     xmlStr = xmlStr_in;
@@ -114,10 +148,17 @@ std::shared_ptr<DataFormat> DataFormatParser::parseFromString(const std::string&
     return format;
 }
 
+/**
+ * @brief Parses the xml contained in the member string xmlStr and stores into member format
+ * @throws runtime_error on a bad parse or schema violation
+ */
 void DataFormatParser::parse()
 {
-    parser->loadGrammar(xsdFile.c_str(), Grammar::SchemaGrammarType);
+    // use our custom error handler
     parser->setErrorHandler(errHandler);
+
+    // loads the xsd schema file for use by the parser
+    parser->loadGrammar(xsdFile.c_str(), Grammar::SchemaGrammarType);
     parser->setValidationScheme(XercesDOMParser::Val_Always);
     parser->setDoNamespaces(true);
     parser->setDoSchema(true);
@@ -125,6 +166,7 @@ void DataFormatParser::parse()
 
     try
     {
+        // create the buffer necessary to parse the xml string, 3rd param is unused
         MemBufInputSource xmlBuf((const XMLByte*)xmlStr.c_str(), xmlStr.size(), "unused");
 
         parser->parse(xmlBuf);
@@ -134,14 +176,21 @@ void DataFormatParser::parse()
         if (parser->getErrorCount() != 0)
         {
             std::stringstream ss;
+
+            // grab the detailed error from the handler
             ss << "error in xml: " << errHandler->getLastError();
+
+            // now that we've gotten the error we can reset the error count in the handler
+            // (not sure if this really means anything)
             errHandler->resetErrors();
+
             throw std::runtime_error(ss.str());
         }
 
         xercesc::DOMDocument* doc = parser->getDocument();
         DOMElement* formatElement = doc->getDocumentElement();
 
+        // grab the version
         const XMLCh* xVersion = formatElement->getAttribute(attVersion);
         std::string version(XMLString::transcode(xVersion));
 
@@ -149,6 +198,7 @@ void DataFormatParser::parse()
 
         DOMNodeList* children = formatElement->getChildNodes();
 
+        // iterate the child nodes, looking for item elements
         for (XMLSize_t i = 0; i < children->getLength(); ++i)
         {
             DOMNode* node = children->item(i);
@@ -159,13 +209,15 @@ void DataFormatParser::parse()
 
                 if (XMLString::equals(nodeElement->getTagName(), tagItem))
                 {
+                    // found an item element, now grab the attributes
                     const XMLCh* xName = nodeElement->getAttribute(attName);
                     const XMLCh* xType = nodeElement->getAttribute(attType);
                     const XMLCh* xSize = nodeElement->getAttribute(attSize);
                     const XMLCh* xOffset = nodeElement->getAttribute(attOffset);
 
-                    unsigned int size;
-                    unsigned int offset;
+                    // convert the numeric values to the needed types
+                    size_t size;
+                    off_t offset;
 
                     std::istringstream issSize(XMLString::transcode(xSize));
                     issSize >> size;
@@ -173,6 +225,7 @@ void DataFormatParser::parse()
                     std::istringstream issOffset(XMLString::transcode(xOffset));
                     issOffset >> offset;
 
+                    // add the item to the format
                     format->addItem(DataItem(std::string(XMLString::transcode(xName)),
                                              std::string(XMLString::transcode(xType)),
                                              size, offset));
@@ -186,36 +239,46 @@ void DataFormatParser::parse()
     }
 }
 
+/**
+ * @brief Converts a given array of DataRefItems and generates and stores its xml string into the xmlStr member
+ * @param items is a vector of AbstractDataRefItem to generate from
+ * @param version is a string containing the version of the data format used
+ * @returns true on successful generation, false on failure
+ */
 bool DataFormatParser::createFromDataRefItems(const std::vector<AbstractDataRefItem*>& items, const std::string& version)
 {
-    std::stringstream ss;
-
-    XMLCh* xTempStr = nullptr;
+    // temporary xml strings to use during generation
     XMLCh* xVersion = nullptr;
     XMLCh* xName = nullptr;
     XMLCh* xType = nullptr;
     XMLCh* xSize = nullptr;
     XMLCh* xOffset = nullptr;
+    XMLCh* xFormat = nullptr;
 
-    xTempStr = XMLString::transcode("Range");
-    DOMImplementation* impl = DOMImplementationRegistry::getDOMImplementation(xTempStr);
+    // grab available dom implementation (nullptr = no options)
+    DOMImplementation* impl = DOMImplementationRegistry::getDOMImplementation(nullptr);
 
     if (!impl)
     {
         return false;
     }
 
-    xTempStr = XMLString::transcode("format");
-    xercesc::DOMDocument* doc = impl->createDocument(nullptr, xTempStr, nullptr);
+    // root element is format
+    xFormat = XMLString::transcode("format");
+    xercesc::DOMDocument* doc = impl->createDocument(nullptr, xFormat, nullptr);
     DOMElement* root = doc->getDocumentElement();
 
+    // add the version
     xVersion = XMLString::transcode(version.c_str());
     root->setAttribute(attVersion, xVersion);
 
+    std::stringstream ss;
+
     for (auto i = items.begin(); i != items.end(); ++i)
     {
-        uint32_t size = (*i)->getSize();
-        uint32_t offset = (*i)->getOffset();
+        // grab the numeric values and put them into xml strings
+        size_t size = (*i)->getSize();
+        off_t offset = (*i)->getOffset();
 
         ss.str(std::string());
         ss << size;
@@ -225,26 +288,32 @@ bool DataFormatParser::createFromDataRefItems(const std::vector<AbstractDataRefI
         ss << offset;
         xOffset = XMLString::transcode(ss.str().c_str());
 
+        // grab the remaining info
         xName = XMLString::transcode((*i)->getName().c_str());
         xType = XMLString::transcode((*i)->getType().c_str());
 
+        // create the new element and attributes
         DOMElement* item = doc->createElement(tagItem);
         item->setAttribute(attName, xName);
         item->setAttribute(attType, xType);
         item->setAttribute(attSize, xSize);
         item->setAttribute(attOffset, xOffset);
+
         root->appendChild(item);
     }
 
+    // set the member string
     xmlStr = getStringFromDoc(doc);
 
-    XMLString::release(&xTempStr);
+    // release the xml string resources
+    XMLString::release(&xFormat);
     XMLString::release(&xVersion);
     XMLString::release(&xName);
     XMLString::release(&xType);
     XMLString::release(&xSize);
     XMLString::release(&xOffset);
 
+    // check validity against the schema
     if (!isValid(xmlStr, items.size()))
     {
         return false;
@@ -253,9 +322,17 @@ bool DataFormatParser::createFromDataRefItems(const std::vector<AbstractDataRefI
     return true;
 }
 
+/**
+ * @brief Creates the xml format string for kegs given an existing map of uuid to xml format string
+ * @param map is a map of uuid to xml data format string
+ * @returns true on successful generation, false on failure
+ * @throws runtime_error on bad parse or bad uuid conversion
+ */
+// TODO throw instead of return
 bool DataFormatParser::createFromUuidMap(const std::map<std::string, std::string>& map)
 {
-    XMLCh* xTempStr = nullptr;
+    // temporary xml strings to use during generation
+    XMLCh* xKeg = nullptr;
     XMLCh* xVersion = nullptr;
     XMLCh* xName = nullptr;
     XMLCh* xType = nullptr;
@@ -263,18 +340,20 @@ bool DataFormatParser::createFromUuidMap(const std::map<std::string, std::string
     XMLCh* xOffset = nullptr;
     XMLCh* xUuid = nullptr;
 
-    xTempStr = XMLString::transcode("Range");
-    DOMImplementation* impl = DOMImplementationRegistry::getDOMImplementation(xTempStr);
+    // grab available dom implementation (nullptr = no options)
+    DOMImplementation* impl = DOMImplementationRegistry::getDOMImplementation(nullptr);
 
     if (!impl)
     {
         return false;
     }
 
-    xTempStr = XMLString::transcode("keg");
-    xercesc::DOMDocument* doc = impl->createDocument(nullptr, xTempStr, nullptr);
+    // root element is keg
+    xKeg = XMLString::transcode("keg");
+    xercesc::DOMDocument* doc = impl->createDocument(nullptr, xKeg, nullptr);
     DOMElement* root = doc->getDocumentElement();
 
+    // all formats will go under a formats element
     DOMElement* formatsElem = doc->createElement(tagFormats);
 
     // set up the parser to parse the individual format strings
@@ -287,9 +366,12 @@ bool DataFormatParser::createFromUuidMap(const std::map<std::string, std::string
 
     for (auto i = map.begin(); i != map.end(); ++i)
     {
+        // grabs the human readable string, as the 16 byte version may contain invalid xml characters
         std::string tmpUuid = lager_utils::getUuidString(i->first);
+
         std::string tmpXml = i->second;
 
+        // reset the buffer each time for each new format string in the map
         MemBufInputSource xmlBuf((const XMLByte*)tmpXml.c_str(), tmpXml.size(), "unused");
 
         parser->parse(xmlBuf);
@@ -305,6 +387,8 @@ bool DataFormatParser::createFromUuidMap(const std::map<std::string, std::string
         }
 
         xercesc::DOMDocument* tmpDoc = parser->getDocument();
+
+        // after successful parse, grab the root which is the format element
         DOMElement* tmpFormatRoot = tmpDoc->getDocumentElement();
 
         try
@@ -318,16 +402,23 @@ bool DataFormatParser::createFromUuidMap(const std::map<std::string, std::string
             throw std::runtime_error(ss.str());
         }
 
+        // now add the new uuid attribute to the format element
         tmpFormatRoot->setAttribute(attUuid, xUuid);
+
+        // import with the second param true makes a deep copy of the node
         DOMElement* formatElem = (DOMElement*)doc->importNode(tmpFormatRoot, true);
+
+        // add the new element copy to our final formats element
         formatsElem->appendChild(formatElem);
     }
 
     root->appendChild(formatsElem);
 
+    // now that we have the completed doc, store the xml in the member
     xmlStr = getStringFromDoc(doc);
 
-    XMLString::release(&xTempStr);
+    // release the temporary xml strings
+    XMLString::release(&xKeg);
     XMLString::release(&xVersion);
     XMLString::release(&xName);
     XMLString::release(&xType);
@@ -338,30 +429,44 @@ bool DataFormatParser::createFromUuidMap(const std::map<std::string, std::string
     return true;
 }
 
+/**
+ * @brief Gets the xml from a given DOM document
+ * @param doc is a DOMDocument pointer to a valid DOM document
+ * @returns a string containing the xml from the given document
+ */
 std::string DataFormatParser::getStringFromDoc(xercesc::DOMDocument* doc)
 {
     DOMImplementation* pImplement = nullptr;
     DOMLSSerializer* pSerializer = nullptr;
     MemBufFormatTarget* pTarget = nullptr;
 
-    XMLCh* xTempStr;
-    xTempStr = XMLString::transcode("LS");
-    pImplement = DOMImplementationRegistry::getDOMImplementation(xTempStr);
+    // grab available dom implementation (nullptr = no options)
+    pImplement = DOMImplementationRegistry::getDOMImplementation(nullptr);
+
+    // get the serializer
     pSerializer = ((DOMImplementationLS*)pImplement)->createLSSerializer();
+
+    // set up the target which is a memory buffer
     pTarget = new MemBufFormatTarget();
     DOMLSOutput* pDomLsOutput = ((DOMImplementationLS*)pImplement)->createLSOutput();
     pDomLsOutput->setByteStream(pTarget);
 
+    // write the xml to the buffer
     pSerializer->write(doc, pDomLsOutput);
 
+    // copy the buffer into a real string
     std::string xmlOutput((char*)pTarget->getRawBuffer(), pTarget->getLen());
-
-    XMLString::release(&xTempStr);
 
     return xmlOutput;
 }
 
-// TODO documentation: throws via parseFromString()
+/**
+ * @brief Checks the validity of a DataFormat xml string based on the number of items it should have
+ * @param xml is a string containing the xml to check
+ * @param itemCount is the number of expected items in the list
+ * @returns true if the item counts match, false if not
+ * @throws on a bad xml parse
+ */
 bool DataFormatParser::isValid(const std::string& xml, unsigned int itemCount)
 {
     std::shared_ptr<DataFormat> testFormat = parseFromString(xml);

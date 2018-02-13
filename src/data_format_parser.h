@@ -3,6 +3,7 @@
 
 #include <fstream>
 #include <memory>
+#include <sstream>
 #include <stdint.h>
 #include <string>
 #include <vector>
@@ -21,6 +22,9 @@
 
 using namespace xercesc;
 
+/**
+ * @brief Custom error handler for xercesc parsing
+ */
 class XercesErrorHandler : public xercesc::ErrorHandler
 {
 public:
@@ -34,6 +38,9 @@ private:
     std::string lastError;
 };
 
+/**
+ * @brief A DOM based parser to help lager go from xml to structured formats of data to log
+ */
 class DataFormatParser
 {
 public:
