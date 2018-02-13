@@ -170,7 +170,12 @@ void Mug::subscriberThread()
                 subscriber->recv(&msg);
 
                 subscriber->recv(&msg);
-                timestamp = *(uint64_t*)msg.data();
+                timestamp = *static_cast<uint64_t*>(msg.data());
+
+                if (uuid.size() != UUID_SIZE_BYTES)
+                {
+                    throw std::runtime_error("received invalid uuid size");
+                }
 
                 // uuid is first in the buffer
                 for (size_t i = 0; i < uuid.size(); ++i)
@@ -199,28 +204,28 @@ void Mug::subscriberThread()
                     {
                         case 1:
                             data.resize(data.size() + 1);
-                            tmp8 = *(uint8_t*)msg.data();
+                            tmp8 = *static_cast<uint8_t*>(msg.data());
                             data.push_back(tmp8);
                             offset += 1;
                             break;
 
                         case 2:
                             data.resize(data.size() + 2);
-                            tmp16 = *(uint16_t*)msg.data();
+                            tmp16 = *static_cast<uint16_t*>(msg.data());
                             *(reinterpret_cast<uint16_t*>(data.data() + offset)) = tmp16;
                             offset += 2;
                             break;
 
                         case 4:
                             data.resize(data.size() + 4);
-                            tmp32 = *(uint32_t*)msg.data();
+                            tmp32 = *static_cast<uint32_t*>(msg.data());
                             *(reinterpret_cast<uint32_t*>(data.data() + offset)) = tmp32;
                             offset += 4;
                             break;
 
                         case 8:
                             data.resize(data.size() + 8);
-                            tmp64 = *(uint64_t*)msg.data();
+                            tmp64 = *static_cast<uint64_t*>(msg.data());
                             *(reinterpret_cast<uint64_t*>(data.data() + offset)) = tmp64;
                             offset += 8;
                             break;
@@ -230,13 +235,13 @@ void Mug::subscriberThread()
                             break;
                     }
 
-                    // write out the data
-                    // TODO this should probably be some kind of callback function
-                    keg->write(data, data.size());
-
                     // check for more multipart messages
                     subscriber->getsockopt(ZMQ_RCVMORE, &rcvMore, &moreSize);
                 }
+
+                // write out the data
+                // TODO this should probably be some kind of callback function
+                keg->write(data, data.size());
             }
         }
     }

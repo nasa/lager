@@ -235,7 +235,7 @@ namespace lager_utils
             tzset();
             localtime_r(&timeT, &timeInfo);
 #endif
-            strftime(outputBuffer, 500, format.c_str(), &timeInfo);
+            strftime(outputBuffer, sizeof(outputBuffer), format.c_str(), &timeInfo);
             ss << outputBuffer;
         }
         else
