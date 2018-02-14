@@ -4,8 +4,8 @@
 #include <future>
 #include <memory>
 
-#include "lager/chp_server.h"
-#include "lager/forwarder.h"
+#include "chp_server.h"
+#include "forwarder.h"
 
 /**
  * @brief Bartender provides a middleware layer for the Lager system

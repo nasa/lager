@@ -8,7 +8,7 @@
 
 #include <zmq.hpp>
 
-#include "lager/lager_defines.h"
+#include "lager_defines.h"
 #include "lager/lager_utils.h"
 
 /**

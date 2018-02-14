@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "lager/lager_defines.h"
+#include "lager_defines.h"
 #include "lager/lager_utils.h"
 
 class LagerUtilTests : public ::testing::Test

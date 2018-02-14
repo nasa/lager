@@ -7,8 +7,8 @@
 #include <thread>
 #include <vector>
 
-#include "lager/chp_client.h"
-#include "lager/data_format_parser.h"
+#include "chp_client.h"
+#include "data_format_parser.h"
 #include "lager/keg.h"
 
 /**

@@ -5,10 +5,12 @@ Light-weight Accumulator Gathering Efficiently in Real-time
    
 Lager is a light-weight logging system.
    
-[![pipeline status](https://js-er-code.jsc.nasa.gov/lager/lager/badges/develop/pipeline.svg)](https://js-er-code.jsc.nasa.gov/lager/lager/commits/develop)   
+Master   
+[![pipeline status](https://js-er-code.jsc.nasa.gov/lager/lager/badges/master/pipeline.svg)](https://js-er-code.jsc.nasa.gov/lager/lager/commits/master) [![coverage report](https://js-er-code.jsc.nasa.gov/lager/lager/badges/master/coverage.svg)](https://artifacts.jsc.nasa.gov/artifactory/doc/lager/lager/master/coverage/index.html)   
    
-[![coverage report](https://js-er-code.jsc.nasa.gov/lager/lager/badges/develop/coverage.svg)](https://artifacts.jsc.nasa.gov/artifactory/doc/lager/lager/develop/coverage/index.html)   
-   
+Develop   
+[![pipeline status](https://js-er-code.jsc.nasa.gov/lager/lager/badges/develop/pipeline.svg)](https://js-er-code.jsc.nasa.gov/lager/lager/commits/develop) [![coverage report](https://js-er-code.jsc.nasa.gov/lager/lager/badges/develop/coverage.svg)](https://artifacts.jsc.nasa.gov/artifactory/doc/lager/lager/develop/coverage/index.html)   
+
 ### Dependencies Linux
 
 Package dependencies   

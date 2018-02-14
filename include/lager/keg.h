@@ -9,7 +9,7 @@
 #include <vector>
 #include <sys/stat.h>
 
-#include "lager/data_format_parser.h"
+#include "data_format_parser.h"
 #include "lager/keg_utils.h"
 #include "lager/lager_utils.h"
 

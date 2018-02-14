@@ -1,4 +1,4 @@
-#include "lager/chp_client.h"
+#include "chp_client.h"
 
 /**
  * @brief Constructor, sets the various ports needed by Lager
