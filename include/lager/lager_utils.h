@@ -249,7 +249,7 @@ namespace lager_utils
             ss << outputBuffer;
         }
 
-        return ss.str().c_str();
+        return ss.str();
     }
 
     /**

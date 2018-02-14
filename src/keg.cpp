@@ -33,12 +33,13 @@ void Keg::addFormat(const std::string& uuid, const std::string& formatStr)
 
 /**
  * @brief Opens the keg's output file and writes the initially blank version and offset values
+ * @throws runtime_error if keg is already running
  */
 void Keg::start()
 {
     if (running)
     {
-        return;
+        throw std::runtime_error("attempted to start a keg that's already running");
     }
 
     std::stringstream ss;
@@ -58,12 +59,13 @@ void Keg::start()
 
 /**
  * @brief Calls the update to the file header and closes the file
+ * @throws runtime_error if keg is not running
  */
 void Keg::stop()
 {
     if (!running)
     {
-        return;
+        throw std::runtime_error("attempted to stop a keg that's not running");
     }
 
     running = false;
