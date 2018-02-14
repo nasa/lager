@@ -64,7 +64,7 @@ Replace `Visual Studio 15 2017` with your appropriate version.
 
 Open a terminal window and run the bartender   
    
-`./bartender`   
+`./test_bartender`   
    
 Open a second terminal window and run the tap   
    
