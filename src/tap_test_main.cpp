@@ -5,7 +5,7 @@
 
 #include <zmq.hpp>
 
-#include "tap.h"
+#include "lager/tap.h"
 
 // TODO this test application will be removed
 int main(int argc, char* argv[])

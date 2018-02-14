@@ -2,8 +2,8 @@
 
 #include <gtest/gtest.h>
 
-#include "keg.h"
-#include "lager_utils.h"
+#include "lager/keg.h"
+#include "lager/lager_utils.h"
 
 class KegTests : public ::testing::Test
 {

@@ -7,9 +7,9 @@
 #include <thread>
 #include <vector>
 
-#include "chp_client.h"
-#include "data_format_parser.h"
-#include "keg.h"
+#include "lager/chp_client.h"
+#include "lager/data_format_parser.h"
+#include "lager/keg.h"
 
 /**
 * @brief The data sink object for the lager system

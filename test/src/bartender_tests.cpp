@@ -2,8 +2,8 @@
 
 #include <gtest/gtest.h>
 
-#include "bartender.h"
-#include "lager_utils.h"
+#include "lager/bartender.h"
+#include "lager/lager_utils.h"
 
 class BartenderTests : public ::testing::Test
 {

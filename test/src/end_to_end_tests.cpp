@@ -2,10 +2,10 @@
 
 #include <gtest/gtest.h>
 
-#include "bartender.h"
-#include "mug.h"
-#include "tap.h"
-#include "lager_utils.h"
+#include "lager/bartender.h"
+#include "lager/mug.h"
+#include "lager/tap.h"
+#include "lager/lager_utils.h"
 
 class EndToEndTests : public ::testing::Test
 {

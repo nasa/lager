@@ -1,7 +1,7 @@
 #include <zmq.hpp>
 
-#include "mug.h"
-#include "lager_utils.h"
+#include "lager/mug.h"
+#include "lager/lager_utils.h"
 
 // TODO this test application will be removed
 int main(int argc, char* argv[])

@@ -1,4 +1,4 @@
-#include "keg.h"
+#include "lager/keg.h"
 
 /**
  * @brief Keg constructor
@@ -19,9 +19,15 @@ Keg::Keg(const std::string& baseDir_in): baseDir(baseDir_in), version(1), runnin
  * @brief Adds the given data format to the format uuid map
  * @param uuid is a string containing the 16 byte uuid of the data format
  * @param formatStr is a string containing the xml of the data format
+ * @throws runtime_error on duplicate uuid
  */
 void Keg::addFormat(const std::string& uuid, const std::string& formatStr)
 {
+    if (formatMap.count(uuid))
+    {
+        throw std::runtime_error("attempted to add duplicate uuid to formatMap");
+    }
+
     formatMap[uuid] = formatStr;
 }
 
@@ -30,6 +36,11 @@ void Keg::addFormat(const std::string& uuid, const std::string& formatStr)
  */
 void Keg::start()
 {
+    if (running)
+    {
+        return;
+    }
+
     std::stringstream ss;
     ss << baseDir << "/" << lager_utils::getCurrentTimeFormatted("%Y%m%d_%H%M%S") << ".lgr";
     logFileName = ss.str();
@@ -40,8 +51,8 @@ void Keg::start()
     uint64_t emptyOffset = 0;
 
     logFile.open(logFileName.c_str(), std::ios::out | std::ios::binary);
-    logFile.write((char*)&emptyVersion, sizeof(uint16_t));
-    logFile.write((char*)&emptyOffset, sizeof(uint64_t));
+    logFile.write((char*)&emptyVersion, sizeof(emptyVersion));
+    logFile.write((char*)&emptyOffset, sizeof(emptyOffset));
     running = true;
 }
 
@@ -50,8 +61,13 @@ void Keg::start()
  */
 void Keg::stop()
 {
+    if (!running)
+    {
+        return;
+    }
+
     running = false;
-    writeHeaderAndFormats();
+    writeFormatsAndHeader();
     logFile.close();
 }
 
@@ -72,7 +88,7 @@ void Keg::write(const std::vector<uint8_t>& data, size_t size)
 /**
  * @brief Updates the file header with the finalized version and format offsets
  */
-void Keg::writeHeaderAndFormats()
+void Keg::writeFormatsAndHeader()
 {
     uint64_t pos = logFile.tellp();
 
@@ -80,18 +96,15 @@ void Keg::writeHeaderAndFormats()
     uint64_t posN = lager_utils::htonll(pos);
     uint16_t versionN = htons(version);
 
-    // seek back to beginning of file to write the version and offset
-    logFile.seekp(0);
-
-    logFile.write((char*)&versionN, sizeof(uint16_t));
-    logFile.write((char*)&posN, sizeof(uint64_t));
-
-    // seek the file back to where it needs to be
-    logFile.seekp(pos);
-
     // write the formats
     std::string formatStr = getFormatString();
     logFile.write(reinterpret_cast<const char*>(formatStr.c_str()), formatStr.length());
+
+    // seek back to beginning of file to write the version and offset
+    logFile.seekp(0);
+
+    logFile.write((char*)&versionN, sizeof(versionN));
+    logFile.write((char*)&posN, sizeof(posN));
 }
 
 /**

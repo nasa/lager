@@ -5,8 +5,8 @@
 #include <memory>
 #include <vector>
 
-#include "chp_client.h"
-#include "data_format_parser.h"
+#include "lager/chp_client.h"
+#include "lager/data_format_parser.h"
 
 /**
 * @brief The data source object for the lager system

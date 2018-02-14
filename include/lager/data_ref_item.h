@@ -6,7 +6,7 @@
 #include <typeinfo>
 #include <stdexcept>
 
-#include "lager_utils.h"
+#include "lager/lager_utils.h"
 
 /**
  * @brief Abstract class object used to define a column of data in the data format

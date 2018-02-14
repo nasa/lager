@@ -8,8 +8,8 @@
 
 #include <zmq.hpp>
 
-#include "lager_defines.h"
-#include "lager_utils.h"
+#include "lager/lager_defines.h"
+#include "lager/lager_utils.h"
 
 /**
  * @brief ZMQ XPUB/XSUB implementation to forward many to many PUB/SUBs

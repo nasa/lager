@@ -17,8 +17,8 @@
 #include <xercesc/util/TranscodingException.hpp>
 #include <xercesc/util/XMLString.hpp>
 
-#include "data_format.h"
-#include "data_ref_item.h"
+#include "lager/data_format.h"
+#include "lager/data_ref_item.h"
 
 using namespace xercesc;
 

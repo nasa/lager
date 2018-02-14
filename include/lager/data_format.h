@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "lager_defines.h"
+#include "lager/lager_defines.h"
 
 /**
  * @brief Struct to hold info about a single column of data

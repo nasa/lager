@@ -2,8 +2,8 @@
 
 #include <gtest/gtest.h>
 
-#include "mug.h"
-#include "lager_utils.h"
+#include "lager/mug.h"
+#include "lager/lager_utils.h"
 
 class MugTests : public ::testing::Test
 {

@@ -27,7 +27,7 @@ include_directories(
     ${ZeroMQ_INCLUDE_DIRS}
     ${LIBUUID_INCLUDE_DIRS}
     ${XercesC_INCLUDE_DIRS}
-    src)
+    include)
 
 # Sources 
 set(BARTENDER_SRCS

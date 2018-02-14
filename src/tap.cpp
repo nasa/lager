@@ -1,4 +1,4 @@
-#include "tap.h"
+#include "lager/tap.h"
 
 Tap::Tap(): publisherPort(0), running(false), newData(false), flags(0), offsetCount(0), timestamp(0),
     publisherRunning(false)
@@ -109,6 +109,7 @@ void Tap::stop()
 * @brief Logs the data references set up by the tap with the current system timestamp
 * The newData flag indicates to the publisher thread that it needs to publish again
 */
+// TODO allow user to pass the timestamp in
 void Tap::log()
 {
     mutex.lock();

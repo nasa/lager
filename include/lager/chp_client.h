@@ -16,8 +16,8 @@
 
 #include <zmq.hpp>
 
-#include "lager_defines.h"
-#include "lager_utils.h"
+#include "lager/lager_defines.h"
+#include "lager/lager_utils.h"
 
 /**
  * @brief Client implementation of ZMQ Clustered Hashmap Protocol

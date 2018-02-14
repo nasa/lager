@@ -213,7 +213,7 @@ namespace lager_utils
 
     /**
     * @brief Gets a formatted string containing the current system time
-    * @param format is a standard ctime based format specifier
+    * @param format is a standard strftime format specifier
     * @param local is an option boolean parameter specifying whether the time should be local or gmt (defaults true)
     * @returns a string containing the current system time formatted as per the input parameters
     */
@@ -245,7 +245,7 @@ namespace lager_utils
 #else
             gmtime_r(&timeT, &timeInfo);
 #endif
-            strftime(outputBuffer, 500, format.c_str(), &timeInfo);
+            strftime(outputBuffer, sizeof(outputBuffer), format.c_str(), &timeInfo);
             ss << outputBuffer;
         }
 

@@ -9,9 +9,9 @@
 #include <vector>
 #include <sys/stat.h>
 
-#include "data_format_parser.h"
-#include "keg_utils.h"
-#include "lager_utils.h"
+#include "lager/data_format_parser.h"
+#include "lager/keg_utils.h"
+#include "lager/lager_utils.h"
 
 /**
  * @brief Object used to write lager data to non-volatile storage
@@ -26,7 +26,7 @@ public:
     void addFormat(const std::string& uuid, const std::string& formatStr);
 
 private:
-    void writeHeaderAndFormats();
+    void writeFormatsAndHeader();
     std::string getFormatString();
     std::fstream logFile;
 
