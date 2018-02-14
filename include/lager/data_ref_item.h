@@ -6,12 +6,15 @@
 #include <typeinfo>
 #include <stdexcept>
 
-#include "lager_utils.h"
+#include "lager/lager_utils.h"
 
+/**
+ * @brief Abstract class object used to define a column of data in the data format
+ */
 struct AbstractDataRefItem
 {
-    AbstractDataRefItem(const std::string& name_in, const std::string& type_in, off_t size_in):
-        name(name_in), type(type_in), size(size_in) {}
+    AbstractDataRefItem(const std::string& name_in, const std::string& type_in, size_t size_in):
+        name(name_in), type(type_in), size(size_in), offset(0) {}
 
     virtual void getNetworkDataRef(void* data) = 0;
 
@@ -22,12 +25,16 @@ struct AbstractDataRefItem
     void setOffset(off_t offset_in) {offset = offset_in;}
 
 protected:
-    std::string name;
-    std::string type;
-    size_t size;
-    off_t offset;
+    std::string name; /*!< a descriptive name for this column of data */
+    std::string type; /*!< a lager data type */
+    size_t size; /*!< the size of the data type */
+    off_t offset; /*!< the offset of this column of data from zero */
 };
 
+/**
+ * @brief Main template overload of the abstract item, not intended for actual use.
+ * Use one of the specialized templates below.
+ */
 template<class T>
 class DataRefItem : public AbstractDataRefItem
 {
@@ -96,7 +103,7 @@ template<> inline void DataRefItem<uint32_t>::getNetworkDataRef(void* data)
 }
 
 template<> inline DataRefItem<float>::DataRefItem(const std::string& name_in, float* dataRef_in):
-    AbstractDataRefItem(name_in, "float", sizeof(float)),
+    AbstractDataRefItem(name_in, "float32", sizeof(float)),
     dataRef(dataRef_in) {}
 
 template<> inline void DataRefItem<float>::getNetworkDataRef(void* data)
@@ -132,7 +139,7 @@ template<> inline void DataRefItem<int64_t>::getNetworkDataRef(void* data)
 }
 
 template<> inline DataRefItem<double>::DataRefItem(const std::string& name_in, double* dataRef_in):
-    AbstractDataRefItem(name_in, "double", sizeof(double)),
+    AbstractDataRefItem(name_in, "float64", sizeof(double)),
     dataRef(dataRef_in) {}
 
 template<> inline void DataRefItem<double>::getNetworkDataRef(void* data)

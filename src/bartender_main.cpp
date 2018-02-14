@@ -1,6 +1,7 @@
-#include "bartender.h"
-#include "lager_utils.h"
+#include "lager/bartender.h"
+#include "lager/lager_utils.h"
 
+// TODO this test application will be removed
 int main(int argc, char* argv[])
 {
     std::cout << "zmq version: " << lager_utils::getZmqVersion() << std::endl;

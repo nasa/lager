@@ -4,9 +4,9 @@
 
 #include <gtest/gtest.h>
 
-#include "data_format.h"
-#include "data_format_parser.h"
-#include "lager_utils.h"
+#include "lager/data_format.h"
+#include "lager/data_format_parser.h"
+#include "lager/lager_utils.h"
 
 class DataFormatTests : public ::testing::Test {};
 

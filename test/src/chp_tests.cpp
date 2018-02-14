@@ -4,9 +4,9 @@
 
 #include <zmq.hpp>
 
-#include "chp_server.h"
-#include "chp_client.h"
-#include "lager_utils.h"
+#include "lager/chp_server.h"
+#include "lager/chp_client.h"
+#include "lager/lager_utils.h"
 
 class ChpTests : public ::testing::Test
 {

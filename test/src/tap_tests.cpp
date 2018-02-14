@@ -2,8 +2,8 @@
 
 #include <gtest/gtest.h>
 
-#include "tap.h"
-#include "lager_utils.h"
+#include "lager/tap.h"
+#include "lager/lager_utils.h"
 
 class TapTests : public ::testing::Test
 {

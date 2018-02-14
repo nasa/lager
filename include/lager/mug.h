@@ -7,31 +7,41 @@
 #include <thread>
 #include <vector>
 
-#include "chp_client.h"
+#include "lager/chp_client.h"
+#include "lager/data_format_parser.h"
+#include "lager/keg.h"
 
+/**
+* @brief The data sink object for the lager system
+*/
 class Mug
 {
 public:
     Mug();
     virtual ~Mug();
 
-    bool init(const std::string& serverHost_in, int basePort);
+    bool init(const std::string& serverHost_in, int basePort, const std::string& kegDir = "./");
     void start();
     void stop();
-    void log(int data);
 
 private:
     void subscriberThread();
+    void hashMapUpdated();
 
+    std::shared_ptr<Keg> keg;
     std::shared_ptr<ClusteredHashmapClient> chpClient;
     std::shared_ptr<zmq::context_t> context;
     std::shared_ptr<zmq::socket_t> subscriber;
+    std::function<void()> hashMapUpdatedHandle;
 
     std::thread subscriberThreadHandle;
     std::mutex mutex;
     std::condition_variable subscriberCv;
 
-    std::map<std::string, std::vector<uint8_t> > payloads;
+    std::map<std::string, std::string> hashMap; // <topic name, xml format>
+    std::map<std::string, std::shared_ptr<DataFormat>> formatMap; // <uuid, dataformat>
+    std::vector<std::string> subscribedList; // <topic name>
+    std::shared_ptr<DataFormatParser> formatParser;
 
     std::string serverHost;
     std::string uuid;

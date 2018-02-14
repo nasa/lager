@@ -27,7 +27,7 @@ include_directories(
     ${ZeroMQ_INCLUDE_DIRS}
     ${LIBUUID_INCLUDE_DIRS}
     ${XercesC_INCLUDE_DIRS}
-    src)
+    include)
 
 # Sources 
 set(BARTENDER_SRCS
@@ -40,6 +40,9 @@ set(TAP_SRCS
 set(MUG_SRCS
     src/mug.cpp)
 
+set(KEG_SRCS
+    src/keg.cpp)
+
 set(DATA_FORMAT_SRCS
     src/data_format.cpp
     src/data_format_parser.cpp)
@@ -48,6 +51,7 @@ set(CHP_SRCS
     src/chp_server.cpp
     src/chp_client.cpp)
 
+# libraries
 add_library(chp SHARED ${CHP_SRCS})
 target_link_libraries(chp
     ${LIBUUID_LIBRARIES}
@@ -57,6 +61,9 @@ target_link_libraries(chp
 add_library(dataformat SHARED ${DATA_FORMAT_SRCS})
 target_link_libraries(dataformat ${XercesC_LIBRARIES})
 
+add_library(keg SHARED ${KEG_SRCS})
+target_link_libraries(keg dataformat chp)
+
 add_library(bartender SHARED ${BARTENDER_SRCS})
 target_link_libraries(bartender chp)
 
@@ -64,9 +71,10 @@ add_library(tap SHARED ${TAP_SRCS} ${DATA_FORMAT_SRCS})
 target_link_libraries(tap dataformat chp)
 
 add_library(mug SHARED ${MUG_SRCS})
-target_link_libraries(mug chp)
+target_link_libraries(mug chp keg dataformat)
 
-# Targets for bartender and test tap
+# Targets for bartender and test apps
+# TODO remove these later
 add_executable(test_bartender src/bartender_main.cpp)
 target_link_libraries(test_bartender bartender)
 
@@ -119,6 +127,13 @@ if (WIN32)
     endforeach()    
 endif()
 
+# cppcheck
+if (NOT WIN32)
+    include(cppcheck)
+    add_custom_target(cppcheck DEPENDS ${CPPCHECK_OUTPUT}.touch)
+endif()
+
+# testing
 if (BUILD_TESTS)
     enable_testing()
     add_subdirectory(test)

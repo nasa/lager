@@ -15,13 +15,13 @@
 
 #include <zmq.hpp>
 
-#include "lager_defines.h"
-#include "lager_utils.h"
+#include "lager/lager_defines.h"
+#include "lager/lager_utils.h"
 
 class ClusteredHashmapServer final
 {
 public:
-    ClusteredHashmapServer(int basePort);
+    explicit ClusteredHashmapServer(int basePort);
 
     void init(std::shared_ptr<zmq::context_t> context_in);
     void addOrUpdateKeyValue(const std::string& key, const std::string& value);
@@ -54,9 +54,9 @@ private:
     std::condition_variable collectorCv;
     std::mutex mutex;
 
-    std::map<std::string, std::string> hashMap;
-    std::map<std::string, std::string> uuidMap;
-    std::vector<std::string> updatedKeys;
+    std::map<std::string, std::string> hashMap; // <topic name, xml format>
+    std::map<std::string, std::string> uuidMap; // <uuid, topic name>
+    std::vector<std::string> updatedKeys; // <topic name>
 
     int snapshotPort;
     int publisherPort;

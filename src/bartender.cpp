@@ -1,12 +1,18 @@
-#include "bartender.h"
+#include "lager/bartender.h"
 
 Bartender::Bartender()
 {
 }
 
+/**
+ * @brief Starts the zmq context and initializes the underlying CHP and XPUB sockets
+ * @param basePort is the base port used for all Lager communication
+ * @return true on success, false on failure
+ */
 bool Bartender::init(int basePort)
 {
-    if (basePort < 0 || basePort > 65535)
+    // make sure basePort is a valid port
+    if (basePort < 0 || basePort > BASEPORT_MAX)
     {
         // TODO have user optional stream output?
         return false;
@@ -31,12 +37,18 @@ bool Bartender::init(int basePort)
     return true;
 }
 
+/**
+ * @brief Starts the sockets listening
+ */
 void Bartender::start()
 {
     registrar->start();
     forwarder->start();
 }
 
+/**
+ * @brief Closes the zmq context and stops the sockets
+ */
 void Bartender::stop()
 {
     context->close();

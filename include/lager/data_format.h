@@ -5,30 +5,36 @@
 #include <string>
 #include <vector>
 
-#include "lager_defines.h"
+#include "lager/lager_defines.h"
 
+/**
+ * @brief Struct to hold info about a single column of data
+ */
 struct DataItem
 {
-    std::string name;
-    std::string type;
-    unsigned int size;
-    unsigned int offset;
+    std::string name; // description of data column
+    std::string type; // type as a string correspoding to accepted lager formats
+    size_t size; // size in bytes of the data type
+    off_t offset; // offset in bytes from zero of the column
 
     DataItem(const std::string& n, const std::string& t, unsigned int s, unsigned int o):
         name(n), type(t), size(s), offset(o) {}
 };
 
+/**
+ * @brief Data structure to store the format of a set of data
+ */
 class DataFormat
 {
 public:
-    DataFormat(const std::string& version);
+    explicit DataFormat(const std::string& version);
     virtual ~DataFormat();
 
     std::vector<DataItem> getItems() {return items;}
     unsigned int getItemCount() {return items.size();}
     std::string getVersion() {return version;}
+    size_t getItemsSize() {return itemsSize;}
 
-    unsigned int getPayloadSize();
     void addItem(const DataItem& item);
 
     friend std::ostream& operator<<(std::ostream& stream, const DataFormat& df)
@@ -46,6 +52,7 @@ public:
 private:
     std::vector<DataItem> items;
     std::string version;
+    size_t itemsSize;
 };
 
 #endif

@@ -16,9 +16,13 @@
 
 #include <zmq.hpp>
 
-#include "lager_defines.h"
-#include "lager_utils.h"
+#include "lager/lager_defines.h"
+#include "lager/lager_utils.h"
 
+/**
+ * @brief Client implementation of ZMQ Clustered Hashmap Protocol
+ * https://rfc.zeromq.org/spec:12/CHP/
+ */
 class ClusteredHashmapClient final
 {
 public:
@@ -27,10 +31,12 @@ public:
     void init(std::shared_ptr<zmq::context_t> context_in, const std::string& uuid);
     void addOrUpdateKeyValue(const std::string& key, const std::string& value);
     void removeKey(const std::string& key);
+    void setCallback(const std::function<void()>& func);
     void start();
     void stop();
     bool isTimedOut() {return timedOut;};
     std::map<std::string, std::string> getHashMap() {return hashMap;}
+    std::map<std::string, std::string> getUuidMap() {return uuidMap;}
 
 private:
     void snapshotThread();
@@ -42,6 +48,7 @@ private:
     std::shared_ptr<zmq::socket_t> snapshot;
     std::shared_ptr<zmq::socket_t> subscriber;
     std::shared_ptr<zmq::socket_t> publisher;
+    std::function<void()> hashMapUpdated;
 
     std::thread snapshotThreadHandle;
     std::thread subscriberThreadHandle;
@@ -50,7 +57,8 @@ private:
     std::condition_variable subscriberCv;
     std::mutex mutex;
 
-    std::map<std::string, std::string> hashMap;
+    std::map<std::string, std::string> hashMap; // <topic name, xml format>
+    std::map<std::string, std::string> uuidMap; // <uuid, topic name>
 
     std::string uuid;
     std::string serverHost;

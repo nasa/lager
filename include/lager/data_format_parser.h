@@ -3,6 +3,7 @@
 
 #include <fstream>
 #include <memory>
+#include <sstream>
 #include <stdint.h>
 #include <string>
 #include <vector>
@@ -13,13 +14,17 @@
 #include <xercesc/framework/MemBufInputSource.hpp>
 #include <xercesc/framework/MemBufFormatTarget.hpp>
 #include <xercesc/util/PlatformUtils.hpp>
+#include <xercesc/util/TranscodingException.hpp>
 #include <xercesc/util/XMLString.hpp>
 
-#include "data_format.h"
-#include "data_ref_item.h"
+#include "lager/data_format.h"
+#include "lager/data_ref_item.h"
 
 using namespace xercesc;
 
+/**
+ * @brief Custom error handler for xercesc parsing
+ */
 class XercesErrorHandler : public xercesc::ErrorHandler
 {
 public:
@@ -33,11 +38,14 @@ private:
     std::string lastError;
 };
 
+/**
+ * @brief A DOM based parser to help lager go from xml to structured formats of data to log
+ */
 class DataFormatParser
 {
 public:
     DataFormatParser();
-    DataFormatParser(const std::string& xsdFile_in);
+    explicit DataFormatParser(const std::string& xsdFile_in);
     ~DataFormatParser();
 
     std::string getXmlStr() {return xmlStr;};
@@ -45,6 +53,7 @@ public:
     std::shared_ptr<DataFormat> parseFromFile(const std::string& xmlFile);
     std::shared_ptr<DataFormat> parseFromString(const std::string& xmlStr_in);
     bool createFromDataRefItems(const std::vector<AbstractDataRefItem*>& items, const std::string& version);
+    bool createFromUuidMap(const std::map<std::string, std::string>& map);
     bool isValid(const std::string& xml, unsigned int itemCount);
 
 private:
@@ -56,11 +65,17 @@ private:
 
     XMLCh* tagFormat;
     XMLCh* tagItem;
+    XMLCh* tagFormats;
+    XMLCh* tagMeta;
+    XMLCh* tagMetaData;
     XMLCh* attVersion;
     XMLCh* attName;
     XMLCh* attType;
     XMLCh* attSize;
     XMLCh* attOffset;
+    XMLCh* attUuid;
+    XMLCh* attKey;
+    XMLCh* attValue;
 
     std::shared_ptr<DataFormat> format;
 

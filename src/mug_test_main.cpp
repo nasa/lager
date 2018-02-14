@@ -1,8 +1,9 @@
 #include <zmq.hpp>
 
-#include "mug.h"
-#include "lager_utils.h"
+#include "lager/mug.h"
+#include "lager/lager_utils.h"
 
+// TODO this test application will be removed
 int main(int argc, char* argv[])
 {
     std::cout << "zmq version: " << lager_utils::getZmqVersion() << std::endl;
@@ -11,7 +12,7 @@ int main(int argc, char* argv[])
     m.init("localhost", 12345);
     m.start();
 
-    lager_utils::sleepMillis(60000);
+    lager_utils::sleepMillis(10000);
 
     m.stop();
 

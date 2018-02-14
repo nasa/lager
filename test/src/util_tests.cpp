@@ -1,16 +1,22 @@
 #include <gtest/gtest.h>
 
-#include "lager_defines.h"
-#include "lager_utils.h"
+#include "lager/lager_defines.h"
+#include "lager/lager_utils.h"
 
 class LagerUtilTests : public ::testing::Test
 {};
 
 TEST_F(LagerUtilTests, UuidLength)
 {
-#ifndef _WIN32
     ASSERT_EQ(lager_utils::getUuid().size(), UUID_SIZE_BYTES);
-#endif
+}
+
+TEST_F(LagerUtilTests, UuidParseAndBack)
+{
+    std::string uuid = lager_utils::getUuid();
+    std::string uuidStr = lager_utils::getUuidString(uuid);
+    std::string uuid2 = lager_utils::getUuid(uuidStr);
+    ASSERT_STREQ(uuid.c_str(), uuid2.c_str());
 }
 
 TEST_F(LagerUtilTests, LocalUri)
@@ -26,6 +32,12 @@ TEST_F(LagerUtilTests, RemoteUri)
 TEST_F(LagerUtilTests, ZmqVersion)
 {
     ASSERT_STREQ(lager_utils::getZmqVersion().c_str(), ZMQ_VER);
+}
+
+TEST_F(LagerUtilTests, GetTime)
+{
+    std::string gmtTime = lager_utils::getCurrentTimeFormatted("%Y%m%d", false);
+    std::string localTime = lager_utils::getCurrentTimeFormatted("%Y%m%d");
 }
 
 int main(int argc, char* argv[])

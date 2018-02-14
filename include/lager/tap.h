@@ -5,9 +5,12 @@
 #include <memory>
 #include <vector>
 
-#include "chp_client.h"
-#include "data_format_parser.h"
+#include "lager/chp_client.h"
+#include "lager/data_format_parser.h"
 
+/**
+* @brief The data source object for the lager system
+*/
 class Tap
 {
 public:
@@ -46,10 +49,6 @@ private:
     bool newData;
     bool running;
     bool publisherRunning;
-
-    // demo
-    uint32_t int1;
-    uint32_t int2;
 };
 
 #endif
