@@ -12,7 +12,7 @@ find_package(XercesC REQUIRED)
 # grab the version
 include(VersionMacros)
 file(READ "VERSION" versionFile)
-string(REGEX REPLACE "\n$" "" version ${versionFile})
+string(STRIP ${versionFile} version)
 version_str_to_ints(VERSION_MAJOR VERSION_MINOR VERSION_PATCH ${version})
 message(STATUS "Lager version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 
