@@ -20,7 +20,8 @@ public:
     Mug();
     virtual ~Mug();
 
-    bool init(const std::string& serverHost_in, int basePort, const std::string& kegDir = "./");
+    bool init(const std::string& serverHost_in, int basePort, int timeOutMillis,
+              const std::string& kegDir = "./");
     void start();
     void stop();
 

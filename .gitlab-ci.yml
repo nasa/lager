@@ -47,13 +47,21 @@ coverage:
   script:   
     - mkdir build
     - cd build
-    - cmake -DCMAKE_BUILD_TYPE=Coverage .. && make && make run_coverage
+    - cmake -DCMAKE_BUILD_TYPE=Coverage .. && make && make test
   coverage: '/lines[\.]+\: (\d+\.\d+)\%/'
   artifacts:
     paths:
       - build/coverage/
 
-report:
+benchmark:
+  stage: postbuild
+  image: js-er-code.jsc.nasa.gov:5005/lager/lager_image_base_xenial:stable
+  script:   
+    - mkdir build
+    - cd build
+    - cmake -DCMAKE_BUILD_TYPE=Release .. && make && make run_benchmarks
+
+coverage-report:
   image: js-er-code.jsc.nasa.gov:5005/ci_build/ubuntu_xenial_with_nasa_certs_and_python
   stage: deploy
   dependencies: 

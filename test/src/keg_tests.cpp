@@ -24,6 +24,21 @@ TEST_F(KegTests, BadDir)
     EXPECT_ANY_THROW(Keg k("hahathisisntadirectory"));
 }
 
+TEST_F(KegTests, StartAlreadyRunning)
+{
+    Keg k(".");
+
+    k.start();
+    EXPECT_ANY_THROW(k.start());
+}
+
+TEST_F(KegTests, StopNotRunning)
+{
+    Keg k(".");
+
+    EXPECT_ANY_THROW(k.stop());
+}
+
 TEST_F(KegTests, BadFormat)
 {
     Keg k(".");
@@ -32,6 +47,18 @@ TEST_F(KegTests, BadFormat)
 
     k.start();
     EXPECT_ANY_THROW(k.stop());
+}
+
+TEST_F(KegTests, DuplicateUuid)
+{
+    Keg k(".");
+
+    k.addFormat("076ac37b-83dd-4fef-bc9d-16789794be87", "<?xml version=\"1.0\" encoding=\"UTF-8\"?><format version=\"BEERR01\">"
+                "<item name=\"column1\" type=\"uint32_t\" size=\"4\" offset=\"0\"/>"
+                "<item name=\"column2\" type=\"uint16_t\" size=\"2\" offset=\"4\"/></format>");
+    EXPECT_ANY_THROW(k.addFormat("076ac37b-83dd-4fef-bc9d-16789794be87", "<?xml version=\"1.0\" encoding=\"UTF-8\"?><format version=\"BEERR01\">"
+                                 "<item name=\"column1\" type=\"uint16_t\" size=\"2\" offset=\"0\"/>"
+                                 "<item name=\"column2\" type=\"uint16_t\" size=\"2\" offset=\"2\"/></format>"));
 }
 
 TEST_F(KegTests, DoesItWork)

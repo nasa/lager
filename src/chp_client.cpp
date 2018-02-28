@@ -8,7 +8,8 @@
  */
 ClusteredHashmapClient::ClusteredHashmapClient(const std::string& serverHost_in, int basePort, int timeoutMillis_in):
     initialized(false), running(false), snapshotRunning(false), subscriberRunning(false),
-    timedOut(false), sequence(-1), uuid("invalid"), serverHost(serverHost_in), timeoutMillis(timeoutMillis_in)
+    timedOut(false), sequence(-1), uuid("invalid"), serverHost(serverHost_in),
+    timeoutMillis(timeoutMillis_in)
 {
     snapshotPort = basePort + CHP_SNAPSHOT_OFFSET;
     subscriberPort = basePort + CHP_PUBLISHER_OFFSET;
@@ -98,6 +99,41 @@ void ClusteredHashmapClient::setCallback(const std::function<void()>& func)
 }
 
 /**
+ * @brief Checks the self map to ensure this client's own key/values added are in the map.
+ * If not, re-send the updates to the server.
+ */
+bool ClusteredHashmapClient::isSelfMapValid()
+{
+    bool allValid = true;
+
+    for (auto i = selfMap.begin(); i != selfMap.end(); ++i)
+    {
+        if (hashMap.find(i->first) == hashMap.end())
+        {
+            // if the item isn't in the hashmap and has a non-empty value,
+            // we haven't received the update yet
+            if (i->second.size() > 0)
+            {
+                allValid = false;
+                // addOrUpdateKeyValue(i->first, i->second);
+            }
+        }
+        else
+        {
+            // if the item is in the hashmap but has a different value,
+            // we haven't received the update yet
+            if (hashMap[i->first] != selfMap[i->first])
+            {
+                allValid = false;
+                // addOrUpdateKeyValue(i->first, i->second);
+            }
+        }
+    }
+
+    return allValid;
+}
+
+/**
  * @brief Main subscriber thread used to receive updates to the hashmap from the server
  */
 void ClusteredHashmapClient::subscriberThread()
@@ -106,9 +142,14 @@ void ClusteredHashmapClient::subscriberThread()
     subscriberRunning = true;
     subscriber.reset(new zmq::socket_t(*context.get(), ZMQ_SUB));
 
+    // setting high water mark of 1 so messages don't stack up
+    int hwm = 1;
+
     // setting linger so the socket doesn't hang around after being stopped
     int linger = 0;
-    subscriber->setsockopt(ZMQ_LINGER, &linger, sizeof(int));
+
+    subscriber->setsockopt(ZMQ_RCVHWM, &hwm, sizeof(hwm));
+    subscriber->setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
 
     // we want all messages from the server
     subscriber->setsockopt(ZMQ_SUBSCRIBE, "", 0);
@@ -219,8 +260,8 @@ void ClusteredHashmapClient::snapshotThread()
     int linger = 0;
 
     snapshot.reset(new zmq::socket_t(*context.get(), ZMQ_DEALER));
-    snapshot->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(int));
-    snapshot->setsockopt(ZMQ_LINGER, &linger, sizeof(int));
+    snapshot->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
+    snapshot->setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
     snapshot->connect(lager_utils::getRemoteUri(serverHost.c_str(), snapshotPort).c_str());
 
     std::map<std::string, std::string> updateMap; // <key, value>
@@ -238,8 +279,6 @@ void ClusteredHashmapClient::snapshotThread()
 
     try
     {
-        double sequence = 0;
-
         while (running)
         {
             if (key != "KTHXBAI")
@@ -265,8 +304,8 @@ void ClusteredHashmapClient::snapshotThread()
                     snapshot->recv(&replyMsg);
                     key = std::string(static_cast<char*>(replyMsg.data()), replyMsg.size());
 
+                    // this frame is the sequence number and is unused for the snapshot
                     snapshot->recv(&replyMsg);
-                    sequence = *(double*)replyMsg.data();
 
                     snapshot->recv(&replyMsg);
                     uuid = std::string(static_cast<char*>(replyMsg.data()), replyMsg.size());
@@ -277,21 +316,12 @@ void ClusteredHashmapClient::snapshotThread()
                     snapshot->recv(&replyMsg);
                     value = std::string(static_cast<char*>(replyMsg.data()), replyMsg.size());
 
-                    // only update the map if the sequence number increased
-                    if (sequence > this->sequence)
+                    // if value is empty we're supposed to delete, but since this is the first
+                    // iteration that can't happen, we'll just ignore.
+                    if (value.length() > 0)
                     {
-                        // if value is empty we're supposed to delete, but since this is the first
-                        // iteration that can't happen, we'll just ignore.
-                        if (value.length() > 0)
-                        {
-                            updateMap[key] = value;
-                            updateUuids[uuid] = key;
-                        }
-                    }
-                    else
-                    {
-                        // TODO throw error
-                        std::cout << "bad sequence check (new = " << sequence << ", old = " << this->sequence << ")" << std::endl;
+                        updateMap[key] = value;
+                        updateUuids[uuid] = key;
                     }
                 }
                 else
@@ -300,7 +330,6 @@ void ClusteredHashmapClient::snapshotThread()
                     // TODO some kind of error should probably be thrown
                     updateMap.clear();
                     updateUuids.clear();
-                    std::cout << "no reply from snapshot server in " << timeoutMillis << "ms, retrying infinite times" << std::endl;
                 }
             }
             else
@@ -358,6 +387,18 @@ void ClusteredHashmapClient::snapshotThread()
  */
 void ClusteredHashmapClient::publisherThread(const std::string& key, const std::string& value)
 {
+    // make sure we keep track of our own (key, value) adds
+    if (selfMap.find(key) == selfMap.end())
+    {
+        selfMap[key] = value;
+    }
+    // we don't remove the key completely on delete because we want to
+    // know if the removed item was in fact removed
+    else if (selfMap.find(key) != selfMap.end())
+    {
+        selfMap[key] = value;
+    }
+
     // setting high water mark of 1 so messages don't stack up
     int hwm = 1;
 
@@ -365,13 +406,9 @@ void ClusteredHashmapClient::publisherThread(const std::string& key, const std::
     int linger = 0;
 
     publisher.reset(new zmq::socket_t(*context.get(), ZMQ_PUB));
-    publisher->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(int));
-    publisher->setsockopt(ZMQ_LINGER, &linger, sizeof(int));
+    publisher->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
+    publisher->setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
     publisher->connect(lager_utils::getRemoteUri(serverHost.c_str(), publisherPort).c_str());
-
-    // gives time for the socket to spin up
-    // TODO investigate how long this really needs to be
-    lager_utils::sleepMillis(1000);
 
     // TODO implement properties
     std::string properties("");
@@ -397,4 +434,14 @@ void ClusteredHashmapClient::publisherThread(const std::string& key, const std::
 
     // this is a one shot send and close
     publisher->close();
+
+    // keep this from running at full speed
+    lager_utils::sleepMillis(10);
+
+    // if we haven't gotten the update back, keep sending it
+    // until we do
+    if (!isSelfMapValid())
+    {
+        addOrUpdateKeyValue(key, value);
+    }
 }

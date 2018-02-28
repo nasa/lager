@@ -22,19 +22,8 @@ protected:
 TEST_F(MugTests, BadPortNumber)
 {
     Mug m;
-    EXPECT_FALSE(m.init("localhost", -50));
-    EXPECT_FALSE(m.init("localhost", 65535));
-}
-
-TEST_F(MugTests, DoesItWork)
-{
-    Mug m;
-    m.init("localhost", 12345);
-    m.start();
-
-    lager_utils::sleepMillis(100);
-
-    m.stop();
+    EXPECT_FALSE(m.init("localhost", -50, 100));
+    EXPECT_FALSE(m.init("localhost", 65535, 100));
 }
 
 int main(int argc, char* argv[])

@@ -13,7 +13,7 @@ int main(int argc, char* argv[])
     std::cout << "zmq version: " << lager_utils::getZmqVersion() << std::endl;
 
     Tap t;
-    t.init("localhost", 12345);
+    t.init("localhost", 12345, 1000);
 
     uint8_t ubyte1 = 0;
     int8_t byte1 = -100;
@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
     {
         t.log();
 
-        lager_utils::sleepMillis(500);
+        lager_utils::sleepMillis(5);
 
         ubyte1 += 1;
         byte1 += 10;

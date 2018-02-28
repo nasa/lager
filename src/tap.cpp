@@ -13,9 +13,10 @@ Tap::~Tap()
 * @brief Starts the zmq context and initializes the tap with the given bartender information
 * @param serverHost_in is a string containing the IP address or hostname of the bartender to connect to
 * @param basePort is an integer containing the port of the bartender to connect to
+* @param timeOutMillis is the timeout to the bartender
 * @returns true on success, false on failure
 */
-bool Tap::init(const std::string& serverHost_in, int basePort)
+bool Tap::init(const std::string& serverHost_in, int basePort, int timeOutMillis)
 {
     context.reset(new zmq::context_t(1));
 
@@ -31,7 +32,7 @@ bool Tap::init(const std::string& serverHost_in, int basePort)
     serverHost = serverHost_in;
 
     // TODO make this not magic 2000 default timeout for testing
-    chpClient.reset(new ClusteredHashmapClient(serverHost_in, basePort, 2000));
+    chpClient.reset(new ClusteredHashmapClient(serverHost_in, basePort, timeOutMillis));
     chpClient->init(context, uuid);
 
     return true;
@@ -78,9 +79,9 @@ void Tap::start(const std::string& key_in)
 
     running = true;
 
+    chpClient->start();
     // sets the hashmap value so it will be sent to the bartender
     chpClient->addOrUpdateKeyValue(key, formatStr);
-    chpClient->start();
 
     publisherThreadHandle = std::thread(&Tap::publisherThread, this);
     publisherThreadHandle.detach();
@@ -129,8 +130,6 @@ void Tap::publisherThread()
     int linger = 0;
     publisher.setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
     publisher.connect(lager_utils::getRemoteUri(serverHost, publisherPort).c_str());
-
-    lager_utils::sleepMillis(1000);
 
     while (running)
     {

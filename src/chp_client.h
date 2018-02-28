@@ -43,6 +43,7 @@ private:
     void subscriberThread();
     void publisherThread(const std::string& key, const std::string& value);
     void initialize(std::shared_ptr<zmq::context_t> context_in);
+    bool isSelfMapValid();
 
     std::shared_ptr<zmq::context_t> context;
     std::shared_ptr<zmq::socket_t> snapshot;
@@ -59,6 +60,7 @@ private:
 
     std::map<std::string, std::string> hashMap; // <topic name, xml format>
     std::map<std::string, std::string> uuidMap; // <uuid, topic name>
+    std::map<std::string, std::string> selfMap; // <topic name, xml format>
 
     std::string uuid;
     std::string serverHost;

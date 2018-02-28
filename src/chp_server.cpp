@@ -112,7 +112,7 @@ void ClusteredHashmapServer::snapshotThread()
 
         while (running)
         {
-            zmq::poll(&items[0], 1, 1000);
+            zmq::poll(&items[0], 1, -1);
 
             if (items[0].revents & ZMQ_POLLIN)
             {
@@ -300,9 +300,13 @@ void ClusteredHashmapServer::publisherThread()
 {
     publisherRunning = true;
 
+    // setting high water mark of 1 so messages don't stack up
+    int hwm = 1;
+
     try
     {
         publisher.reset(new zmq::socket_t(*context.get(), ZMQ_PUB));
+        publisher->setsockopt(ZMQ_RCVHWM, &hwm, sizeof(hwm));
         publisher->bind(lager_utils::getLocalUri(publisherPort).c_str());
 
         while (running)
@@ -369,9 +373,13 @@ void ClusteredHashmapServer::collectorThread()
 {
     collectorRunning = true;
 
+    // setting high water mark of 1 so messages don't stack up
+    int hwm = 1;
+
     try
     {
         collector.reset(new zmq::socket_t(*context.get(), ZMQ_SUB));
+        collector->setsockopt(ZMQ_RCVHWM, &hwm, sizeof(hwm));
         collector->bind(lager_utils::getLocalUri(collectorPort).c_str());
 
         // We want all messages on the socket
@@ -387,7 +395,7 @@ void ClusteredHashmapServer::collectorThread()
 
         while (running)
         {
-            zmq::poll(&items[0], 1, 1000);
+            zmq::poll(&items[0], 1, -1);
 
             // Check for new data
             if (items[0].revents & ZMQ_POLLIN)

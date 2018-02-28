@@ -15,10 +15,11 @@ Mug::~Mug()
 * @brief Initializes the mug by creating the zmq context and starting up the CHP client
 * @param serverHost_in is a string containing the IP or hostname of the bartender to connect to
 * @param basePort is an integer containing a the port of the bartender to connect to
+* @param timeOutMillis is an integer containing the timeout for the bartender
 * @param kegDir is a string containing a path to an accessible directory to store the keg files
 * @returns true on successful initialization, false on failure
 */
-bool Mug::init(const std::string& serverHost_in, int basePort, const std::string& kegDir)
+bool Mug::init(const std::string& serverHost_in, int basePort, int timeOutMillis, const std::string& kegDir)
 {
     subscriberPort = basePort + FORWARDER_BACKEND_OFFSET;
 
@@ -33,7 +34,7 @@ bool Mug::init(const std::string& serverHost_in, int basePort, const std::string
     context.reset(new zmq::context_t(1));
 
     // TODO make this not magic 2000 default timeout for testing
-    chpClient.reset(new ClusteredHashmapClient(serverHost_in, basePort, 2000));
+    chpClient.reset(new ClusteredHashmapClient(serverHost_in, basePort, timeOutMillis));
     chpClient->init(context, uuid);
     hashMapUpdatedHandle = std::bind(&Mug::hashMapUpdated, this);
     chpClient->setCallback(hashMapUpdatedHandle);

@@ -102,12 +102,6 @@ target_link_libraries(end_to_end_tests bartender mug tap gtest)
 set_target_properties(end_to_end_tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/test)
 add_test(NAME end_to_end_tests COMMAND end_to_end_tests WORKING_DIRECTORY ${TEST_DIR})
 
-# Benchmarks
-add_executable(test_benchmarks src/test_benchmarks.cpp)
-target_link_libraries(test_benchmarks benchmark ${CMAKE_THREAD_LIBS_INIT})
-set_target_properties(test_benchmarks PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/test)
-add_test(NAME test_benchmarks COMMAND test_benchmarks WORKING_DIRECTORY ${TEST_DIR})
-
 # Copy the test files
 file(GLOB TEST_FILES share/*.xml share/*.xsd ../share/*.xsd)
 foreach(TEST_FILE ${TEST_FILES})
@@ -128,7 +122,6 @@ if (WIN32)
     set_tests_properties(util_tests PROPERTIES ENVIRONMENT "${TEST_PATH}")
     set_tests_properties(keg_tests PROPERTIES ENVIRONMENT "${TEST_PATH}")
     set_tests_properties(end_to_end_tests PROPERTIES ENVIRONMENT "${TEST_PATH}")
-    set_tests_properties(test_benchmarks PROPERTIES ENVIRONMENT "${TEST_PATH}")
 endif()
 
 # Code coverage (don't attempt to run in windows)
@@ -147,3 +140,12 @@ if (CMAKE_BUILD_TYPE MATCHES Coverage AND NOT WIN32)
     coverage_add_exec(keg_tests)
     coverage_add_exec(end_to_end_tests)
 endif()
+
+# Benchmarking
+add_executable(test_benchmarks src/test_benchmarks.cpp)
+target_link_libraries(test_benchmarks benchmark ${CMAKE_THREAD_LIBS_INIT})
+set_target_properties(test_benchmarks PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/test)
+
+add_custom_target(run_benchmarks
+    COMMAND test_benchmarks
+    DEPENDS test_benchmarks)

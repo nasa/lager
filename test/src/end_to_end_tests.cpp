@@ -29,15 +29,15 @@ TEST_F(EndToEndTests, SubscriberUpdates)
     b.init(12345);
 
     Mug m;
-    m.init("localhost", 12345);
+    m.init("localhost", 12345, 100);
 
     b.start();
     m.start();
 
-    lager_utils::sleepMillis(2000);
+    lager_utils::sleepMillis(100);
 
     Tap t;
-    t.init("localhost", 12345);
+    t.init("localhost", 12345, 100);
     t.addItem(new DataRefItem<uint32_t>("item1", &item1));
     t.start("/test");
 
@@ -67,15 +67,13 @@ TEST_F(EndToEndTests, DoesItWork)
     b.init(12345);
 
     Mug m;
-    m.init("localhost", 12345);
+    m.init("localhost", 12345, 100);
 
     Tap t;
-    t.init("localhost", 12345);
+    t.init("localhost", 12345, 100);
 
     b.start();
     m.start();
-
-    lager_utils::sleepMillis(2000);
 
     t.addItem(new DataRefItem<uint32_t>("item1", &item1));
     t.addItem(new DataRefItem<uint16_t>("item2", &item2));
@@ -90,7 +88,7 @@ TEST_F(EndToEndTests, DoesItWork)
         item3++;
         item4++;
         t.log();
-        lager_utils::sleepMillis(1000);
+        lager_utils::sleepMillis(100);
     }
 
     m.stop();
