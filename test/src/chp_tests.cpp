@@ -54,21 +54,21 @@ TEST_F(ChpTests, BothAddRemoveKeys)
 {
     context.reset(new zmq::context_t(1));
     ClusteredHashmapServer s(12345);
-    ClusteredHashmapClient c("localhost", 12345, 100);
+    ClusteredHashmapClient c("localhost", 12345, 1000);
 
     s.init(context);
     c.init(context, lager_utils::getUuid());
 
     s.start();
-    lager_utils::sleepMillis(50);
+    lager_utils::sleepMillis(500);
     c.start();
-    lager_utils::sleepMillis(50);
+    lager_utils::sleepMillis(500);
     EXPECT_EQ(s.getHashMap().size(), 0);
     c.addOrUpdateKeyValue("testkey", "testvalue");
-    lager_utils::sleepMillis(50);
+    lager_utils::sleepMillis(500);
     EXPECT_STREQ(s.getHashMap()["testkey"].c_str(), "testvalue");
     c.removeKey("testkey");
-    lager_utils::sleepMillis(50);
+    lager_utils::sleepMillis(500);
     EXPECT_EQ(s.getHashMap().size(), 0);
     context->close();
     c.stop();
@@ -79,7 +79,7 @@ TEST_F(ChpTests, AddMultipleKeys)
 {
     context.reset(new zmq::context_t(1));
     ClusteredHashmapServer s(12345);
-    ClusteredHashmapClient c("localhost", 12345, 10);
+    ClusteredHashmapClient c("localhost", 12345, 1000);
 
     s.init(context);
     c.init(context, lager_utils::getUuid());
@@ -89,10 +89,10 @@ TEST_F(ChpTests, AddMultipleKeys)
     EXPECT_EQ(s.getHashMap().size(), 0);
     c.addOrUpdateKeyValue("testkey1", "testvalue1");
     c.addOrUpdateKeyValue("testkey2", "testvalue2");
-    lager_utils::sleepMillis(10);
+    lager_utils::sleepMillis(500);
     EXPECT_STREQ(s.getHashMap()["testkey1"].c_str(), "testvalue1");
     c.removeKey("testkey1");
-    lager_utils::sleepMillis(10);
+    lager_utils::sleepMillis(500);
     EXPECT_EQ(s.getHashMap().size(), 1);
     context->close();
     c.stop();
@@ -103,7 +103,7 @@ TEST_F(ChpTests, ClientMapReceive)
 {
     context.reset(new zmq::context_t(1));
     ClusteredHashmapServer s(12345);
-    ClusteredHashmapClient c("localhost", 12345, 10);
+    ClusteredHashmapClient c("localhost", 12345, 1000);
 
     s.init(context);
     c.init(context, lager_utils::getUuid());
@@ -111,10 +111,10 @@ TEST_F(ChpTests, ClientMapReceive)
     s.start();
     EXPECT_EQ(s.getHashMap().size(), 0);
     s.addOrUpdateKeyValue("testkey1", "testvalue1");
-    lager_utils::sleepMillis(100);
+    lager_utils::sleepMillis(500);
     EXPECT_STREQ(s.getHashMap()["testkey1"].c_str(), "testvalue1");
     c.start();
-    lager_utils::sleepMillis(100);
+    lager_utils::sleepMillis(500);
     EXPECT_EQ(c.getHashMap().size(), 1);
     context->close();
     c.stop();
@@ -125,8 +125,8 @@ TEST_F(ChpTests, ServerDuplicateKeys)
 {
     context.reset(new zmq::context_t(1));
     ClusteredHashmapServer s(12345);
-    ClusteredHashmapClient c("localhost", 12345, 10);
-    ClusteredHashmapClient cDupe("localhost", 12345, 10);
+    ClusteredHashmapClient c("localhost", 12345, 1000);
+    ClusteredHashmapClient cDupe("localhost", 12345, 1000);
 
     s.init(context);
     c.init(context, lager_utils::getUuid());
@@ -137,9 +137,9 @@ TEST_F(ChpTests, ServerDuplicateKeys)
     cDupe.start();
     EXPECT_EQ(s.getHashMap().size(), 0);
     c.addOrUpdateKeyValue("testkey1", "testvalue1");
-    lager_utils::sleepMillis(10);
+    lager_utils::sleepMillis(500);
     cDupe.addOrUpdateKeyValue("testkey1", "testvalue1");
-    lager_utils::sleepMillis(10);
+    lager_utils::sleepMillis(500);
     EXPECT_EQ(c.getHashMap().size(), 1);
     context->close();
     c.stop();
