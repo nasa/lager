@@ -51,7 +51,10 @@ void Bartender::start()
  */
 void Bartender::stop()
 {
-    context->close();
+    zmq_ctx_shutdown((void*)*context.get());
+
     registrar->stop();
     forwarder->stop();
+
+    context->close();
 }

@@ -68,7 +68,7 @@ void Mug::stop()
 {
     running = false;
 
-    context->close();
+    zmq_ctx_shutdown((void*)*context.get());
 
     std::unique_lock<std::mutex> lock(mutex);
 
@@ -79,6 +79,8 @@ void Mug::stop()
 
     chpClient->stop();
     keg->stop();
+
+    context->close();
 }
 
 /**

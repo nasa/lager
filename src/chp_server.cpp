@@ -51,9 +51,11 @@ void ClusteredHashmapServer::start()
  */
 void ClusteredHashmapServer::stop()
 {
-    std::unique_lock<std::mutex> lock(mutex);
-
+    mutex.lock();
     running = false;
+    mutex.unlock();
+
+    std::unique_lock<std::mutex> lock(mutex);
 
     while (publisherRunning)
     {
@@ -321,7 +323,7 @@ void ClusteredHashmapServer::publisherThread()
             }
 
             // TODO this could probably run slower
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
     }
     catch (const zmq::error_t& e)
@@ -336,6 +338,10 @@ void ClusteredHashmapServer::publisherThread()
             publisherCv.notify_one();
         }
     }
+
+    publisher->close();
+    publisherRunning = false;
+    publisherCv.notify_one();
 }
 
 /**
@@ -418,8 +424,6 @@ void ClusteredHashmapServer::collectorThread()
 
                 collector->recv(&msg);
                 value = std::string(static_cast<char*>(msg.data()), msg.size());
-
-                std::cout << "chpserversub: " << key << " : " << value << std::endl;
 
                 // Uuid is required, if it's empty, ignore this message
                 // TODO should we really ignore this, or bubble up an error?

@@ -41,13 +41,14 @@ TEST_F(ChpTests, ServerAddRemoveKeys)
     c.start();
     EXPECT_EQ(c.getHashMap().size(), 0);
     c.addOrUpdateKeyValue("testkey", "testvalue");
-    lager_utils::sleepMillis(10);
+    lager_utils::sleepMillis(50);
     EXPECT_STREQ(c.getHashMap()["testkey"].c_str(), "testvalue");
     c.removeKey("testkey");
-    lager_utils::sleepMillis(10);
+    lager_utils::sleepMillis(50);
     EXPECT_EQ(c.getHashMap().size(), 0);
-    context->close();
+    EXPECT_EQ(zmq_ctx_shutdown((void*)*context.get()), 0);
     c.stop();
+    context->close();
 }
 
 TEST_F(ChpTests, BothAddRemoveKeys)
@@ -70,9 +71,11 @@ TEST_F(ChpTests, BothAddRemoveKeys)
     c.removeKey("testkey");
     lager_utils::sleepMillis(500);
     EXPECT_EQ(s.getHashMap().size(), 0);
-    context->close();
+    lager_utils::sleepMillis(500);
+    EXPECT_EQ(zmq_ctx_shutdown((void*)*context.get()), 0);
     c.stop();
     s.stop();
+    context->close();
 }
 
 TEST_F(ChpTests, AddMultipleKeys)
@@ -94,9 +97,10 @@ TEST_F(ChpTests, AddMultipleKeys)
     c.removeKey("testkey1");
     lager_utils::sleepMillis(500);
     EXPECT_EQ(s.getHashMap().size(), 1);
-    context->close();
+    EXPECT_EQ(zmq_ctx_shutdown((void*)*context.get()), 0);
     c.stop();
     s.stop();
+    context->close();
 }
 
 TEST_F(ChpTests, ClientMapReceive)
@@ -116,9 +120,10 @@ TEST_F(ChpTests, ClientMapReceive)
     c.start();
     lager_utils::sleepMillis(500);
     EXPECT_EQ(c.getHashMap().size(), 1);
-    context->close();
+    EXPECT_EQ(zmq_ctx_shutdown((void*)*context.get()), 0);
     c.stop();
     s.stop();
+    context->close();
 }
 
 TEST_F(ChpTests, ServerDuplicateKeys)
@@ -141,9 +146,11 @@ TEST_F(ChpTests, ServerDuplicateKeys)
     cDupe.addOrUpdateKeyValue("testkey1", "testvalue1");
     lager_utils::sleepMillis(500);
     EXPECT_EQ(c.getHashMap().size(), 1);
-    context->close();
+    EXPECT_EQ(zmq_ctx_shutdown((void*)*context.get()), 0);
     c.stop();
+    cDupe.stop();
     s.stop();
+    context->close();
 }
 
 TEST_F(ChpTests, ClientNoHugz)
@@ -159,9 +166,9 @@ TEST_F(ChpTests, ClientNoHugz)
     lager_utils::sleepMillis(100);
 
     EXPECT_TRUE(c.isTimedOut());
-
-    context->close();
+    EXPECT_EQ(zmq_ctx_shutdown((void*)*context.get()), 0);
     c.stop();
+    context->close();
 }
 
 int main(int argc, char* argv[])
