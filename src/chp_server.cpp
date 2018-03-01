@@ -101,9 +101,13 @@ void ClusteredHashmapServer::snapshotThread()
 {
     snapshotRunning = true;
 
+    // setting linger so the socket doesn't hang around after being stopped
+    int linger = 0;
+
     try
     {
         snapshot.reset(new zmq::socket_t(*context.get(), ZMQ_ROUTER));
+        snapshot->setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
         snapshot->bind(lager_utils::getLocalUri(snapshotPort).c_str());
 
         // Sets up a poller for the snapshot socket
@@ -305,10 +309,14 @@ void ClusteredHashmapServer::publisherThread()
     // setting high water mark of 1 so messages don't stack up
     int hwm = 1;
 
+    // setting linger so the socket doesn't hang around after being stopped
+    int linger = 0;
+
     try
     {
         publisher.reset(new zmq::socket_t(*context.get(), ZMQ_PUB));
         publisher->setsockopt(ZMQ_RCVHWM, &hwm, sizeof(hwm));
+        publisher->setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
         publisher->bind(lager_utils::getLocalUri(publisherPort).c_str());
 
         while (running)
@@ -382,10 +390,14 @@ void ClusteredHashmapServer::collectorThread()
     // setting high water mark of 1 so messages don't stack up
     int hwm = 1;
 
+    // setting linger so the socket doesn't hang around after being stopped
+    int linger = 0;
+
     try
     {
         collector.reset(new zmq::socket_t(*context.get(), ZMQ_SUB));
         collector->setsockopt(ZMQ_RCVHWM, &hwm, sizeof(hwm));
+        collector->setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
         collector->bind(lager_utils::getLocalUri(collectorPort).c_str());
 
         // We want all messages on the socket
