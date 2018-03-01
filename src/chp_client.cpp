@@ -387,17 +387,12 @@ void ClusteredHashmapClient::snapshotThread()
  */
 void ClusteredHashmapClient::publisherThread(const std::string& key, const std::string& value)
 {
-    // make sure we keep track of our own (key, value) adds
-    if (selfMap.find(key) == selfMap.end())
-    {
-        selfMap[key] = value;
-    }
+    std::cout << "chpclientpub: " << key << " : " << value << std::endl;
+
+    // make sure we keep track of our own (key, value) changes.
     // we don't remove the key completely on delete because we want to
     // know if the removed item was in fact removed
-    else if (selfMap.find(key) != selfMap.end())
-    {
-        selfMap[key] = value;
-    }
+    selfMap[key] = value;
 
     // setting high water mark of 1 so messages don't stack up
     int hwm = 1;

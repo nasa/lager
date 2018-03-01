@@ -419,6 +419,8 @@ void ClusteredHashmapServer::collectorThread()
                 collector->recv(&msg);
                 value = std::string(static_cast<char*>(msg.data()), msg.size());
 
+                std::cout << "chpserversub: " << key << " : " << value << std::endl;
+
                 // Uuid is required, if it's empty, ignore this message
                 // TODO should we really ignore this, or bubble up an error?
                 if (uuid.length() > 0)
