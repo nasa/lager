@@ -143,11 +143,16 @@ if (CMAKE_BUILD_TYPE MATCHES Release)
     # Include Benchmark
     include_directories(${benchmark_SOURCE_DIR}/benchmark/include)
 
-    add_executable(test_benchmarks src/test_benchmarks.cpp)
-    target_link_libraries(test_benchmarks benchmark ${CMAKE_THREAD_LIBS_INIT})
-    set_target_properties(test_benchmarks PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/test)
+    add_executable(data_ref_benchmarks src/data_ref_benchmarks.cpp)
+    target_link_libraries(data_ref_benchmarks benchmark ${CMAKE_THREAD_LIBS_INIT})
+    set_target_properties(data_ref_benchmarks PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/test)
+
+    add_executable(keg_benchmarks src/keg_benchmarks.cpp)
+    target_link_libraries(keg_benchmarks benchmark keg ${CMAKE_THREAD_LIBS_INIT})
+    set_target_properties(keg_benchmarks PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/test)
 
     add_custom_target(run_benchmarks
-        COMMAND test_benchmarks
-        DEPENDS test_benchmarks)
+        COMMAND data_ref_benchmarks
+        COMMAND keg_benchmarks
+        DEPENDS data_ref_benchmarks keg_benchmarks)
 endif()
