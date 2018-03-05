@@ -47,7 +47,7 @@ coverage:
   script:   
     - mkdir build
     - cd build
-    - cmake -DCMAKE_BUILD_TYPE=Coverage .. && make && make test
+    - cmake -DCMAKE_BUILD_TYPE=Coverage .. && make && make run_coverage
   coverage: '/lines[\.]+\: (\d+\.\d+)\%/'
   artifacts:
     paths:
