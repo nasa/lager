@@ -41,7 +41,7 @@ static void kegWriteOneUint32(benchmark::State& state)
         data.resize(data.size() + 4);
         *(reinterpret_cast<uint32_t*>(data.data() + offset)) = htonl(column1);
 
-        dataSize = data.size();
+        dataSize = data.size() * sizeof(data[0]);
         state.ResumeTiming();
         k.write(data, data.size());
     }
@@ -109,7 +109,7 @@ static void kegWriteTenUint32(benchmark::State& state)
             *(reinterpret_cast<uint32_t*>(data.data() + offset)) = htonl(items[i]);
         }
 
-        dataSize = data.size();
+        dataSize = data.size() * sizeof(data[0]);
         state.ResumeTiming();
         k.write(data, data.size());
     }
@@ -120,5 +120,74 @@ static void kegWriteTenUint32(benchmark::State& state)
 }
 
 BENCHMARK(kegWriteTenUint32);
+
+static void kegWriteHundredUint32(benchmark::State& state)
+{
+    std::stringstream ss;
+    off_t offset = 0;
+    ss << "<?xml version=\"1.0\" encoding=\"UTF-8\"?><format version=\"BEERR01\">";
+
+    for (uint16_t i = 0; i < 100; ++i)
+    {
+        ss << "<item name=\"column" << i << "\" type=\"uint32_t\" size=\"4\" offset=\"" << offset << "\"/>";
+        offset += 4;
+    }
+
+    ss << "</format>";
+
+    Keg k(".");
+
+    k.addFormat("076ac37b-83dd-4fef-bc9d-16789794be87", ss.str());
+
+    k.start();
+
+    std::string uuid = lager_utils::getUuid("076ac37b-83dd-4fef-bc9d-16789794be87");
+    uint64_t timestamp = 0;
+    std::vector<uint32_t> items;
+    items.resize(100);
+    uint32_t dataSize = 0;
+
+    for (auto _ : state)
+    {
+        state.PauseTiming();
+        timestamp = lager_utils::getCurrentTime();
+
+        for (uint8_t i = 0; i < items.size(); ++i)
+        {
+            items[i]++;
+        }
+
+        std::vector<uint8_t> data;
+        off_t offset = 0;
+
+        for (size_t i = 0; i < uuid.size(); ++i)
+        {
+            data.push_back(uuid[i]);
+        }
+
+        offset += UUID_SIZE_BYTES;
+
+        data.resize(data.size() + TIMESTAMP_SIZE_BYTES);
+        *(reinterpret_cast<uint64_t*>(data.data() + offset)) = lager_utils::htonll(timestamp);
+
+        offset += TIMESTAMP_SIZE_BYTES;
+
+        for (uint8_t i = 0; i < items.size(); ++i)
+        {
+            data.resize(data.size() + 4);
+            *(reinterpret_cast<uint32_t*>(data.data() + offset)) = htonl(items[i]);
+        }
+
+        dataSize = data.size() * sizeof(data[0]);
+        state.ResumeTiming();
+        k.write(data, data.size());
+    }
+
+    k.stop();
+
+    state.SetBytesProcessed(static_cast<int64_t>(state.iterations()) * dataSize);
+}
+
+BENCHMARK(kegWriteHundredUint32);
 
 BENCHMARK_MAIN();
