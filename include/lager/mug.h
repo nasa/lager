@@ -37,7 +37,6 @@ private:
 
     std::thread subscriberThreadHandle;
     std::mutex mutex;
-    std::condition_variable subscriberCv;
 
     std::map<std::string, std::string> hashMap; // <topic name, xml format>
     std::map<std::string, std::shared_ptr<DataFormat>> formatMap; // <uuid, dataformat>

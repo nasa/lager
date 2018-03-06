@@ -63,23 +63,31 @@ void Mug::start()
 
 /**
 * @brief Closes the zmq context and stops the subscriber and chp threads
+* @throws runtime_error if the subscriber thread fails to end
 */
 void Mug::stop()
 {
+    mutex.lock();
     running = false;
+    mutex.unlock();
 
     zmq_ctx_shutdown((void*)*context.get());
 
-    std::unique_lock<std::mutex> lock(mutex);
+    unsigned int retries = 0;
 
     while (subscriberRunning)
     {
-        subscriberCv.wait(lock);
+        if (retries > THREAD_CLOSE_WAIT_RETRIES)
+        {
+            throw std::runtime_error("Mug::subscriber thread failed to end");
+        }
+
+        lager_utils::sleepMillis(THREAD_CLOSE_WAIT_MILLIS);
+        retries++;
     }
 
     chpClient->stop();
     keg->stop();
-
     context->close();
 }
 
@@ -124,9 +132,13 @@ void Mug::subscriberThread()
 {
     subscriberRunning = true;
 
+    // setting linger so the socket doesn't hang around after being stopped
+    int linger = 0;
+
     try
     {
         subscriber.reset(new zmq::socket_t(*context.get(), ZMQ_SUB));
+        subscriber->setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
         subscriber->connect(lager_utils::getRemoteUri(serverHost.c_str(), subscriberPort).c_str());
 
         // subscribe to everything (for now)
@@ -255,8 +267,15 @@ void Mug::subscriberThread()
         if (e.num() == ETERM)
         {
             subscriber->close();
+            mutex.lock();
             subscriberRunning = false;
-            subscriberCv.notify_one();
+            mutex.unlock();
+            return;
         }
     }
+
+    subscriber->close();
+    mutex.lock();
+    subscriberRunning = false;
+    mutex.unlock();
 }

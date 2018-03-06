@@ -89,22 +89,30 @@ void Tap::start(const std::string& key_in)
 
 /**
 * @brief Stops the tap by closing the zmq context and stopping chp and the publisher thread
+* @throws runtime_error if the publisher thread fails to end
 */
 void Tap::stop()
 {
+    mutex.lock();
     running = false;
+    mutex.unlock();
 
     zmq_ctx_shutdown((void*)*context.get());
 
-    std::unique_lock<std::mutex> lock(mutex);
+    unsigned int retries = 0;
 
     while (publisherRunning)
     {
-        publisherCv.wait(lock);
+        if (retries > THREAD_CLOSE_WAIT_RETRIES)
+        {
+            throw std::runtime_error("Tap::publisher thread failed to end");
+        }
+
+        lager_utils::sleepMillis(THREAD_CLOSE_WAIT_MILLIS);
+        retries++;
     }
 
     chpClient->stop();
-
     context->close();
 }
 
@@ -129,56 +137,76 @@ void Tap::publisherThread()
     publisherRunning = true;
     zmq::socket_t publisher(*context.get(), ZMQ_PUB);
 
+    // setting linger so the socket doesn't hang around after being stopped
     int linger = 0;
-    publisher.setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
-    publisher.connect(lager_utils::getRemoteUri(serverHost, publisherPort).c_str());
 
-    while (running)
+    try
     {
-        if (newData)
+        publisher.setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
+        publisher.connect(lager_utils::getRemoteUri(serverHost, publisherPort).c_str());
+
+        while (running)
         {
-            zmq::message_t uuidMsg(uuid.size());
-            zmq::message_t versionMsg(version.size());
-            zmq::message_t flagsMsg(sizeof(flags));
-            zmq::message_t timestampMsg(sizeof(timestamp));
-
-            mutex.lock();
-
-            memcpy(uuidMsg.data(), uuid.c_str(), uuid.size());
-            memcpy(versionMsg.data(), version.c_str(), version.size());
-
-            // TODO endianness
-            memcpy(flagsMsg.data(), (void*)&flags, sizeof(flags));
-            uint64_t networkTimestamp = lager_utils::htonll(timestamp);
-            memcpy(timestampMsg.data(), (void*)&networkTimestamp, sizeof(timestamp));
-
-            publisher.send(uuidMsg, ZMQ_SNDMORE);
-            publisher.send(versionMsg, ZMQ_SNDMORE);
-            publisher.send(flagsMsg, ZMQ_SNDMORE);
-            publisher.send(timestampMsg, ZMQ_SNDMORE);
-
-            for (unsigned int i = 0; i < dataRefItems.size(); ++i)
+            if (newData)
             {
-                zmq::message_t tmp(dataRefItems[i]->getSize());
-                dataRefItems[i]->getNetworkDataRef(tmp.data());
+                zmq::message_t uuidMsg(uuid.size());
+                zmq::message_t versionMsg(version.size());
+                zmq::message_t flagsMsg(sizeof(flags));
+                zmq::message_t timestampMsg(sizeof(timestamp));
 
-                // make sure to use the sndmore flag until the last message
-                if (i < dataRefItems.size() - 1)
+                mutex.lock();
+
+                memcpy(uuidMsg.data(), uuid.c_str(), uuid.size());
+                memcpy(versionMsg.data(), version.c_str(), version.size());
+
+                // TODO endianness
+                memcpy(flagsMsg.data(), (void*)&flags, sizeof(flags));
+                uint64_t networkTimestamp = lager_utils::htonll(timestamp);
+                memcpy(timestampMsg.data(), (void*)&networkTimestamp, sizeof(timestamp));
+
+                publisher.send(uuidMsg, ZMQ_SNDMORE);
+                publisher.send(versionMsg, ZMQ_SNDMORE);
+                publisher.send(flagsMsg, ZMQ_SNDMORE);
+                publisher.send(timestampMsg, ZMQ_SNDMORE);
+
+                for (unsigned int i = 0; i < dataRefItems.size(); ++i)
                 {
-                    publisher.send(tmp, ZMQ_SNDMORE);
+                    zmq::message_t tmp(dataRefItems[i]->getSize());
+                    dataRefItems[i]->getNetworkDataRef(tmp.data());
+
+                    // make sure to use the sndmore flag until the last message
+                    if (i < dataRefItems.size() - 1)
+                    {
+                        publisher.send(tmp, ZMQ_SNDMORE);
+                    }
+                    else
+                    {
+                        publisher.send(tmp);
+                    }
                 }
-                else
-                {
-                    publisher.send(tmp);
-                }
+
+                newData = false;
+                mutex.unlock();
             }
-
-            newData = false;
+        }
+    }
+    catch (const zmq::error_t& e)
+    {
+        // This is the proper way of shutting down multithreaded ZMQ sockets.
+        // The creator of the zmq context basically pulls the rug out from
+        // under the socket.
+        if (e.num() == ETERM)
+        {
+            publisher.close();
+            mutex.lock();
+            publisherRunning = false;
             mutex.unlock();
+            return;
         }
     }
 
     publisher.close();
+    mutex.lock();
     publisherRunning = false;
-    publisherCv.notify_one();
+    mutex.unlock();
 }

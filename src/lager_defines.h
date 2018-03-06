@@ -16,5 +16,7 @@ const unsigned int TIMESTAMP_SIZE_BYTES = 8;
 
 // other
 const int BASEPORT_MAX = 65535;
+const unsigned int THREAD_CLOSE_WAIT_MILLIS = 100;
+const unsigned int THREAD_CLOSE_WAIT_RETRIES = 10;
 
 #endif

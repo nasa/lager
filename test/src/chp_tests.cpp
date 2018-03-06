@@ -61,17 +61,17 @@ TEST_F(ChpTests, BothAddRemoveKeys)
     c.init(context, lager_utils::getUuid());
 
     s.start();
-    lager_utils::sleepMillis(500);
+    lager_utils::sleepMillis(200);
     c.start();
-    lager_utils::sleepMillis(500);
+    lager_utils::sleepMillis(200);
     EXPECT_EQ(s.getHashMap().size(), 0);
     c.addOrUpdateKeyValue("testkey", "testvalue");
-    lager_utils::sleepMillis(500);
+    lager_utils::sleepMillis(200);
     EXPECT_STREQ(s.getHashMap()["testkey"].c_str(), "testvalue");
     c.removeKey("testkey");
-    lager_utils::sleepMillis(500);
+    lager_utils::sleepMillis(200);
     EXPECT_EQ(s.getHashMap().size(), 0);
-    lager_utils::sleepMillis(500);
+    lager_utils::sleepMillis(200);
     EXPECT_EQ(zmq_ctx_shutdown((void*)*context.get()), 0);
     c.stop();
     s.stop();

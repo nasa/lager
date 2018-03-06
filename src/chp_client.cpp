@@ -53,6 +53,7 @@ void ClusteredHashmapClient::start()
 
 /**
  * @brief Stops the running threads used by the client
+ * @throws runtime_error if a thread fails to end
  */
 void ClusteredHashmapClient::stop()
 {
@@ -60,21 +61,43 @@ void ClusteredHashmapClient::stop()
     running = false;
     mutex.unlock();
 
-    std::unique_lock<std::mutex> lock(mutex);
+    unsigned int retries = 0;
 
     while (subscriberRunning)
     {
-        subscriberCv.wait(lock);
+        if (retries > THREAD_CLOSE_WAIT_RETRIES)
+        {
+            throw std::runtime_error("ClusteredHashmapClient::subscriber thread failed to end");
+        }
+
+        lager_utils::sleepMillis(THREAD_CLOSE_WAIT_MILLIS);
+        retries++;
     }
+
+    retries = 0;
 
     while (snapshotRunning)
     {
-        snapshotCv.wait(lock);
+        if (retries > THREAD_CLOSE_WAIT_RETRIES)
+        {
+            throw std::runtime_error("ClusteredHashmapClient::snapshot thread failed to end");
+        }
+
+        lager_utils::sleepMillis(THREAD_CLOSE_WAIT_MILLIS);
+        retries++;
     }
+
+    retries = 0;
 
     while (publisherRunning)
     {
-        publisherCv.wait(lock);
+        if (retries > THREAD_CLOSE_WAIT_RETRIES)
+        {
+            throw std::runtime_error("ClusteredHashmapClient::publisher thread failed to end");
+        }
+
+        lager_utils::sleepMillis(THREAD_CLOSE_WAIT_MILLIS);
+        retries++;
     }
 }
 
@@ -276,14 +299,17 @@ void ClusteredHashmapClient::subscriberThread()
         if (e.num() == ETERM)
         {
             subscriber->close();
+            mutex.lock();
             subscriberRunning = false;
-            subscriberCv.notify_one();
+            mutex.unlock();
+            return;
         }
     }
 
     subscriber->close();
+    mutex.lock();
     subscriberRunning = false;
-    subscriberCv.notify_one();
+    mutex.unlock();
 }
 
 /**
@@ -390,8 +416,10 @@ void ClusteredHashmapClient::snapshotThread()
         if (e.num() == ETERM)
         {
             snapshot->close();
+            mutex.lock();
             snapshotRunning = false;
-            snapshotCv.notify_one();
+            mutex.unlock();
+            return;
         }
     }
 
@@ -419,8 +447,9 @@ void ClusteredHashmapClient::snapshotThread()
     // This thread ends after one successful call, subsequent hashmap updates come
     // from the subscriber thread
     snapshot->close();
+    mutex.lock();
     snapshotRunning = false;
-    snapshotCv.notify_one();
+    mutex.unlock();
 }
 
 /**
@@ -487,12 +516,15 @@ void ClusteredHashmapClient::publisherThread()
         if (e.num() == ETERM)
         {
             publisher->close();
+            mutex.lock();
             publisherRunning = false;
-            publisherCv.notify_one();
+            mutex.unlock();
+            return;
         }
     }
 
     publisher->close();
+    mutex.lock();
     publisherRunning = false;
-    publisherCv.notify_one();
+    mutex.unlock();
 }

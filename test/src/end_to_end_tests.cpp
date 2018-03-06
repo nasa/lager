@@ -21,38 +21,6 @@ protected:
     }
 };
 
-TEST_F(EndToEndTests, SubscriberUpdates)
-{
-    uint32_t item1 = 0;
-
-    Bartender b;
-    b.init(12345);
-
-    Mug m;
-    m.init("localhost", 12345, 100);
-
-    b.start();
-    m.start();
-
-    lager_utils::sleepMillis(100);
-
-    Tap t;
-    t.init("localhost", 12345, 100);
-    t.addItem(new DataRefItem<uint32_t>("item1", &item1));
-    t.start("/test");
-
-    for (unsigned int i = 0; i < 5; ++i)
-    {
-        item1++;
-        t.log();
-        lager_utils::sleepMillis(100);
-    }
-
-    m.stop();
-    t.stop();
-    b.stop();
-}
-
 TEST_F(EndToEndTests, DoesItWork)
 {
     uint32_t item1 = 0;
