@@ -20,7 +20,8 @@ public:
     Mug();
     virtual ~Mug();
 
-    bool init(const std::string& serverHost_in, int basePort, const std::string& kegDir = "./");
+    bool init(const std::string& serverHost_in, int basePort, int timeOutMillis,
+              const std::string& kegDir = "./");
     void start();
     void stop();
 
@@ -36,7 +37,6 @@ private:
 
     std::thread subscriberThreadHandle;
     std::mutex mutex;
-    std::condition_variable subscriberCv;
 
     std::map<std::string, std::string> hashMap; // <topic name, xml format>
     std::map<std::string, std::shared_ptr<DataFormat>> formatMap; // <uuid, dataformat>

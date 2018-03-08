@@ -22,6 +22,8 @@
 
 #include <zmq.hpp>
 
+#include "lager_defines.h"
+
 namespace lager_utils
 {
     /**

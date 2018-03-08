@@ -15,10 +15,11 @@ Mug::~Mug()
 * @brief Initializes the mug by creating the zmq context and starting up the CHP client
 * @param serverHost_in is a string containing the IP or hostname of the bartender to connect to
 * @param basePort is an integer containing a the port of the bartender to connect to
+* @param timeOutMillis is an integer containing the timeout for the bartender
 * @param kegDir is a string containing a path to an accessible directory to store the keg files
 * @returns true on successful initialization, false on failure
 */
-bool Mug::init(const std::string& serverHost_in, int basePort, const std::string& kegDir)
+bool Mug::init(const std::string& serverHost_in, int basePort, int timeOutMillis, const std::string& kegDir)
 {
     subscriberPort = basePort + FORWARDER_BACKEND_OFFSET;
 
@@ -33,7 +34,7 @@ bool Mug::init(const std::string& serverHost_in, int basePort, const std::string
     context.reset(new zmq::context_t(1));
 
     // TODO make this not magic 2000 default timeout for testing
-    chpClient.reset(new ClusteredHashmapClient(serverHost_in, basePort, 2000));
+    chpClient.reset(new ClusteredHashmapClient(serverHost_in, basePort, timeOutMillis));
     chpClient->init(context, uuid);
     hashMapUpdatedHandle = std::bind(&Mug::hashMapUpdated, this);
     chpClient->setCallback(hashMapUpdatedHandle);
@@ -62,22 +63,32 @@ void Mug::start()
 
 /**
 * @brief Closes the zmq context and stops the subscriber and chp threads
+* @throws runtime_error if the subscriber thread fails to end
 */
 void Mug::stop()
 {
+    mutex.lock();
     running = false;
+    mutex.unlock();
 
-    context->close();
+    zmq_ctx_shutdown((void*)*context.get());
 
-    std::unique_lock<std::mutex> lock(mutex);
+    unsigned int retries = 0;
 
     while (subscriberRunning)
     {
-        subscriberCv.wait(lock);
+        if (retries > THREAD_CLOSE_WAIT_RETRIES)
+        {
+            throw std::runtime_error("Mug::subscriber thread failed to end");
+        }
+
+        lager_utils::sleepMillis(THREAD_CLOSE_WAIT_MILLIS);
+        retries++;
     }
 
     chpClient->stop();
     keg->stop();
+    context->close();
 }
 
 /**
@@ -121,9 +132,13 @@ void Mug::subscriberThread()
 {
     subscriberRunning = true;
 
+    // setting linger so the socket doesn't hang around after being stopped
+    int linger = 0;
+
     try
     {
         subscriber.reset(new zmq::socket_t(*context.get(), ZMQ_SUB));
+        subscriber->setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
         subscriber->connect(lager_utils::getRemoteUri(serverHost.c_str(), subscriberPort).c_str());
 
         // subscribe to everything (for now)
@@ -252,8 +267,15 @@ void Mug::subscriberThread()
         if (e.num() == ETERM)
         {
             subscriber->close();
+            mutex.lock();
             subscriberRunning = false;
-            subscriberCv.notify_one();
+            mutex.unlock();
+            return;
         }
     }
+
+    subscriber->close();
+    mutex.lock();
+    subscriberRunning = false;
+    mutex.unlock();
 }

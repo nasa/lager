@@ -27,7 +27,7 @@ protected:
 TEST_F(ChpTests, UninitializedStart)
 {
     ClusteredHashmapServer s(12345);
-    ClusteredHashmapClient c("localhost", 12345, 1000);
+    ClusteredHashmapClient c("localhost", 12345, 100);
 
     EXPECT_ANY_THROW(s.start());
     EXPECT_ANY_THROW(c.start());
@@ -41,13 +41,14 @@ TEST_F(ChpTests, ServerAddRemoveKeys)
     c.start();
     EXPECT_EQ(c.getHashMap().size(), 0);
     c.addOrUpdateKeyValue("testkey", "testvalue");
-    lager_utils::sleepMillis(100);
+    lager_utils::sleepMillis(50);
     EXPECT_STREQ(c.getHashMap()["testkey"].c_str(), "testvalue");
     c.removeKey("testkey");
-    lager_utils::sleepMillis(100);
+    lager_utils::sleepMillis(50);
     EXPECT_EQ(c.getHashMap().size(), 0);
-    context->close();
+    EXPECT_EQ(zmq_ctx_shutdown((void*)*context.get()), 0);
     c.stop();
+    context->close();
 }
 
 TEST_F(ChpTests, BothAddRemoveKeys)
@@ -60,17 +61,21 @@ TEST_F(ChpTests, BothAddRemoveKeys)
     c.init(context, lager_utils::getUuid());
 
     s.start();
+    lager_utils::sleepMillis(200);
     c.start();
+    lager_utils::sleepMillis(200);
     EXPECT_EQ(s.getHashMap().size(), 0);
     c.addOrUpdateKeyValue("testkey", "testvalue");
-    lager_utils::sleepMillis(100);
+    lager_utils::sleepMillis(200);
     EXPECT_STREQ(s.getHashMap()["testkey"].c_str(), "testvalue");
     c.removeKey("testkey");
-    lager_utils::sleepMillis(100);
+    lager_utils::sleepMillis(200);
     EXPECT_EQ(s.getHashMap().size(), 0);
-    context->close();
+    lager_utils::sleepMillis(200);
+    EXPECT_EQ(zmq_ctx_shutdown((void*)*context.get()), 0);
     c.stop();
     s.stop();
+    context->close();
 }
 
 TEST_F(ChpTests, AddMultipleKeys)
@@ -87,14 +92,15 @@ TEST_F(ChpTests, AddMultipleKeys)
     EXPECT_EQ(s.getHashMap().size(), 0);
     c.addOrUpdateKeyValue("testkey1", "testvalue1");
     c.addOrUpdateKeyValue("testkey2", "testvalue2");
-    lager_utils::sleepMillis(100);
+    lager_utils::sleepMillis(500);
     EXPECT_STREQ(s.getHashMap()["testkey1"].c_str(), "testvalue1");
     c.removeKey("testkey1");
-    lager_utils::sleepMillis(100);
+    lager_utils::sleepMillis(500);
     EXPECT_EQ(s.getHashMap().size(), 1);
-    context->close();
+    EXPECT_EQ(zmq_ctx_shutdown((void*)*context.get()), 0);
     c.stop();
     s.stop();
+    context->close();
 }
 
 TEST_F(ChpTests, ClientMapReceive)
@@ -109,14 +115,15 @@ TEST_F(ChpTests, ClientMapReceive)
     s.start();
     EXPECT_EQ(s.getHashMap().size(), 0);
     s.addOrUpdateKeyValue("testkey1", "testvalue1");
-    lager_utils::sleepMillis(100);
+    lager_utils::sleepMillis(500);
     EXPECT_STREQ(s.getHashMap()["testkey1"].c_str(), "testvalue1");
     c.start();
-    lager_utils::sleepMillis(1000);
+    lager_utils::sleepMillis(500);
     EXPECT_EQ(c.getHashMap().size(), 1);
-    context->close();
+    EXPECT_EQ(zmq_ctx_shutdown((void*)*context.get()), 0);
     c.stop();
     s.stop();
+    context->close();
 }
 
 TEST_F(ChpTests, ServerDuplicateKeys)
@@ -135,31 +142,33 @@ TEST_F(ChpTests, ServerDuplicateKeys)
     cDupe.start();
     EXPECT_EQ(s.getHashMap().size(), 0);
     c.addOrUpdateKeyValue("testkey1", "testvalue1");
-    lager_utils::sleepMillis(1000);
+    lager_utils::sleepMillis(500);
     cDupe.addOrUpdateKeyValue("testkey1", "testvalue1");
-    lager_utils::sleepMillis(1000);
+    lager_utils::sleepMillis(500);
     EXPECT_EQ(c.getHashMap().size(), 1);
-    context->close();
+    EXPECT_EQ(zmq_ctx_shutdown((void*)*context.get()), 0);
     c.stop();
+    cDupe.stop();
     s.stop();
+    context->close();
 }
 
 TEST_F(ChpTests, ClientNoHugz)
 {
     context.reset(new zmq::context_t(1));
 
-    ClusteredHashmapClient c("localhost", 12345, 1000);
+    ClusteredHashmapClient c("localhost", 12345, 50);
 
     c.init(context, lager_utils::getUuid());
 
     c.start();
 
-    lager_utils::sleepMillis(2500);
+    lager_utils::sleepMillis(100);
 
     EXPECT_TRUE(c.isTimedOut());
-
-    context->close();
+    EXPECT_EQ(zmq_ctx_shutdown((void*)*context.get()), 0);
     c.stop();
+    context->close();
 }
 
 int main(int argc, char* argv[])

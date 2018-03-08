@@ -126,3 +126,33 @@ if (CMAKE_BUILD_TYPE MATCHES Coverage AND NOT WIN32)
     coverage_add_exec(keg_tests)
     coverage_add_exec(end_to_end_tests)
 endif()
+
+# Benchmarking (only has value on release)
+if (CMAKE_BUILD_TYPE MATCHES Release)
+    download_project(
+        PROJ benchmark
+        GIT_REPOSITORY https://github.com/google/benchmark.git
+        GIT_TAG master
+        ${UPDATE_DISCONNECTED_IF_AVAILABLE})
+
+    set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Suppressing benchmark's tests" FORCE)
+
+    # Build Benchmark
+    add_subdirectory(${benchmark_SOURCE_DIR} ${benchmark_BINARY_DIR})
+
+    # Include Benchmark
+    include_directories(${benchmark_SOURCE_DIR}/benchmark/include)
+
+    add_executable(data_ref_benchmarks src/data_ref_benchmarks.cpp)
+    target_link_libraries(data_ref_benchmarks benchmark ${CMAKE_THREAD_LIBS_INIT})
+    set_target_properties(data_ref_benchmarks PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/test)
+
+    add_executable(keg_benchmarks src/keg_benchmarks.cpp)
+    target_link_libraries(keg_benchmarks benchmark keg ${CMAKE_THREAD_LIBS_INIT})
+    set_target_properties(keg_benchmarks PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/test)
+
+    add_custom_target(run_benchmarks
+        COMMAND data_ref_benchmarks
+        COMMAND keg_benchmarks
+        DEPENDS data_ref_benchmarks keg_benchmarks)
+endif()

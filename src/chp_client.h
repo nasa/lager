@@ -41,8 +41,9 @@ public:
 private:
     void snapshotThread();
     void subscriberThread();
-    void publisherThread(const std::string& key, const std::string& value);
+    void publisherThread();
     void initialize(std::shared_ptr<zmq::context_t> context_in);
+    std::map<std::string, std::string> getUnsyncedHashmap();
 
     std::shared_ptr<zmq::context_t> context;
     std::shared_ptr<zmq::socket_t> snapshot;
@@ -53,12 +54,11 @@ private:
     std::thread snapshotThreadHandle;
     std::thread subscriberThreadHandle;
     std::thread publisherThreadHandle;
-    std::condition_variable snapshotCv;
-    std::condition_variable subscriberCv;
     std::mutex mutex;
 
     std::map<std::string, std::string> hashMap; // <topic name, xml format>
     std::map<std::string, std::string> uuidMap; // <uuid, topic name>
+    std::map<std::string, std::string> selfMap; // <topic name, xml format>
 
     std::string uuid;
     std::string serverHost;
@@ -75,6 +75,7 @@ private:
     bool timedOut;
     bool snapshotRunning;
     bool subscriberRunning;
+    bool publisherRunning;
 };
 
 #endif

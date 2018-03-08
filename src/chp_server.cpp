@@ -48,26 +48,52 @@ void ClusteredHashmapServer::start()
 
 /**
  * @brief Stops the server and associated threads
+ * @throws runtime_error if a thread fails to end
  */
 void ClusteredHashmapServer::stop()
 {
-    std::unique_lock<std::mutex> lock(mutex);
-
+    mutex.lock();
     running = false;
+    mutex.unlock();
+
+    unsigned int retries = 0;
 
     while (publisherRunning)
     {
-        publisherCv.wait(lock);
+        if (retries > THREAD_CLOSE_WAIT_RETRIES)
+        {
+            throw std::runtime_error("ClusteredHashmapServer::publisher thread failed to end");
+        }
+
+        lager_utils::sleepMillis(THREAD_CLOSE_WAIT_MILLIS);
+        retries++;
+
     }
+
+    retries = 0;
 
     while (snapshotRunning)
     {
-        snapshotCv.wait(lock);
+        if (retries > THREAD_CLOSE_WAIT_RETRIES)
+        {
+            throw std::runtime_error("ClusteredHashmapServer::snapshot thread failed to end");
+        }
+
+        lager_utils::sleepMillis(THREAD_CLOSE_WAIT_MILLIS);
+        retries++;
     }
+
+    retries = 0;
 
     while (collectorRunning)
     {
-        collectorCv.wait(lock);
+        if (retries > THREAD_CLOSE_WAIT_RETRIES)
+        {
+            throw std::runtime_error("ClusteredHashmapServer::collector thread failed to end");
+        }
+
+        lager_utils::sleepMillis(THREAD_CLOSE_WAIT_MILLIS);
+        retries++;
     }
 }
 
@@ -99,9 +125,13 @@ void ClusteredHashmapServer::snapshotThread()
 {
     snapshotRunning = true;
 
+    // setting linger so the socket doesn't hang around after being stopped
+    int linger = 0;
+
     try
     {
         snapshot.reset(new zmq::socket_t(*context.get(), ZMQ_ROUTER));
+        snapshot->setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
         snapshot->bind(lager_utils::getLocalUri(snapshotPort).c_str());
 
         // Sets up a poller for the snapshot socket
@@ -112,7 +142,7 @@ void ClusteredHashmapServer::snapshotThread()
 
         while (running)
         {
-            zmq::poll(&items[0], 1, 1000);
+            zmq::poll(&items[0], 1, -1);
 
             if (items[0].revents & ZMQ_POLLIN)
             {
@@ -144,10 +174,17 @@ void ClusteredHashmapServer::snapshotThread()
         if (e.num() == ETERM)
         {
             snapshot->close();
+            mutex.lock();
             snapshotRunning = false;
-            snapshotCv.notify_one();
+            mutex.unlock();
+            return;
         }
     }
+
+    snapshot->close();
+    mutex.lock();
+    snapshotRunning = false;
+    mutex.unlock();
 }
 
 /**
@@ -300,9 +337,17 @@ void ClusteredHashmapServer::publisherThread()
 {
     publisherRunning = true;
 
+    // setting high water mark of 1 so messages don't stack up
+    int hwm = 1;
+
+    // setting linger so the socket doesn't hang around after being stopped
+    int linger = 0;
+
     try
     {
         publisher.reset(new zmq::socket_t(*context.get(), ZMQ_PUB));
+        publisher->setsockopt(ZMQ_RCVHWM, &hwm, sizeof(hwm));
+        publisher->setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
         publisher->bind(lager_utils::getLocalUri(publisherPort).c_str());
 
         while (running)
@@ -317,7 +362,7 @@ void ClusteredHashmapServer::publisherThread()
             }
 
             // TODO this could probably run slower
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
     }
     catch (const zmq::error_t& e)
@@ -328,10 +373,17 @@ void ClusteredHashmapServer::publisherThread()
         if (e.num() == ETERM)
         {
             publisher->close();
+            mutex.lock();
             publisherRunning = false;
-            publisherCv.notify_one();
+            mutex.unlock();
+            return;
         }
     }
+
+    publisher->close();
+    mutex.lock();
+    publisherRunning = false;
+    mutex.unlock();
 }
 
 /**
@@ -369,9 +421,17 @@ void ClusteredHashmapServer::collectorThread()
 {
     collectorRunning = true;
 
+    // setting high water mark of 1 so messages don't stack up
+    int hwm = 1;
+
+    // setting linger so the socket doesn't hang around after being stopped
+    int linger = 0;
+
     try
     {
         collector.reset(new zmq::socket_t(*context.get(), ZMQ_SUB));
+        collector->setsockopt(ZMQ_RCVHWM, &hwm, sizeof(hwm));
+        collector->setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
         collector->bind(lager_utils::getLocalUri(collectorPort).c_str());
 
         // We want all messages on the socket
@@ -387,7 +447,7 @@ void ClusteredHashmapServer::collectorThread()
 
         while (running)
         {
-            zmq::poll(&items[0], 1, 1000);
+            zmq::poll(&items[0], 1, -1);
 
             // Check for new data
             if (items[0].revents & ZMQ_POLLIN)
@@ -458,8 +518,15 @@ void ClusteredHashmapServer::collectorThread()
         if (e.num() == ETERM)
         {
             collector->close();
+            mutex.lock();
             collectorRunning = false;
-            collectorCv.notify_one();
+            mutex.unlock();
+            return;
         }
     }
+
+    collector->close();
+    mutex.lock();
+    collectorRunning = false;
+    mutex.unlock();
 }

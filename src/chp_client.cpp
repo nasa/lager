@@ -8,7 +8,8 @@
  */
 ClusteredHashmapClient::ClusteredHashmapClient(const std::string& serverHost_in, int basePort, int timeoutMillis_in):
     initialized(false), running(false), snapshotRunning(false), subscriberRunning(false),
-    timedOut(false), sequence(-1), uuid("invalid"), serverHost(serverHost_in), timeoutMillis(timeoutMillis_in)
+    publisherRunning(false), timedOut(false), sequence(-1), uuid("invalid"),
+    serverHost(serverHost_in), timeoutMillis(timeoutMillis_in)
 {
     snapshotPort = basePort + CHP_SNAPSHOT_OFFSET;
     subscriberPort = basePort + CHP_PUBLISHER_OFFSET;
@@ -43,28 +44,60 @@ void ClusteredHashmapClient::start()
 
     snapshotThreadHandle = std::thread(&ClusteredHashmapClient::snapshotThread, this);
     subscriberThreadHandle = std::thread(&ClusteredHashmapClient::subscriberThread, this);
+    publisherThreadHandle = std::thread(&ClusteredHashmapClient::publisherThread, this);
 
     snapshotThreadHandle.detach();
     subscriberThreadHandle.detach();
+    publisherThreadHandle.detach();
 }
 
 /**
  * @brief Stops the running threads used by the client
+ * @throws runtime_error if a thread fails to end
  */
 void ClusteredHashmapClient::stop()
 {
-    std::unique_lock<std::mutex> lock(mutex);
-
+    mutex.lock();
     running = false;
+    mutex.unlock();
+
+    unsigned int retries = 0;
 
     while (subscriberRunning)
     {
-        subscriberCv.wait(lock);
+        if (retries > THREAD_CLOSE_WAIT_RETRIES)
+        {
+            throw std::runtime_error("ClusteredHashmapClient::subscriber thread failed to end");
+        }
+
+        lager_utils::sleepMillis(THREAD_CLOSE_WAIT_MILLIS);
+        retries++;
     }
+
+    retries = 0;
 
     while (snapshotRunning)
     {
-        snapshotCv.wait(lock);
+        if (retries > THREAD_CLOSE_WAIT_RETRIES)
+        {
+            throw std::runtime_error("ClusteredHashmapClient::snapshot thread failed to end");
+        }
+
+        lager_utils::sleepMillis(THREAD_CLOSE_WAIT_MILLIS);
+        retries++;
+    }
+
+    retries = 0;
+
+    while (publisherRunning)
+    {
+        if (retries > THREAD_CLOSE_WAIT_RETRIES)
+        {
+            throw std::runtime_error("ClusteredHashmapClient::publisher thread failed to end");
+        }
+
+        lager_utils::sleepMillis(THREAD_CLOSE_WAIT_MILLIS);
+        retries++;
     }
 }
 
@@ -75,7 +108,13 @@ void ClusteredHashmapClient::stop()
  */
 void ClusteredHashmapClient::addOrUpdateKeyValue(const std::string& key, const std::string& value)
 {
-    std::async(std::launch::async, &ClusteredHashmapClient::publisherThread, this, key, value);
+    // std::async(std::launch::async, &ClusteredHashmapClient::publisherThread, this, key, value);
+    // make sure we keep track of our own (key, value) changes.
+    // we don't remove the key completely on delete because we want to
+    // know if the removed item was in fact removed
+    mutex.lock();
+    selfMap[key] = value;
+    mutex.unlock();
 }
 
 /**
@@ -85,7 +124,13 @@ void ClusteredHashmapClient::addOrUpdateKeyValue(const std::string& key, const s
 void ClusteredHashmapClient::removeKey(const std::string& key)
 {
     // Sending an empty string as the value will tell the server to remove the key
-    std::async(std::launch::async, &ClusteredHashmapClient::publisherThread, this, key, "");
+    // std::async(std::launch::async, &ClusteredHashmapClient::publisherThread, this, key, "");
+    // make sure we keep track of our own (key, value) changes.
+    // we don't remove the key completely on delete because we want to
+    // know if the removed item was in fact removed
+    mutex.lock();
+    selfMap[key] = "";
+    mutex.unlock();
 }
 
 /**
@@ -98,6 +143,59 @@ void ClusteredHashmapClient::setCallback(const std::function<void()>& func)
 }
 
 /**
+ * @brief Checks the self map to ensure this client's own key/values added are in the map.
+ * If not, re-send the updates to the server.
+ */
+std::map<std::string, std::string> ClusteredHashmapClient::getUnsyncedHashmap()
+{
+    std::map<std::string, std::string> unsyncedHashmap;
+
+    for (auto i = selfMap.begin(); i != selfMap.end(); ++i)
+    {
+        if (hashMap.find(i->first) == hashMap.end())
+        {
+            // if the item isn't in the hashmap and has a non-empty value,
+            // we haven't received the update yet
+            if (i->second.size() > 0)
+            {
+                unsyncedHashmap[i->first] = i->second;
+            }
+        }
+        else
+        {
+            bool uuidsMatch = false;
+
+            // we found the item, now we have to check to make sure it's
+            // our uuid
+            for (auto j = uuidMap.begin(); j != uuidMap.end(); ++j)
+            {
+                if (j->second == i->first)
+                {
+                    if (uuid == j->first)
+                    {
+                        uuidsMatch = true;
+                    }
+                }
+            }
+
+            // if the item is in the hashmap but has a different value,
+            // we haven't received the update yet
+            if (hashMap[i->first] != selfMap[i->first])
+            {
+                // make sure it's our uuid, else it's a dupe with a different client
+                // TODO some kind of throw here perhaps?  user defined?
+                if (uuidsMatch)
+                {
+                    unsyncedHashmap[i->first] = i->second;
+                }
+            }
+        }
+    }
+
+    return unsyncedHashmap;
+}
+
+/**
  * @brief Main subscriber thread used to receive updates to the hashmap from the server
  */
 void ClusteredHashmapClient::subscriberThread()
@@ -106,9 +204,14 @@ void ClusteredHashmapClient::subscriberThread()
     subscriberRunning = true;
     subscriber.reset(new zmq::socket_t(*context.get(), ZMQ_SUB));
 
+    // setting high water mark of 1 so messages don't stack up
+    int hwm = 1;
+
     // setting linger so the socket doesn't hang around after being stopped
     int linger = 0;
-    subscriber->setsockopt(ZMQ_LINGER, &linger, sizeof(int));
+
+    subscriber->setsockopt(ZMQ_RCVHWM, &hwm, sizeof(hwm));
+    subscriber->setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
 
     // we want all messages from the server
     subscriber->setsockopt(ZMQ_SUBSCRIBE, "", 0);
@@ -196,10 +299,17 @@ void ClusteredHashmapClient::subscriberThread()
         if (e.num() == ETERM)
         {
             subscriber->close();
+            mutex.lock();
             subscriberRunning = false;
-            subscriberCv.notify_one();
+            mutex.unlock();
+            return;
         }
     }
+
+    subscriber->close();
+    mutex.lock();
+    subscriberRunning = false;
+    mutex.unlock();
 }
 
 /**
@@ -219,8 +329,8 @@ void ClusteredHashmapClient::snapshotThread()
     int linger = 0;
 
     snapshot.reset(new zmq::socket_t(*context.get(), ZMQ_DEALER));
-    snapshot->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(int));
-    snapshot->setsockopt(ZMQ_LINGER, &linger, sizeof(int));
+    snapshot->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
+    snapshot->setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
     snapshot->connect(lager_utils::getRemoteUri(serverHost.c_str(), snapshotPort).c_str());
 
     std::map<std::string, std::string> updateMap; // <key, value>
@@ -238,8 +348,6 @@ void ClusteredHashmapClient::snapshotThread()
 
     try
     {
-        double sequence = 0;
-
         while (running)
         {
             if (key != "KTHXBAI")
@@ -265,8 +373,8 @@ void ClusteredHashmapClient::snapshotThread()
                     snapshot->recv(&replyMsg);
                     key = std::string(static_cast<char*>(replyMsg.data()), replyMsg.size());
 
+                    // this frame is the sequence number and is unused for the snapshot
                     snapshot->recv(&replyMsg);
-                    sequence = *(double*)replyMsg.data();
 
                     snapshot->recv(&replyMsg);
                     uuid = std::string(static_cast<char*>(replyMsg.data()), replyMsg.size());
@@ -277,21 +385,12 @@ void ClusteredHashmapClient::snapshotThread()
                     snapshot->recv(&replyMsg);
                     value = std::string(static_cast<char*>(replyMsg.data()), replyMsg.size());
 
-                    // only update the map if the sequence number increased
-                    if (sequence > this->sequence)
+                    // if value is empty we're supposed to delete, but since this is the first
+                    // iteration that can't happen, we'll just ignore.
+                    if (value.length() > 0)
                     {
-                        // if value is empty we're supposed to delete, but since this is the first
-                        // iteration that can't happen, we'll just ignore.
-                        if (value.length() > 0)
-                        {
-                            updateMap[key] = value;
-                            updateUuids[uuid] = key;
-                        }
-                    }
-                    else
-                    {
-                        // TODO throw error
-                        std::cout << "bad sequence check (new = " << sequence << ", old = " << this->sequence << ")" << std::endl;
+                        updateMap[key] = value;
+                        updateUuids[uuid] = key;
                     }
                 }
                 else
@@ -300,7 +399,6 @@ void ClusteredHashmapClient::snapshotThread()
                     // TODO some kind of error should probably be thrown
                     updateMap.clear();
                     updateUuids.clear();
-                    std::cout << "no reply from snapshot server in " << timeoutMillis << "ms, retrying infinite times" << std::endl;
                 }
             }
             else
@@ -318,8 +416,10 @@ void ClusteredHashmapClient::snapshotThread()
         if (e.num() == ETERM)
         {
             snapshot->close();
+            mutex.lock();
             snapshotRunning = false;
-            snapshotCv.notify_one();
+            mutex.unlock();
+            return;
         }
     }
 
@@ -347,8 +447,9 @@ void ClusteredHashmapClient::snapshotThread()
     // This thread ends after one successful call, subsequent hashmap updates come
     // from the subscriber thread
     snapshot->close();
+    mutex.lock();
     snapshotRunning = false;
-    snapshotCv.notify_one();
+    mutex.unlock();
 }
 
 /**
@@ -356,7 +457,7 @@ void ClusteredHashmapClient::snapshotThread()
  * @param key is a string value of the hashmap key to update
  * @param value is a string value of the hashmap value to update (empty string removes the key from the map)
  */
-void ClusteredHashmapClient::publisherThread(const std::string& key, const std::string& value)
+void ClusteredHashmapClient::publisherThread()
 {
     // setting high water mark of 1 so messages don't stack up
     int hwm = 1;
@@ -364,37 +465,66 @@ void ClusteredHashmapClient::publisherThread(const std::string& key, const std::
     // linger zero so the socket shuts down nicely later
     int linger = 0;
 
-    publisher.reset(new zmq::socket_t(*context.get(), ZMQ_PUB));
-    publisher->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(int));
-    publisher->setsockopt(ZMQ_LINGER, &linger, sizeof(int));
-    publisher->connect(lager_utils::getRemoteUri(serverHost.c_str(), publisherPort).c_str());
-
-    // gives time for the socket to spin up
-    // TODO investigate how long this really needs to be
-    lager_utils::sleepMillis(1000);
-
     // TODO implement properties
     std::string properties("");
     double zero = 0;
 
-    zmq::message_t frame0(key.size());
-    zmq::message_t frame1(sizeof(double));
-    zmq::message_t frame2(uuid.size());
-    zmq::message_t frame3(properties.size());
-    zmq::message_t frame4(value.size());
+    std::map<std::string, std::string> unsyncedHashmap;
 
-    memcpy(frame0.data(), key.c_str(), key.size());
-    memcpy(frame1.data(), (void*)&zero, sizeof(double));
-    memcpy(frame2.data(), uuid.c_str(), uuid.size());
-    memcpy(frame3.data(), properties.c_str(), properties.size());
-    memcpy(frame4.data(), value.c_str(), value.size());
+    try
+    {
+        publisher.reset(new zmq::socket_t(*context.get(), ZMQ_PUB));
+        publisher->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
+        publisher->setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
+        publisher->connect(lager_utils::getRemoteUri(serverHost.c_str(), publisherPort).c_str());
 
-    publisher->send(frame0, ZMQ_SNDMORE);
-    publisher->send(frame1, ZMQ_SNDMORE);
-    publisher->send(frame2, ZMQ_SNDMORE);
-    publisher->send(frame3, ZMQ_SNDMORE);
-    publisher->send(frame4);
+        while (running)
+        {
+            // keep sending the updates until we get them back from the server
+            unsyncedHashmap = getUnsyncedHashmap();
 
-    // this is a one shot send and close
+            for (auto i = unsyncedHashmap.begin(); i != unsyncedHashmap.end(); ++i)
+            {
+                zmq::message_t frame0(i->first.size());
+                zmq::message_t frame1(sizeof(double));
+                zmq::message_t frame2(uuid.size());
+                zmq::message_t frame3(properties.size());
+                zmq::message_t frame4(i->second.size());
+
+                memcpy(frame0.data(), i->first.c_str(), i->first.size());
+                memcpy(frame1.data(), (void*)&zero, sizeof(double));
+                memcpy(frame2.data(), uuid.c_str(), uuid.size());
+                memcpy(frame3.data(), properties.c_str(), properties.size());
+                memcpy(frame4.data(), i->second.c_str(), i->second.size());
+
+                publisher->send(frame0, ZMQ_SNDMORE);
+                publisher->send(frame1, ZMQ_SNDMORE);
+                publisher->send(frame2, ZMQ_SNDMORE);
+                publisher->send(frame3, ZMQ_SNDMORE);
+                publisher->send(frame4);
+            }
+
+            // keep this from running at full speed
+            lager_utils::sleepMillis(100);
+        }
+    }
+    catch (const zmq::error_t& e)
+    {
+        // This is the proper way of shutting down multithreaded ZMQ sockets.
+        // The creator of the zmq context basically pulls the rug out from
+        // under the socket.
+        if (e.num() == ETERM)
+        {
+            publisher->close();
+            mutex.lock();
+            publisherRunning = false;
+            mutex.unlock();
+            return;
+        }
+    }
+
     publisher->close();
+    mutex.lock();
+    publisherRunning = false;
+    mutex.unlock();
 }

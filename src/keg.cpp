@@ -25,7 +25,10 @@ void Keg::addFormat(const std::string& uuid, const std::string& formatStr)
 {
     if (formatMap.count(uuid))
     {
-        throw std::runtime_error("attempted to add duplicate uuid to formatMap");
+        if (formatMap[uuid] != formatStr)
+        {
+            throw std::runtime_error("attempted to add duplicate uuid with different format to formatMap");
+        }
     }
 
     formatMap[uuid] = formatStr;

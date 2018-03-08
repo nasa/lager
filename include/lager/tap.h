@@ -17,7 +17,7 @@ public:
     Tap();
     virtual ~Tap();
 
-    bool init(const std::string& serverHost_in, int basePort);
+    bool init(const std::string& serverHost_in, int basePort, int timeOutMillis);
     void addItem(AbstractDataRefItem* item);
     void start(const std::string& key_in);
     void stop();

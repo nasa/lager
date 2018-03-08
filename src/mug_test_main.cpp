@@ -9,7 +9,7 @@ int main(int argc, char* argv[])
     std::cout << "zmq version: " << lager_utils::getZmqVersion() << std::endl;
 
     Mug m;
-    m.init("localhost", 12345);
+    m.init("localhost", 12345, 100);
     m.start();
 
     lager_utils::sleepMillis(10000);
