@@ -31,4 +31,17 @@ namespace keg_utils
         return (info.st_mode & S_IFDIR) != 0;
 #endif
     }
+
+    static bool doesFileExist(const std::string& path)
+    {
+#ifdef _WIN32
+        struct _stat info;
+
+        return (_stat(path.c_str(), &info) == 0);
+#else
+        struct stat info;
+
+        return (stat(path.c_str(), &info) == 0);
+#endif
+    }
 }
