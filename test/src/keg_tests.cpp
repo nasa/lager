@@ -58,6 +58,20 @@ TEST_F(KegTests, DuplicateUuid)
                                  "<item name=\"column2\" type=\"uint16_t\" size=\"2\" offset=\"2\"/></format>"));
 }
 
+TEST_F(KegTests, MetaData)
+{
+    Keg k(".");
+
+    k.addFormat("076ac37b-83dd-4fef-bc9d-16789794be87", "<?xml version=\"1.0\" encoding=\"UTF-8\"?><format version=\"BEERR01\">"
+                "<item name=\"column1\" type=\"uint32_t\" size=\"4\" offset=\"0\"/>"
+                "<item name=\"column2\" type=\"uint16_t\" size=\"2\" offset=\"4\"/></format>");
+
+    k.setMetaData("testkey", "testvalue");
+    k.start();
+    lager_utils::sleepMillis(100);
+    k.stop();
+}
+
 // make sure the format file is created and subsequentely deleted
 TEST_F(KegTests, FormatFile)
 {

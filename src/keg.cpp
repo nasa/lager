@@ -37,6 +37,16 @@ void Keg::addFormat(const std::string& uuid, const std::string& formatStr)
 }
 
 /**
+ * @brief Adds the given key, value pair to the metadata set for the keg
+ * @param key
+ * @param value
+ */
+void Keg::setMetaData(const std::string& key, const std::string& value)
+{
+    metaMap[key] = value;
+}
+
+/**
  * @brief Opens the keg's output file and writes the initially blank version and offset values
  * @throws runtime_error if keg is already running
  */
@@ -141,7 +151,7 @@ std::string Keg::getFormatString()
 {
     DataFormatParser p;
 
-    if (p.createFromUuidMap(formatMap))
+    if (p.createFromUuidMap(formatMap, metaMap))
     {
         return p.getXmlStr();
     }
