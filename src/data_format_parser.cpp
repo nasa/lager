@@ -418,13 +418,13 @@ bool DataFormatParser::createFromUuidMap(const std::map<std::string, std::string
     // now add the meta data if it exists
     if (metaMap.size() > 0)
     {
-        XMLCh* xKey = nullptr;
-        XMLCh* xValue = nullptr;
-
         DOMElement* metaElem = doc->createElement(tagMetaData);
 
         for (auto meta = metaMap.begin(); meta != metaMap.end(); ++meta)
         {
+            XMLCh* xKey = nullptr;
+            XMLCh* xValue = nullptr;
+
             DOMElement* metaItem = doc->createElement(tagMeta);
 
             xKey = XMLString::transcode(meta->first.c_str());
