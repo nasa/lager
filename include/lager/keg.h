@@ -29,7 +29,7 @@ public:
     const std::string getLogFile() { return logFileName; }
     const std::string getFormatFile() { return formatFileName; }
 
-private:
+protected:
     void writeFormatsAndHeader();
     void writeFormatFile();
     std::string getFormatString();

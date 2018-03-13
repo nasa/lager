@@ -23,7 +23,7 @@ public:
     void stop();
     void log();
 
-private:
+protected:
     void publisherThread();
 
     std::shared_ptr<ClusteredHashmapClient> chpClient;
