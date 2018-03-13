@@ -32,6 +32,18 @@ void Keg::addFormat(const std::string& uuid, const std::string& formatStr)
     }
 
     formatMap[uuid] = formatStr;
+
+    writeFormatFile();
+}
+
+/**
+ * @brief Adds the given key, value pair to the metadata set for the keg
+ * @param key
+ * @param value
+ */
+void Keg::setMetaData(const std::string& key, const std::string& value)
+{
+    metaMap[key] = value;
 }
 
 /**
@@ -48,6 +60,8 @@ void Keg::start()
     std::stringstream ss;
     ss << baseDir << "/" << lager_utils::getCurrentTimeFormatted("%Y%m%d_%H%M%S") << ".lgr";
     logFileName = ss.str();
+    ss << ".format";
+    formatFileName = ss.str();
 
     // TODO check for file open
 
@@ -57,6 +71,8 @@ void Keg::start()
     logFile.open(logFileName.c_str(), std::ios::out | std::ios::binary);
     logFile.write((char*)&emptyVersion, sizeof(emptyVersion));
     logFile.write((char*)&emptyOffset, sizeof(emptyOffset));
+
+    formatFile.open(formatFileName.c_str(), std::ios::out | std::ios::binary);
     running = true;
 }
 
@@ -72,8 +88,13 @@ void Keg::stop()
     }
 
     running = false;
+
     writeFormatsAndHeader();
     logFile.close();
+    formatFile.close();
+
+    // we no longer need the formats file
+    std::remove(formatFileName.c_str());
 }
 
 /**
@@ -113,6 +134,16 @@ void Keg::writeFormatsAndHeader()
 }
 
 /**
+ * @brief Writes formats to intermediate file in case of bad exit
+ */
+void Keg::writeFormatFile()
+{
+    std::string formatStr = getFormatString();
+    formatFile.write(reinterpret_cast<const char*>(formatStr.c_str()), formatStr.length());
+    formatFile.flush();
+}
+
+/**
  * @brief Helper function which calls the xml generator function to get the final xml format string
  * @throws runtime_error if xml generator fails
  */
@@ -120,7 +151,7 @@ std::string Keg::getFormatString()
 {
     DataFormatParser p;
 
-    if (p.createFromUuidMap(formatMap))
+    if (p.createFromUuidMap(formatMap, metaMap))
     {
         return p.getXmlStr();
     }

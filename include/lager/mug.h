@@ -25,7 +25,7 @@ public:
     void start();
     void stop();
 
-private:
+protected:
     void subscriberThread();
     void hashMapUpdated();
 

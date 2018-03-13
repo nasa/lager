@@ -1,6 +1,7 @@
 #ifndef KEG
 #define KEG
 
+#include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -24,16 +25,23 @@ public:
     void stop();
     void write(const std::vector<uint8_t>& data, size_t size);
     void addFormat(const std::string& uuid, const std::string& formatStr);
+    void setMetaData(const std::string& key, const std::string& value);
+    const std::string getLogFile() { return logFileName; }
+    const std::string getFormatFile() { return formatFileName; }
 
-private:
+protected:
     void writeFormatsAndHeader();
+    void writeFormatFile();
     std::string getFormatString();
     std::fstream logFile;
+    std::fstream formatFile;
 
     std::map<std::string, std::string> formatMap; // <uuid, format xml>
+    std::map<std::string, std::string> metaMap; // <key, value>
     std::vector<uint8_t> data;
 
     std::string logFileName;
+    std::string formatFileName;
     std::string baseDir;
 
     uint16_t version;

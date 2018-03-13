@@ -19,7 +19,7 @@ public:
     void start();
     void stop();
 
-private:
+protected:
     std::shared_ptr<ClusteredHashmapServer> registrar;
     std::shared_ptr<Forwarder> forwarder;
     std::shared_ptr<zmq::context_t> context;

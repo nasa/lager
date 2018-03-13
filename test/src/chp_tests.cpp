@@ -157,7 +157,7 @@ TEST_F(ChpTests, ClientNoHugz)
 {
     context.reset(new zmq::context_t(1));
 
-    ClusteredHashmapClient c("localhost", 12345, 50);
+    ClusteredHashmapClient c("localhost", 12345, 10);
 
     c.init(context, lager_utils::getUuid());
 

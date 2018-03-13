@@ -329,7 +329,8 @@ bool DataFormatParser::createFromDataRefItems(const std::vector<AbstractDataRefI
  * @throws runtime_error on bad parse or bad uuid conversion
  */
 // TODO throw instead of return
-bool DataFormatParser::createFromUuidMap(const std::map<std::string, std::string>& map)
+bool DataFormatParser::createFromUuidMap(const std::map<std::string, std::string>& uuidMap,
+        const std::map<std::string, std::string>& metaMap)
 {
     // temporary xml strings to use during generation
     XMLCh* xKeg = nullptr;
@@ -364,7 +365,7 @@ bool DataFormatParser::createFromUuidMap(const std::map<std::string, std::string
     parser->setDoSchema(true);
     parser->setExternalNoNamespaceSchemaLocation(xsdFile.c_str());
 
-    for (auto i = map.begin(); i != map.end(); ++i)
+    for (auto i = uuidMap.begin(); i != uuidMap.end(); ++i)
     {
         // grabs the human readable string, as the 16 byte version may contain invalid xml characters
         std::string tmpUuid = lager_utils::getUuidString(i->first);
@@ -413,6 +414,30 @@ bool DataFormatParser::createFromUuidMap(const std::map<std::string, std::string
     }
 
     root->appendChild(formatsElem);
+
+    // now add the meta data if it exists
+    if (metaMap.size() > 0)
+    {
+        DOMElement* metaElem = doc->createElement(tagMetaData);
+
+        for (auto meta = metaMap.begin(); meta != metaMap.end(); ++meta)
+        {
+            XMLCh* xKey = nullptr;
+            XMLCh* xValue = nullptr;
+
+            DOMElement* metaItem = doc->createElement(tagMeta);
+
+            xKey = XMLString::transcode(meta->first.c_str());
+            xValue = XMLString::transcode(meta->second.c_str());
+
+            metaItem->setAttribute(attKey, xKey);
+            metaItem->setAttribute(attValue, xValue);
+
+            metaElem->appendChild(metaItem);
+        }
+
+        root->appendChild(metaElem);
+    }
 
     // now that we have the completed doc, store the xml in the member
     xmlStr = getStringFromDoc(doc);

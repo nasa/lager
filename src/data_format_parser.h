@@ -52,8 +52,10 @@ public:
 
     std::shared_ptr<DataFormat> parseFromFile(const std::string& xmlFile);
     std::shared_ptr<DataFormat> parseFromString(const std::string& xmlStr_in);
-    bool createFromDataRefItems(const std::vector<AbstractDataRefItem*>& items, const std::string& version);
-    bool createFromUuidMap(const std::map<std::string, std::string>& map);
+    bool createFromDataRefItems(const std::vector<AbstractDataRefItem*>& items,
+                                const std::string& version);
+    bool createFromUuidMap(const std::map<std::string, std::string>& uuidMap,
+                           const std::map<std::string, std::string>& metaMap);
     bool isValid(const std::string& xml, unsigned int itemCount);
 
 private:
