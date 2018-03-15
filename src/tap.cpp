@@ -10,7 +10,7 @@ Tap::~Tap()
     // TODO make these smart pointers
     for (auto i = dataRefItems.begin(); i != dataRefItems.end(); ++i)
     {
-        delete (*i);
+        // delete (*i);
     }
 }
 

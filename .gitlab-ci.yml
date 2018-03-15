@@ -61,7 +61,7 @@ benchmark:
     - cd build
     - cmake -DCMAKE_BUILD_TYPE=Release .. && make && make run_benchmarks
 
-profiler:
+leakcheck:
   stage: postbuild
   image: js-er-code.jsc.nasa.gov:5005/lager/lager_image_profiler:stable
   script:
