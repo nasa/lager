@@ -61,6 +61,15 @@ benchmark:
     - cd build
     - cmake -DCMAKE_BUILD_TYPE=Release .. && make && make run_benchmarks
 
+profiler:
+  stage: postbuild
+  image: js-er-code.jsc.nasa.gov:5005/lager/lager_image_profiler:stable
+  script:
+    - mkdir build
+    - cd build
+    - cmake -DCMAKE_BUILD_TYPE=Debug .. && make
+    - valgrind --error-exitcode=1 --leak-check=full --quiet ./test/end_to_end_profile
+
 coverage-report:
   image: js-er-code.jsc.nasa.gov:5005/ci_build/ubuntu_xenial_with_nasa_certs_and_python
   stage: deploy
