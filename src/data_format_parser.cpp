@@ -204,7 +204,7 @@ void DataFormatParser::parse()
         {
             DOMNode* node = children->item(i);
 
-            if (node->getNodeType() and node->getNodeType() == DOMNode::ELEMENT_NODE)
+            if (node->getNodeType() && node->getNodeType() == DOMNode::ELEMENT_NODE)
             {
                 DOMElement* nodeElement = dynamic_cast<DOMElement*>(node);
 
