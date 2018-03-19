@@ -192,7 +192,8 @@ void DataFormatParser::parse()
 
         // grab the version
         const XMLCh* xVersion = formatElement->getAttribute(attVersion);
-        std::string version(XMLString::transcode(xVersion));
+        char* cVersion = XMLString::transcode(xVersion);
+        std::string version(cVersion);
 
         format.reset(new DataFormat(version));
 
@@ -219,19 +220,30 @@ void DataFormatParser::parse()
                     size_t size;
                     off_t offset;
 
-                    std::istringstream issSize(XMLString::transcode(xSize));
+                    char* cSize = XMLString::transcode(xSize);
+                    std::istringstream issSize(cSize);
                     issSize >> size;
 
-                    std::istringstream issOffset(XMLString::transcode(xOffset));
+                    char* cOffset = XMLString::transcode(xOffset);
+                    std::istringstream issOffset(cOffset);
                     issOffset >> offset;
 
+                    char* cName = XMLString::transcode(xName);
+                    char* cType = XMLString::transcode(xType);
+
                     // add the item to the format
-                    format->addItem(DataItem(std::string(XMLString::transcode(xName)),
-                                             std::string(XMLString::transcode(xType)),
-                                             size, offset));
+                    format->addItem(DataItem(std::string(cName), std::string(cType), size, offset));
+
+                    // release resources
+                    XMLString::release(&cName);
+                    XMLString::release(&cType);
+                    XMLString::release(&cSize);
+                    XMLString::release(&cOffset);
                 }
             }
         }
+
+        XMLString::release(&cVersion);
     }
     catch (const std::runtime_error& e)
     {
@@ -300,18 +312,21 @@ bool DataFormatParser::createFromDataRefItems(const std::vector<AbstractDataRefI
         item->setAttribute(attOffset, xOffset);
 
         root->appendChild(item);
+
+        // release resources
+        XMLString::release(&xType);
+        XMLString::release(&xSize);
+        XMLString::release(&xName);
+        XMLString::release(&xOffset);
     }
 
     // set the member string
     xmlStr = getStringFromDoc(doc);
 
-    // release the xml string resources
+    // release resources
     XMLString::release(&xFormat);
     XMLString::release(&xVersion);
-    XMLString::release(&xName);
-    XMLString::release(&xType);
-    XMLString::release(&xSize);
-    XMLString::release(&xOffset);
+    doc->release();
 
     // check validity against the schema
     if (!isValid(xmlStr, items.size()))
@@ -342,6 +357,8 @@ bool DataFormatParser::createFromUuidMap(const std::map<std::string, std::string
     XMLCh* xUuid = nullptr;
 
     // grab available dom implementation (nullptr = no options)
+    // note that the DOMImplementation object retains ownership of this object's
+    // memory and application code should *not* delete it
     DOMImplementation* impl = DOMImplementationRegistry::getDOMImplementation(nullptr);
 
     if (!impl)
@@ -411,6 +428,9 @@ bool DataFormatParser::createFromUuidMap(const std::map<std::string, std::string
 
         // add the new element copy to our final formats element
         formatsElem->appendChild(formatElem);
+
+        // release the memory from the temp doc
+        // tmpDoc->release();
     }
 
     root->appendChild(formatsElem);
@@ -434,6 +454,9 @@ bool DataFormatParser::createFromUuidMap(const std::map<std::string, std::string
             metaItem->setAttribute(attValue, xValue);
 
             metaElem->appendChild(metaItem);
+
+            XMLString::release(&xKey);
+            XMLString::release(&xValue);
         }
 
         root->appendChild(metaElem);
@@ -442,7 +465,7 @@ bool DataFormatParser::createFromUuidMap(const std::map<std::string, std::string
     // now that we have the completed doc, store the xml in the member
     xmlStr = getStringFromDoc(doc);
 
-    // release the temporary xml strings
+    // release resources
     XMLString::release(&xKeg);
     XMLString::release(&xVersion);
     XMLString::release(&xName);
@@ -450,6 +473,7 @@ bool DataFormatParser::createFromUuidMap(const std::map<std::string, std::string
     XMLString::release(&xSize);
     XMLString::release(&xOffset);
     XMLString::release(&xUuid);
+    doc->release();
 
     return true;
 }
@@ -461,7 +485,10 @@ bool DataFormatParser::createFromUuidMap(const std::map<std::string, std::string
  */
 std::string DataFormatParser::getStringFromDoc(xercesc::DOMDocument* doc)
 {
+    // note that the DOMImplementation object retains ownership of this object's
+    // memory and application code should *not* delete it
     DOMImplementation* pImplement = nullptr;
+
     DOMLSSerializer* pSerializer = nullptr;
     MemBufFormatTarget* pTarget = nullptr;
 
@@ -481,6 +508,11 @@ std::string DataFormatParser::getStringFromDoc(xercesc::DOMDocument* doc)
 
     // copy the buffer into a real string
     std::string xmlOutput((char*)pTarget->getRawBuffer(), pTarget->getLen());
+
+    // release the allocated memory
+    pSerializer->release();
+    pDomLsOutput->release();
+    delete pTarget;
 
     return xmlOutput;
 }
