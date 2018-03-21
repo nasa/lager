@@ -1,9 +1,44 @@
+#include <sstream>
+
 #include "lager/tap.h"
 #include "lager/bartender.h"
 #include "lager/mug.h"
 
+void usage(char* progName)
+{
+    std::cout << progName << " [options] ARRAY_SIZE" << std::endl <<
+              "Options:" << std::endl <<
+              "-h | --help        Print this help" << std::endl <<
+              "ARRAY_SIZE         Size of uint32_t array to add to the tap (defaults to 10)" << std::endl;
+}
+
 int main(int argc, char* argv[])
 {
+    int arraySize = 10;
+
+    if (argc == 2)
+    {
+        if (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0)
+        {
+            usage(argv[0]);
+            return 0;
+        }
+
+        std::istringstream ss(argv[1]);
+
+        if (!(ss >> arraySize))
+        {
+            std::cerr << "Invalid ARRAY_SIZE: " << argv[1] << std::endl;
+            return 1;
+        }
+    }
+
+    if (argc > 2)
+    {
+        usage(argv[0]);
+        return 0;
+    }
+
     Tap t;
     Mug m;
     Bartender b;
@@ -22,6 +57,7 @@ int main(int argc, char* argv[])
     int32_t int1 = -1000;
     double double1 = 0.001;
     float float1 = 0.001f;
+    std::vector<uint32_t> array;
 
     t.addItem(new DataRefItem<uint32_t>("uint1", &uint1));
     t.addItem(new DataRefItem<int32_t>("int1", &int1));
@@ -32,13 +68,21 @@ int main(int argc, char* argv[])
     t.addItem(new DataRefItem<int8_t>("byte1", &byte1));
     t.addItem(new DataRefItem<float>("float1", &float1));
 
+    std::stringstream ss;
+
+    for (unsigned int i = 0; i < arraySize; ++i)
+    {
+        ss.str(std::string());
+        ss << "array" << i;
+        array.push_back(uint32_t(0));
+        t.addItem(new DataRefItem<uint32_t>(ss.str(), &array[i]));
+    }
+
     t.start("/sample_format");
 
     for (unsigned int i = 0; i < 1000; ++i)
     {
         t.log();
-
-        lager_utils::sleepMillis(5);
 
         ubyte1 += 1;
         byte1 += 10;
@@ -48,6 +92,13 @@ int main(int argc, char* argv[])
         int1 += 100;
         double1 += 0.001;
         float1 += 0.010f;
+
+        for (unsigned int i = 0; i < arraySize; ++i)
+        {
+            array[i] += 1;
+        }
+
+        lager_utils::sleepMillis(1);
     }
 
     t.stop();

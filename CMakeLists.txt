@@ -17,6 +17,7 @@ version_str_to_ints(VERSION_MAJOR VERSION_MINOR VERSION_PATCH ${version})
 message(STATUS "Lager version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 
 option(BUILD_TESTS "Build unit tests" ON)
+option(BUILD_LTTNG "Build with LTTng tracing enabled" OFF)
 
 if (WIN32)
     # Automatically creates the module definition files in windows
@@ -29,11 +30,18 @@ if (WIN32)
     endif()
 endif()
 
+# LTTng tracing
+if (BUILD_LTTNG)
+    include(lttng)
+endif()
+
 # TODO switch to use target_include_dir when conversion to library is made
 include_directories(
     ${ZeroMQ_INCLUDE_DIRS}
     ${LIBUUID_INCLUDE_DIRS}
     ${XercesC_INCLUDE_DIRS}
+    ${LTTngUST_INCLUDE_DIRS}
+    ${CMAKE_BINARY_DIR}
     include
     src)
 
@@ -46,7 +54,8 @@ set(TAP_SRCS
     src/tap.cpp)
 
 set(MUG_SRCS
-    src/mug.cpp)
+    src/mug.cpp
+    ${LTTNG_SRCS})
 
 set(KEG_SRCS
     src/keg.cpp)
@@ -79,7 +88,7 @@ add_library(tap SHARED ${TAP_SRCS} ${DATA_FORMAT_SRCS})
 target_link_libraries(tap dataformat chp)
 
 add_library(mug SHARED ${MUG_SRCS})
-target_link_libraries(mug chp keg dataformat)
+target_link_libraries(mug chp keg dataformat ${LTTngUST_LIBRARIES})
 
 # Targets for bartender and test apps
 # TODO remove these later

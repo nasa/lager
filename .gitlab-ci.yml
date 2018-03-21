@@ -32,6 +32,14 @@ windows:
     - lager
     - windows
 
+lttng:
+  stage: build
+  image: js-er-code.jsc.nasa.gov:5005/lager/lager_image_profiler:stable
+  script:
+    - mkdir build
+    - cd build
+    - cmake -DBUILD_LTTNG=ON .. && make    
+
 static-analysis:
   stage: prebuild
   image: js-er-code.jsc.nasa.gov:5005/lager/lager_image_base_xenial:stable
