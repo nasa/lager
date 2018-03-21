@@ -58,6 +58,7 @@ int main(int argc, char* argv[])
     double double1 = 0.001;
     float float1 = 0.001f;
     std::vector<uint32_t> array;
+    array.resize(arraySize);
 
     t.addItem(new DataRefItem<uint32_t>("uint1", &uint1));
     t.addItem(new DataRefItem<int32_t>("int1", &int1));
@@ -74,7 +75,6 @@ int main(int argc, char* argv[])
     {
         ss.str(std::string());
         ss << "array" << i;
-        array.push_back(uint32_t(0));
         t.addItem(new DataRefItem<uint32_t>(ss.str(), &array[i]));
     }
 
