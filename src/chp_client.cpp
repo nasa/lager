@@ -301,6 +301,7 @@ void ClusteredHashmapClient::subscriberThread()
             subscriber->close();
             mutex.lock();
             subscriberRunning = false;
+            timedOut = true;
             mutex.unlock();
             return;
         }
@@ -309,6 +310,7 @@ void ClusteredHashmapClient::subscriberThread()
     subscriber->close();
     mutex.lock();
     subscriberRunning = false;
+    timedOut = true;
     mutex.unlock();
 }
 
