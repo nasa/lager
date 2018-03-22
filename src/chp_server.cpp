@@ -281,10 +281,12 @@ void ClusteredHashmapServer::publishUpdatedKeys()
     // Iterate the updated map and send each entry
     for (auto i = updatedKeys.begin(); i != updatedKeys.end(); ++i)
     {
+        std::string tmpKey = *i;
+
         // Find the associated uuid that matches the topic name
         for (auto u = uuidMap.begin(); u != uuidMap.end(); ++u)
         {
-            if (u->second == *i)
+            if (u->second == tmpKey)
             {
                 tmpUuid = u->first;
                 break;
@@ -293,17 +295,17 @@ void ClusteredHashmapServer::publishUpdatedKeys()
 
         // TODO throw here if uuid not found, shouldn't happen?
 
-        zmq::message_t frame0((*i).size());
+        zmq::message_t frame0((tmpKey).size());
         zmq::message_t frame1(sizeof(double));
         zmq::message_t frame2(tmpUuid.size());
         zmq::message_t frame3(empty.size());
-        zmq::message_t frame4(hashMap[*i].size());
+        zmq::message_t frame4(hashMap[tmpKey].size());
 
-        memcpy(frame0.data(), (*i).c_str(), (*i).size());
+        memcpy(frame0.data(), (tmpKey).c_str(), (tmpKey).size());
         memcpy(frame1.data(), (void*)&sequence, sizeof(double));
         memcpy(frame2.data(), tmpUuid.c_str(), tmpUuid.size());
         memcpy(frame3.data(), empty.c_str(), empty.size());
-        memcpy(frame4.data(), hashMap[*i].c_str(), hashMap[*i].size());
+        memcpy(frame4.data(), hashMap[tmpKey].c_str(), hashMap[tmpKey].size());
 
         publisher->send(frame0, ZMQ_SNDMORE);
         publisher->send(frame1, ZMQ_SNDMORE);
@@ -312,9 +314,9 @@ void ClusteredHashmapServer::publishUpdatedKeys()
         publisher->send(frame4);
 
         // if the entry is empty that means it needs to be removed
-        if (hashMap[*i].size() == 0)
+        if (hashMap[tmpKey].size() == 0)
         {
-            removedKeys.push_back(*i);
+            removedKeys.push_back(tmpKey);
         }
 
         // clients should check for sequence to ensure they have the most recent version

@@ -1,0 +1,33 @@
+// LTTng tracepoint events for Lager
+
+// generic tracepoint for any function
+TRACEPOINT_EVENT(
+    lager_tp,
+    lager_tp_general,
+    TP_ARGS(
+        const char*, class_name,
+        const char*, description
+    ),
+    TP_FIELDS(
+        ctf_string(class_name, class_name)
+        ctf_string(description, description)
+    )
+)
+
+// trace specific zmq message details
+TRACEPOINT_EVENT(
+    lager_tp,
+    lager_tp_zmq_msg,
+    TP_ARGS(
+        const char*, class_name,
+        const char*, description,
+        int, msg_part_count,
+        int, msg_total_size
+    ),
+    TP_FIELDS(
+        ctf_string(class_name, class_name)
+        ctf_string(description, description)
+        ctf_integer(int, msg_part_count, msg_part_count)
+        ctf_integer(int, msg_total_size, msg_total_size)
+    )
+)

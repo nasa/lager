@@ -41,10 +41,10 @@ TEST_F(ChpTests, ServerAddRemoveKeys)
     c.start();
     EXPECT_EQ(c.getHashMap().size(), 0);
     c.addOrUpdateKeyValue("testkey", "testvalue");
-    lager_utils::sleepMillis(50);
+    lager_utils::sleepMillis(200);
     EXPECT_STREQ(c.getHashMap()["testkey"].c_str(), "testvalue");
     c.removeKey("testkey");
-    lager_utils::sleepMillis(50);
+    lager_utils::sleepMillis(200);
     EXPECT_EQ(c.getHashMap().size(), 0);
     EXPECT_EQ(zmq_ctx_shutdown((void*)*context.get()), 0);
     c.stop();
@@ -157,13 +157,13 @@ TEST_F(ChpTests, ClientNoHugz)
 {
     context.reset(new zmq::context_t(1));
 
-    ClusteredHashmapClient c("localhost", 12345, 10);
+    ClusteredHashmapClient c("localhost", 12345, 100);
 
     c.init(context, lager_utils::getUuid());
 
     c.start();
 
-    lager_utils::sleepMillis(100);
+    lager_utils::sleepMillis(1000);
 
     EXPECT_TRUE(c.isTimedOut());
     EXPECT_EQ(zmq_ctx_shutdown((void*)*context.get()), 0);

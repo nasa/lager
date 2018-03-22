@@ -1,5 +1,9 @@
 #include "lager/mug.h"
 
+#ifdef WITH_LTTNG
+#include "lager.tp.h"
+#endif
+
 /**
 * @brief Constructor, sets an invalid port to ensure the user initializes properly
 */
@@ -162,6 +166,11 @@ void Mug::subscriberThread()
         // set up a poller for the subscriber socket
         zmq::pollitem_t items[] = {{static_cast<void*>(*subscriber.get()), 0, ZMQ_POLLIN, 0}};
 
+#ifdef WITH_LTTNG
+        int msgPartCount = 0;
+        tracepoint(lager_tp, lager_tp_general, "Mug::subscriberThread()", "start");
+#endif
+
         while (running)
         {
             // TODO check if this timeout should be different or setable by user
@@ -191,6 +200,11 @@ void Mug::subscriberThread()
                 {
                     throw std::runtime_error("received invalid uuid size");
                 }
+
+#ifdef WITH_LTTNG
+                // the four message parts above
+                msgPartCount = 4;
+#endif
 
                 // uuid is first in the buffer
                 for (size_t i = 0; i < uuid.size(); ++i)
@@ -249,9 +263,17 @@ void Mug::subscriberThread()
                             break;
                     }
 
+#ifdef WITH_LTTNG
+                    msgPartCount++;
+#endif
                     // check for more multipart messages
                     subscriber->getsockopt(ZMQ_RCVMORE, &rcvMore, &moreSize);
                 }
+
+#ifdef WITH_LTTNG
+                tracepoint(lager_tp, lager_tp_zmq_msg, "Mug::subscriberThread()", "msg_rcvd",
+                           msgPartCount, data.size());
+#endif
 
                 // write out the data
                 // TODO this should probably be some kind of callback function

@@ -151,10 +151,20 @@ if (CMAKE_BUILD_TYPE MATCHES Release)
     target_link_libraries(keg_benchmarks benchmark keg ${CMAKE_THREAD_LIBS_INIT})
     set_target_properties(keg_benchmarks PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/test)
 
+    add_executable(tap_benchmarks src/tap_benchmarks.cpp)
+    target_link_libraries(tap_benchmarks benchmark tap ${CMAKE_THREAD_LIBS_INIT})
+    set_target_properties(tap_benchmarks PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/test)
+
+    add_executable(data_format_benchmarks src/data_format_benchmarks.cpp)
+    target_link_libraries(data_format_benchmarks benchmark dataformat ${LIBUUID_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+    set_target_properties(data_format_benchmarks PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/test)
+
     add_custom_target(run_benchmarks
         COMMAND data_ref_benchmarks
         COMMAND keg_benchmarks
-        DEPENDS data_ref_benchmarks keg_benchmarks)
+        COMMAND tap_benchmarks
+        COMMAND data_format_benchmarks
+        DEPENDS data_ref_benchmarks keg_benchmarks tap_benchmarks data_format_benchmarks)
 endif()
 
 # Profiling

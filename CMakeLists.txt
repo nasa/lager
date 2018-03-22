@@ -17,6 +17,7 @@ version_str_to_ints(VERSION_MAJOR VERSION_MINOR VERSION_PATCH ${version})
 message(STATUS "Lager version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 
 option(BUILD_TESTS "Build unit tests" ON)
+option(BUILD_LTTNG "Build with LTTng tracing enabled" OFF)
 
 if (WIN32)
     # Automatically creates the module definition files in windows
@@ -145,4 +146,14 @@ endif()
 if (BUILD_TESTS)
     enable_testing()
     add_subdirectory(test)
+endif()
+
+# LTTng tracing
+if (BUILD_LTTNG)
+    include(lttng)
+    target_include_directories(mug PRIVATE
+        ${LTTngUST_INCLUDE_DIRS} 
+        ${CMAKE_BINARY_DIR})
+    target_sources(mug PRIVATE ${LTTNG_SRCS})
+    target_link_libraries(mug ${LTTngUST_LIBRARIES})
 endif()
