@@ -32,6 +32,7 @@ windows:
     - lager
     - windows
 
+# todo: make this actually run the trace
 lttng:
   stage: build
   image: js-er-code.jsc.nasa.gov:5005/lager/lager_image_profiler:stable
