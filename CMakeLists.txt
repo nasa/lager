@@ -30,11 +30,6 @@ if (WIN32)
     endif()
 endif()
 
-# LTTng tracing
-if (BUILD_LTTNG)
-    include(lttng)
-endif()
-
 # TODO switch to use target_include_dir when conversion to library is made
 include_directories(
     ${ZeroMQ_INCLUDE_DIRS}
@@ -54,8 +49,7 @@ set(TAP_SRCS
     src/tap.cpp)
 
 set(MUG_SRCS
-    src/mug.cpp
-    ${LTTNG_SRCS})
+    src/mug.cpp)
 
 set(KEG_SRCS
     src/keg.cpp)
@@ -88,7 +82,7 @@ add_library(tap SHARED ${TAP_SRCS} ${DATA_FORMAT_SRCS})
 target_link_libraries(tap dataformat chp)
 
 add_library(mug SHARED ${MUG_SRCS})
-target_link_libraries(mug chp keg dataformat ${LTTngUST_LIBRARIES})
+target_link_libraries(mug chp keg dataformat)
 
 # Targets for bartender and test apps
 # TODO remove these later
@@ -154,4 +148,11 @@ endif()
 if (BUILD_TESTS)
     enable_testing()
     add_subdirectory(test)
+endif()
+
+# LTTng tracing
+if (BUILD_LTTNG)
+    include(lttng)
+    target_sources(mug PRIVATE ${LTTNG_SRCS})
+    target_link_libraries(mug ${LTTngUST_LIBRARIES})
 endif()
