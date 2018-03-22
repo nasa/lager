@@ -35,8 +35,6 @@ include_directories(
     ${ZeroMQ_INCLUDE_DIRS}
     ${LIBUUID_INCLUDE_DIRS}
     ${XercesC_INCLUDE_DIRS}
-    ${LTTngUST_INCLUDE_DIRS}
-    ${CMAKE_BINARY_DIR}
     include
     src)
 
@@ -153,6 +151,9 @@ endif()
 # LTTng tracing
 if (BUILD_LTTNG)
     include(lttng)
+    target_include_directories(mug PRIVATE
+        ${LTTngUST_INCLUDE_DIRS} 
+        ${CMAKE_BINARY_DIR})
     target_sources(mug PRIVATE ${LTTNG_SRCS})
     target_link_libraries(mug ${LTTngUST_LIBRARIES})
 endif()
