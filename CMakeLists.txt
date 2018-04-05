@@ -141,6 +141,12 @@ endif()
 if (BUILD_TESTS)
     enable_testing()
     add_subdirectory(test)
+    
+    # cppcheck
+    if (NOT WIN32)
+        include(cppcheck)
+        add_custom_target(cppcheck DEPENDS ${CPPCHECK_OUTPUT}.touch)
+    endif()
 endif()
 
 # LTTng tracing

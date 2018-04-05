@@ -170,9 +170,3 @@ endif()
 add_executable(end_to_end_profile src/end_to_end_profile.cpp)
 target_link_libraries(end_to_end_profile tap mug bartender)
 set_target_properties(end_to_end_profile PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/test)
-
-# cppcheck
-if (NOT WIN32)
-    include(cppcheck)
-    add_custom_target(cppcheck DEPENDS ${CPPCHECK_OUTPUT}.touch)
-endif()
