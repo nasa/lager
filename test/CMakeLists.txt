@@ -49,7 +49,7 @@ add_executable(data_format_tests src/data_format_tests.cpp)
 target_link_libraries(data_format_tests 
     dataformat 
     gtest 
-    ${ZeroMQ_LIBRARIES} 
+    ${ZeroMQ_LIBRARY} 
     ${LIBUUID_LIBRARIES})
 set_target_properties(data_format_tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/test)
 add_test(NAME data_format_tests COMMAND data_format_tests WORKING_DIRECTORY ${TEST_DIR})
@@ -71,10 +71,9 @@ add_test(NAME tap_tests COMMAND tap_tests WORKING_DIRECTORY ${TEST_DIR})
 
 add_executable(util_tests src/util_tests.cpp)
 target_link_libraries(util_tests
-    ${ZeroMQ_LIBRARIES} 
+    ${ZeroMQ_LIBRARY} 
     ${LIBUUID_LIBRARIES}
     gtest)
-target_compile_definitions(util_tests PRIVATE -DZMQ_VER="${ZeroMQ_VER}")
 set_target_properties(util_tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/test)
 add_test(NAME util_tests COMMAND util_tests WORKING_DIRECTORY ${TEST_DIR})
 
@@ -171,3 +170,9 @@ endif()
 add_executable(end_to_end_profile src/end_to_end_profile.cpp)
 target_link_libraries(end_to_end_profile tap mug bartender)
 set_target_properties(end_to_end_profile PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/test)
+
+# cppcheck
+if (NOT WIN32)
+    include(cppcheck)
+    add_custom_target(cppcheck DEPENDS ${CPPCHECK_OUTPUT}.touch)
+endif()

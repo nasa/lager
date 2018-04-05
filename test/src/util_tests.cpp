@@ -29,11 +29,6 @@ TEST_F(LagerUtilTests, RemoteUri)
     ASSERT_STREQ(lager_utils::getRemoteUri("test", 12345).c_str(), "tcp://test:12345");
 }
 
-TEST_F(LagerUtilTests, ZmqVersion)
-{
-    ASSERT_STREQ(lager_utils::getZmqVersion().c_str(), ZMQ_VER);
-}
-
 TEST_F(LagerUtilTests, GetTime)
 {
     std::string gmtTime = lager_utils::getCurrentTimeFormatted("%Y%m%d", false);
