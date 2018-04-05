@@ -1,7 +1,7 @@
 #include <benchmark/benchmark.h>
 
-#include "data_format.h"
-#include "data_format_parser.h"
+#include "lager/data_format.h"
+#include "lager/data_format_parser.h"
 
 static void parseFromFile(benchmark::State& state)
 {

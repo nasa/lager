@@ -4,7 +4,7 @@
 
 #include <gtest/gtest.h>
 
-#include "forwarder.h"
+#include "lager/forwarder.h"
 #include "lager/lager_utils.h"
 
 class ForwarderTests : public ::testing::Test
