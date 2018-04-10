@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "lager_defines.h"
+#include "lager/lager_defines.h"
 #include "lager/lager_utils.h"
 
 class LagerUtilTests : public ::testing::Test
@@ -27,11 +27,6 @@ TEST_F(LagerUtilTests, LocalUri)
 TEST_F(LagerUtilTests, RemoteUri)
 {
     ASSERT_STREQ(lager_utils::getRemoteUri("test", 12345).c_str(), "tcp://test:12345");
-}
-
-TEST_F(LagerUtilTests, ZmqVersion)
-{
-    ASSERT_STREQ(lager_utils::getZmqVersion().c_str(), ZMQ_VER);
 }
 
 TEST_F(LagerUtilTests, GetTime)
