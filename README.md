@@ -15,7 +15,7 @@ Develop
 
 Package dependencies   
 
-`sudo apt install -y git cmake build-essential uuid-dev libxerces-c-dev`   
+`sudo apt install -y git cmake build-essential uuid-dev libxerces-c-dev cppcheck`   
 
 [CMake](https://cmake.org) >= 3.1.3.  Note this package is `cmake` in Ubuntu 16.04 and `cmake3` in Ubuntu 14.04.  The primary reason for CMake 3.1.3 is XercesC works better with `find_package()`   
 [XercesC](https://xerces.apache.org/xerces-c/) >= 3.1.1   
