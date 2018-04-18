@@ -169,9 +169,6 @@ endif()
 include(GNUInstallDirs)
 
 # Layout. This works for all platforms:
-#   * <prefix>/lib*/cmake/<PROJECT-NAME>
-#   * <prefix>/lib*/
-#   * <prefix>/include/
 set(config_install_dir "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
 
 set(generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated")
@@ -186,8 +183,6 @@ set(namespace "${PROJECT_NAME}::")
 include(CMakePackageConfigHelpers)
 
 # Configure '<PROJECT-NAME>ConfigVersion.cmake'
-# Use:
-#   * PROJECT_VERSION
 write_basic_package_version_file(
     "${version_config}" 
     VERSION ${${PROJECT_NAME}_VERSION}
@@ -195,9 +190,6 @@ write_basic_package_version_file(
 )
 
 # Configure '<PROJECT-NAME>Config.cmake'
-# Use variables:
-#   * TARGETS_EXPORT_NAME
-#   * PROJECT_NAME
 configure_package_config_file(
     "cmake/Config.cmake.in"
     "${project_config}"
@@ -214,12 +206,10 @@ install(
     INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/lager"
 )
 
-# Headers:
-#   * Source/foo/Bar.hpp -> <prefix>/include/foo/Bar.hpp
-#   * Source/foo/Baz.hpp -> <prefix>/include/foo/Baz.hpp
+# Headers
 install(
     DIRECTORY "include/lager"
-    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/lager"
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
     FILES_MATCHING PATTERN "*.h"
 )
 
