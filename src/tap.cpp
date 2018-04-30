@@ -193,6 +193,10 @@ void Tap::publisherThread()
                 newData = false;
                 mutex.unlock();
             }
+            else
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
         }
     }
     catch (const zmq::error_t& e)
