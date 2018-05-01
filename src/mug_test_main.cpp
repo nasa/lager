@@ -12,7 +12,11 @@ int main(int argc, char* argv[])
     m.init("localhost", 12345, 100);
     m.start();
 
-    lager_utils::sleepMillis(10000);
+    do
+    {
+        std::cout << "Press enter to end" << std::endl;
+    }
+    while (std::cin.get() != '\n');
 
     m.stop();
 

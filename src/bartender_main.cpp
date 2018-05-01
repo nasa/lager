@@ -10,7 +10,11 @@ int main(int argc, char* argv[])
     b.init(12345);
     b.start();
 
-    lager_utils::sleepMillis(60000);
+    do
+    {
+        std::cout << "Press enter to end" << std::endl;
+    }
+    while (std::cin.get() != '\n');
 
     b.stop();
 
