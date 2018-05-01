@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
 
     do
     {
-        std::cout << "Press a key to end" << std::endl;
+        std::cout << "Press enter to end" << std::endl;
     }
     while (std::cin.get() != '\n');
 
