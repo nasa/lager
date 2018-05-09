@@ -20,17 +20,17 @@ xenial:
     - cd build
     - cmake .. && make && ctest --verbose
 
-windows:
-  stage: build
-  script:
-    - mkdir build
-    - cd build
-    - cmake -G "Visual Studio 15 2017" ..
-    - cmake --build . --config Debug
-    - ctest -C Debug --verbose
-  tags:
-    - lager
-    - windows
+# windows:
+#   stage: build
+#   script:
+#     - mkdir build
+#     - cd build
+#     - cmake -G "Visual Studio 15 2017" ..
+#     - cmake --build . --config Debug
+#     - ctest -C Debug --verbose
+#   tags:
+#     - lager
+#     - windows
 
 # todo: make this actually run the trace
 lttng:
