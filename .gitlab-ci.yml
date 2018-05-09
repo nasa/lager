@@ -20,7 +20,7 @@ xenial:
     - cd build
     - cmake .. && make && ctest --verbose
 
-.windows:
+windows:
   stage: build
   script:
     - mkdir build
