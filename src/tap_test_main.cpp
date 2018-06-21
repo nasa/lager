@@ -15,8 +15,6 @@ int main(int argc, char* argv[])
     Tap t;
     t.init("localhost", 12345, 1000);
 
-    int arraySize = 100;
-
     uint8_t ubyte1 = 0;
     int8_t byte1 = -100;
     uint16_t ushort1 = 0;
