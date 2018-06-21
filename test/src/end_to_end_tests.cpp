@@ -44,7 +44,7 @@ TEST_F(EndToEndTests, DoesItWork)
     t.addItem(new DataRefItem<uint16_t>("item2", &item2));
     t.addItem(new DataRefItem<uint8_t>("item3", &item3));
     t.addItem(new DataRefItem<uint64_t>("item4", &item4));
-    t.start("/test");
+    t.start("/test", "end_to_end_test");
 
     for (unsigned int i = 0; i < 5; ++i)
     {

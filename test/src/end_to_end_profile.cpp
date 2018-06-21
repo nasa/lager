@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
         t.addItem(new DataRefItem<uint32_t>(ss.str(), &array[i]));
     }
 
-    t.start("/sample_format");
+    t.start("/sample_format", "end_to_end_profile");
 
     for (unsigned int i = 0; i < 1000; ++i)
     {

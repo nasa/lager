@@ -19,7 +19,8 @@ public:
 
     bool init(const std::string& serverHost_in, int basePort, int timeOutMillis);
     void addItem(AbstractDataRefItem* item);
-    void start(const std::string& key_in);
+    std::vector<AbstractDataRefItem*> getItems();
+    void start(const std::string& key_in, const std::string& group);
     void stop();
     void log();
 
@@ -36,6 +37,7 @@ protected:
 
     std::string uuid;
     std::string key;
+    std::string group;
     std::string formatStr;
     std::string version;
     std::string serverHost;

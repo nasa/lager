@@ -15,17 +15,17 @@ int main(int argc, char* argv[])
     Tap t;
     t.init("localhost", 12345, 1000);
 
-    int arraySize = 1000;
+    int arraySize = 100;
 
     uint8_t ubyte1 = 0;
     int8_t byte1 = -100;
     uint16_t ushort1 = 0;
     int16_t short1 = -1000;
     uint32_t uint1 = 0;
-    int32_t int1 = -1000;
+    int32_t int1 = 0;
     double double1 = 0.001;
     float float1 = 0.001f;
-    std::vector<uint32_t> array;
+    std::string group = "num_group";
 
     t.addItem(new DataRefItem<uint32_t>("uint1", &uint1));
     t.addItem(new DataRefItem<int32_t>("int1", &int1));
@@ -36,19 +36,9 @@ int main(int argc, char* argv[])
     t.addItem(new DataRefItem<int8_t>("byte1", &byte1));
     t.addItem(new DataRefItem<float>("float1", &float1));
 
-    std::stringstream ss;
+    t.start("/sample_format", group);
 
-    for (unsigned int i = 0; i < arraySize; ++i)
-    {
-        ss.clear();
-        ss << "array" << i;
-        array.push_back(uint32_t(0));
-        t.addItem(new DataRefItem<uint32_t>(ss.str(), &array[i]));
-    }
-
-    t.start("/sample_format");
-
-    for (unsigned int i = 0; i < 1000; ++i)
+    for (unsigned int i = 0; i < 100; ++i)
     {
         t.log();
 
@@ -58,15 +48,10 @@ int main(int argc, char* argv[])
         byte1 += 10;
         ushort1 += 10;
         short1 += 100;
-        uint1 += 10;
+        uint1 += 1;
         int1 += 100;
         double1 += 0.001;
         float1 += 0.010f;
-
-        for (unsigned int i = 0; i < arraySize; ++i)
-        {
-            array[i] += 1;
-        }
     }
 
     t.stop();

@@ -76,6 +76,7 @@ DataFormatParser::DataFormatParser(const std::string& xsdFile_in)
     attSize = XMLString::transcode("size");
     attOffset = XMLString::transcode("offset");
     attUuid = XMLString::transcode("uuid");
+    attGroup = XMLString::transcode("group");
     attKey = XMLString::transcode("key");
     attValue = XMLString::transcode("value");
 
@@ -105,6 +106,7 @@ DataFormatParser::~DataFormatParser()
     XMLString::release(&tagMeta);
     XMLString::release(&tagMetaData);
     XMLString::release(&attUuid);
+    XMLString::release(&attGroup);
     XMLString::release(&attKey);
     XMLString::release(&attValue);
 
@@ -170,7 +172,6 @@ void DataFormatParser::parse()
         MemBufInputSource xmlBuf((const XMLByte*)xmlStr.c_str(), xmlStr.size(), "unused");
 
         parser->parse(xmlBuf);
-
         // because we passed in the XSD file, this error count will tell us if
         // the xml file is valid per the schema
         if (parser->getErrorCount() != 0)
@@ -195,7 +196,12 @@ void DataFormatParser::parse()
         char* cVersion = XMLString::transcode(xVersion);
         std::string version(cVersion);
 
-        format.reset(new DataFormat(version));
+        // grab the group
+        const XMLCh* xGroup = formatElement->getAttribute(attGroup);
+        char* cGroup = XMLString::transcode(xGroup);
+        std::string group(cGroup);
+
+        format.reset(new DataFormat(version, group));
 
         DOMNodeList* children = formatElement->getChildNodes();
 
@@ -244,6 +250,7 @@ void DataFormatParser::parse()
         }
 
         XMLString::release(&cVersion);
+        XMLString::release(&cGroup);
     }
     catch (const std::runtime_error& e)
     {
@@ -257,7 +264,7 @@ void DataFormatParser::parse()
  * @param version is a string containing the version of the data format used
  * @returns true on successful generation, false on failure
  */
-bool DataFormatParser::createFromDataRefItems(const std::vector<AbstractDataRefItem*>& items, const std::string& version)
+bool DataFormatParser::createFromDataRefItems(const std::vector<AbstractDataRefItem*>& items, const std::string& version, const std::string& group)
 {
     // temporary xml strings to use during generation
     XMLCh* xVersion = nullptr;
@@ -266,6 +273,7 @@ bool DataFormatParser::createFromDataRefItems(const std::vector<AbstractDataRefI
     XMLCh* xSize = nullptr;
     XMLCh* xOffset = nullptr;
     XMLCh* xFormat = nullptr;
+    XMLCh* xGroup = nullptr;
 
     // grab available dom implementation (nullptr = no options)
     DOMImplementation* impl = DOMImplementationRegistry::getDOMImplementation(nullptr);
@@ -280,9 +288,12 @@ bool DataFormatParser::createFromDataRefItems(const std::vector<AbstractDataRefI
     xercesc::DOMDocument* doc = impl->createDocument(nullptr, xFormat, nullptr);
     DOMElement* root = doc->getDocumentElement();
 
-    // add the version
+    // add the version and group
     xVersion = XMLString::transcode(version.c_str());
     root->setAttribute(attVersion, xVersion);
+
+    xGroup = XMLString::transcode(group.c_str());
+    root->setAttribute(attGroup, xGroup);
 
     std::stringstream ss;
 
@@ -326,8 +337,9 @@ bool DataFormatParser::createFromDataRefItems(const std::vector<AbstractDataRefI
     // release resources
     XMLString::release(&xFormat);
     XMLString::release(&xVersion);
+    XMLString::release(&xGroup);
     doc->release();
-
+    
     // check validity against the schema
     if (!isValid(xmlStr, items.size()))
     {
@@ -355,6 +367,7 @@ bool DataFormatParser::createFromUuidMap(const std::map<std::string, std::string
     XMLCh* xSize = nullptr;
     XMLCh* xOffset = nullptr;
     XMLCh* xUuid = nullptr;
+    XMLCh* xGroup = nullptr;
 
     // grab available dom implementation (nullptr = no options)
     // note that the DOMImplementation object retains ownership of this object's
@@ -468,6 +481,7 @@ bool DataFormatParser::createFromUuidMap(const std::map<std::string, std::string
     // release resources
     XMLString::release(&xKeg);
     XMLString::release(&xVersion);
+    XMLString::release(&xGroup);
     XMLString::release(&xName);
     XMLString::release(&xType);
     XMLString::release(&xSize);
@@ -527,7 +541,7 @@ std::string DataFormatParser::getStringFromDoc(xercesc::DOMDocument* doc)
 bool DataFormatParser::isValid(const std::string& xml, unsigned int itemCount)
 {
     std::shared_ptr<DataFormat> testFormat = parseFromString(xml);
-
+    
     if (testFormat->getItemCount() != itemCount)
     {
         return false;

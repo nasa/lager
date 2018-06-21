@@ -59,19 +59,27 @@ void Tap::addItem(AbstractDataRefItem* item)
     offsetCount += item->getSize();
 }
 
+std::vector<AbstractDataRefItem*> Tap::getItems()
+{
+    return dataRefItems;
+}
+
 /**
 * @brief Starts the tap by setting up the CHP connection to the bartender and starting the publisher thread
 * @param key_in is the "topic name" of this particular tap as it will be represented by the bartender
 * @throws runtime_error if the xml format of the tap was unable to be generated
 */
-void Tap::start(const std::string& key_in)
+void Tap::start(const std::string& key_in, const std::string& group)
 {
     // TODO this should probably be compiled in from the cmake or something
     version = "BEERR01";
 
     DataFormatParser p;
 
-    if (p.createFromDataRefItems(dataRefItems, version))
+    if (group == "")
+        throw std::runtime_error("group name is empty");
+
+    if (p.createFromDataRefItems(dataRefItems, version, group))
     {
         formatStr = p.getXmlStr();
     }
@@ -141,7 +149,7 @@ void Tap::publisherThread()
 {
     publisherRunning = true;
     zmq::socket_t publisher(*context.get(), ZMQ_PUB);
-
+    
     // setting linger so the socket doesn't hang around after being stopped
     int linger = 0;
 
@@ -156,6 +164,7 @@ void Tap::publisherThread()
             {
                 zmq::message_t uuidMsg(uuid.size());
                 zmq::message_t versionMsg(version.size());
+                zmq::message_t groupMsg(group.size());
                 zmq::message_t flagsMsg(sizeof(flags));
                 zmq::message_t timestampMsg(sizeof(timestamp));
 
@@ -163,6 +172,7 @@ void Tap::publisherThread()
 
                 memcpy(uuidMsg.data(), uuid.c_str(), uuid.size());
                 memcpy(versionMsg.data(), version.c_str(), version.size());
+                memcpy(groupMsg.data(), group.c_str(), group.size());
 
                 // TODO endianness
                 memcpy(flagsMsg.data(), (void*)&flags, sizeof(flags));
@@ -171,6 +181,7 @@ void Tap::publisherThread()
 
                 publisher.send(uuidMsg, ZMQ_SNDMORE);
                 publisher.send(versionMsg, ZMQ_SNDMORE);
+                publisher.send(groupMsg, ZMQ_SNDMORE);
                 publisher.send(flagsMsg, ZMQ_SNDMORE);
                 publisher.send(timestampMsg, ZMQ_SNDMORE);
 
@@ -178,7 +189,7 @@ void Tap::publisherThread()
                 {
                     zmq::message_t tmp(dataRefItems[i]->getSize());
                     dataRefItems[i]->getNetworkDataRef(tmp.data());
-
+                    
                     // make sure to use the sndmore flag until the last message
                     if (i < dataRefItems.size() - 1)
                     {

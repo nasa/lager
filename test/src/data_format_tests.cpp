@@ -19,7 +19,7 @@ TEST_F(DataFormatTests, GoodFormatParseFromFile)
 TEST_F(DataFormatTests, GoodFormatParseFromString)
 {
     DataFormatParser p("data_format.xsd");
-    EXPECT_NO_THROW(p.parseFromString("<?xml version=\"1.0\" encoding=\"UTF-8\"?><format version=\"BEERR01\">"
+    EXPECT_NO_THROW(p.parseFromString("<?xml version=\"1.0\" encoding=\"UTF-8\"?><format version=\"BEERR01\" group=\"test\">"
                                       "<item name=\"column1\" type=\"string\" size=\"255\" offset=\"0\"/>"
                                       "<item name=\"column2\" type=\"integer\" size=\"4\" offset=\"255\"/></format>"));
 }
@@ -27,7 +27,7 @@ TEST_F(DataFormatTests, GoodFormatParseFromString)
 TEST_F(DataFormatTests, VersionStringTooLong)
 {
     DataFormatParser p("data_format.xsd");
-    EXPECT_ANY_THROW(p.parseFromString("<?xml version=\"1.0\" encoding=\"UTF-8\"?><format version=\"123456789\">"
+    EXPECT_ANY_THROW(p.parseFromString("<?xml version=\"1.0\" encoding=\"UTF-8\"?><format version=\"123456789\" group=\"test\">"
                                        "<item name=\"column1\" type=\"string\" size=\"255\" offset=\"0\"/>"
                                        "<item name=\"column2\" type=\"integer\" size=\"4\" offset=\"255\"/></format>"));
 }
@@ -35,10 +35,10 @@ TEST_F(DataFormatTests, VersionStringTooLong)
 TEST_F(DataFormatTests, NegativeValues)
 {
     DataFormatParser p("data_format.xsd");
-    EXPECT_ANY_THROW(p.parseFromString("<?xml version=\"1.0\" encoding=\"UTF-8\"?><format version=\"123456789\">"
+    EXPECT_ANY_THROW(p.parseFromString("<?xml version=\"1.0\" encoding=\"UTF-8\"?><format version=\"123456789\" group=\"test\">"
                                        "<item name=\"column1\" type=\"string\" size=\"255\" offset=\"-1\"/>"
                                        "<item name=\"column2\" type=\"integer\" size=\"4\" offset=\"255\"/></format>"));
-    EXPECT_ANY_THROW(p.parseFromString("<?xml version=\"1.0\" encoding=\"UTF-8\"?><format version=\"123456789\">"
+    EXPECT_ANY_THROW(p.parseFromString("<?xml version=\"1.0\" encoding=\"UTF-8\"?><format version=\"123456789\" group=\"test\">"
                                        "<item name=\"column1\" type=\"string\" size=\"-1\" offset=\"0\"/>"
                                        "<item name=\"column2\" type=\"integer\" size=\"4\" offset=\"255\"/></format>"));
 }
@@ -79,7 +79,7 @@ TEST_F(DataFormatTests, Print)
     std::shared_ptr<DataFormat> df = p.parseFromFile("good_format.xml");
     std::stringstream ss;
     ss << *df.get();
-    EXPECT_STREQ(ss.str().c_str(), "version: BEERR01\ncolumn1 string\ncolumn2 integer\n");
+    EXPECT_STREQ(ss.str().c_str(), "version: BEERR01 group: test\ncolumn1 string\ncolumn2 integer\n");
 }
 
 TEST_F(DataFormatTests, SchemaCheckerGood)
@@ -88,10 +88,11 @@ TEST_F(DataFormatTests, SchemaCheckerGood)
     std::vector<AbstractDataRefItem*> dataRefItems;
     uint32_t int1;
     uint32_t int2;
+
     dataRefItems.push_back(new DataRefItem<uint32_t>("int1", &int1));
     dataRefItems.push_back(new DataRefItem<uint32_t>("int2", &int2));
 
-    EXPECT_NO_THROW(p.createFromDataRefItems(dataRefItems, "test"));
+    EXPECT_NO_THROW(p.createFromDataRefItems(dataRefItems, "test", "group_test"));
 
     EXPECT_TRUE(p.isValid(p.getXmlStr(), dataRefItems.size()));
 }
