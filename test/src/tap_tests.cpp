@@ -27,7 +27,7 @@ TEST_F(TapTests, BadPortNumber)
     EXPECT_FALSE(t.init("localhost", 65536, 100));
 }
 
-float ntohf(uint32_t nf)
+float ntohf(float nf)
 {
    float x;
    nf = ntohl(nf);
@@ -56,17 +56,18 @@ TEST_F(TapTests, DuplicateValues) //This is to demonstrate the tap tests were ha
     }    
 
     std::vector<AbstractDataRefItem*> datarefitems = t.getItems();
-    int32_t prevUnpackedValue = 0;
-    int32_t theUnpackedValue = 0;
+    float prevUnpackedValue = 0.0;
+    float theUnpackedValue = 0.0;
     for(int i = 0; i < datarefitems.size(); i++) 
     {
         prevUnpackedValue = theUnpackedValue;
-        int32_t bigEndianValue;
+        float bigEndianValue;
         memcpy(&bigEndianValue, &datarefitems[0], sizeof(bigEndianValue));
         theUnpackedValue = ntohf(bigEndianValue);
         if (prevUnpackedValue == theUnpackedValue) 
         {
             t.stop();
+            std::cerr<<"Duplicate values detected."<<std::endl;
             EXPECT_FALSE(false);
             break;
         }
