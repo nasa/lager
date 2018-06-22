@@ -57,8 +57,8 @@ int main(int argc, char* argv[])
     int32_t int1 = -1000;
     double double1 = 0.001;
     float float1 = 0.001f;
-    std::vector<uint32_t> array;
-    array.resize(arraySize);
+/*    std::vector<uint32_t> array;
+    array.resize(arraySize);*/
 
     t.addItem(new DataRefItem<uint32_t>("uint1", &uint1));
     t.addItem(new DataRefItem<int32_t>("int1", &int1));
@@ -69,14 +69,14 @@ int main(int argc, char* argv[])
     t.addItem(new DataRefItem<int8_t>("byte1", &byte1));
     t.addItem(new DataRefItem<float>("float1", &float1));
 
-    std::stringstream ss;
+/*    std::stringstream ss;
 
     for (unsigned int i = 0; i < arraySize; ++i)
     {
         ss.str(std::string());
         ss << "array" << i;
         t.addItem(new DataRefItem<uint32_t>(ss.str(), &array[i]));
-    }
+    }*/
 
     t.start("/sample_format");
 
@@ -93,10 +93,10 @@ int main(int argc, char* argv[])
         double1 += 0.001;
         float1 += 0.010f;
 
-        for (unsigned int i = 0; i < arraySize; ++i)
+/*        for (unsigned int i = 0; i < arraySize; ++i)
         {
             array[i] += 1;
-        }
+        }*/
 
         lager_utils::sleepMillis(1);
     }
