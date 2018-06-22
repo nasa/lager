@@ -30,7 +30,7 @@
         <xs:attribute ref="name" use="required"/>
         <xs:attribute ref="type" use="required"/>
         <xs:attribute ref="size" use="required"/>
-        <xs:attribute ref="offset" use="required"/>       
+        <xs:attribute ref="offset" use="required"/>
     </xs:complexType>
 </xs:element>
 

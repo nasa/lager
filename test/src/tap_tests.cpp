@@ -1,10 +1,4 @@
 #include <memory>
-#include <fstream>
-#include <stdint.h>
-#include <streambuf>
-#include <string>
-
-#include <zmq.hpp>
 
 #include <gtest/gtest.h>
 

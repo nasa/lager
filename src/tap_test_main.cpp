@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
     uint16_t ushort1 = 0;
     int16_t short1 = -1000;
     uint32_t uint1 = 0;
-    int32_t int1 = 0;
+    int32_t int1 = -1000;
     double double1 = 0.001;
     float float1 = 0.001f;
 
@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
 
     t.start("/sample_format");
 
-    for (unsigned int i = 0; i < 100; ++i)
+    for (unsigned int i = 0; i < 1000; ++i)
     {
         t.log();
 
