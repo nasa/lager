@@ -19,7 +19,7 @@
 <xs:attribute name="type" type="xs:string"/>
 <xs:attribute name="size" type="PositiveInteger"/>
 <xs:attribute name="offset" type="PositiveInteger"/>
-<xs:attribute name="group" type="xs:string"/>
+<xs:attribute name="key" type="xs:string"/>
 <xs:attribute name="version" type="LimitedString"/>
 
 <!-- item -->
@@ -39,7 +39,7 @@
             <xs:element ref="item" minOccurs="1" maxOccurs="unbounded"/>
         </xs:sequence>
         <xs:attribute ref="version" use="required"/>
-        <xs:attribute ref="group" use="required"/>
+        <xs:attribute ref="key" use="required"/>
     </xs:complexType>
 </xs:element>
 

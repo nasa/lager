@@ -23,7 +23,6 @@ int main(int argc, char* argv[])
     int32_t int1 = 0;
     double double1 = 0.001;
     float float1 = 0.001f;
-    std::string group = "num_group";
 
     t.addItem(new DataRefItem<uint32_t>("uint1", &uint1));
     t.addItem(new DataRefItem<int32_t>("int1", &int1));
@@ -34,7 +33,7 @@ int main(int argc, char* argv[])
     t.addItem(new DataRefItem<int8_t>("byte1", &byte1));
     t.addItem(new DataRefItem<float>("float1", &float1));
 
-    t.start("/sample_format", group);
+    t.start("/sample_format");
 
     for (unsigned int i = 0; i < 100; ++i)
     {

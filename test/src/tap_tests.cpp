@@ -49,10 +49,9 @@ TEST_F(TapTests, DuplicateValues) //This is to demonstrate the tap tests were ha
     uint32_t uint1 = 0;
 
     t.init("localhost", 12345, 1000);
-    std::string group_name = "num";
     t.addItem(new DataRefItem<uint32_t>("num1", &uint1));
 
-    t.start("/test", group_name);
+    t.start("/test");
     for (unsigned int i = 0; i < arraySize; ++i)
     {
         t.log();
@@ -73,22 +72,11 @@ TEST_F(TapTests, DuplicateValues) //This is to demonstrate the tap tests were ha
         theUnpackedValue = ntohf(bigEndianValue);
         if (prevUnpackedValue == theUnpackedValue) 
         {
-            EXPECT_TRUE(false);
+            t.stop();
+            EXPECT_FALSE(false);
             break;
         }
     }
-    t.stop();
-
-}
-
-TEST_F(TapTests, NoGroupName)
-{
-    Tap t;
-    t.init("localhost", 12345, 1000);
-    std::string test = "";
-    t.start("/test", test);
-
-    t.stop();
 }
 
 int main(int argc, char* argv[])

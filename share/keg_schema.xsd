@@ -23,7 +23,6 @@
 <xs:attribute name="uuid" type="xs:string"/>
 <xs:attribute name="key" type="xs:string"/>
 <xs:attribute name="value" type="xs:string"/>
-<xs:attribute name="group" type="xs:string"/>
 
 <!-- elements -->
 <xs:element name="item">
@@ -42,7 +41,7 @@
         </xs:sequence>
         <xs:attribute ref="version" use="required"/>
         <xs:attribute ref="uuid" use="required"/>
-        <xs:attribute ref="group" use="required"/>
+        <xs:attribute ref="key" use="required"/>
     </xs:complexType>
 </xs:element>
 

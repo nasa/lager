@@ -4,7 +4,7 @@
  * @brief Constructor, version required
  * @param version string containing the format version
  */
-DataFormat::DataFormat(const std::string& version_in, const std::string& group_in): version(version_in), group(group_in), itemsSize(0)
+DataFormat::DataFormat(const std::string& version_in, const std::string& key_in): version(version_in), key(key_in), itemsSize(0)
 {
 }
 

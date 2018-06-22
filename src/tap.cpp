@@ -59,6 +59,10 @@ void Tap::addItem(AbstractDataRefItem* item)
     offsetCount += item->getSize();
 }
 
+/**
+* @brief Returns the vector of Items
+* @return dataRefItems
+*/
 std::vector<AbstractDataRefItem*> Tap::getItems()
 {
     return dataRefItems;
@@ -69,17 +73,15 @@ std::vector<AbstractDataRefItem*> Tap::getItems()
 * @param key_in is the "topic name" of this particular tap as it will be represented by the bartender
 * @throws runtime_error if the xml format of the tap was unable to be generated
 */
-void Tap::start(const std::string& key_in, const std::string& group)
+void Tap::start(const std::string& key_in)
 {
     // TODO this should probably be compiled in from the cmake or something
     version = "BEERR01";
 
     DataFormatParser p;
 
-    if (group == "")
-        throw std::runtime_error("group name is empty");
-
-    if (p.createFromDataRefItems(dataRefItems, version, group))
+    key = key_in;
+    if (p.createFromDataRefItems(dataRefItems, version, key))
     {
         formatStr = p.getXmlStr();
     }
@@ -87,8 +89,6 @@ void Tap::start(const std::string& key_in, const std::string& group)
     {
         throw std::runtime_error("unable to build xml format of tap");
     }
-
-    key = key_in;
 
     running = true;
 
@@ -164,7 +164,6 @@ void Tap::publisherThread()
             {
                 zmq::message_t uuidMsg(uuid.size());
                 zmq::message_t versionMsg(version.size());
-                zmq::message_t groupMsg(group.size());
                 zmq::message_t flagsMsg(sizeof(flags));
                 zmq::message_t timestampMsg(sizeof(timestamp));
 
@@ -172,7 +171,6 @@ void Tap::publisherThread()
 
                 memcpy(uuidMsg.data(), uuid.c_str(), uuid.size());
                 memcpy(versionMsg.data(), version.c_str(), version.size());
-                memcpy(groupMsg.data(), group.c_str(), group.size());
 
                 // TODO endianness
                 memcpy(flagsMsg.data(), (void*)&flags, sizeof(flags));
@@ -181,7 +179,6 @@ void Tap::publisherThread()
 
                 publisher.send(uuidMsg, ZMQ_SNDMORE);
                 publisher.send(versionMsg, ZMQ_SNDMORE);
-                publisher.send(groupMsg, ZMQ_SNDMORE);
                 publisher.send(flagsMsg, ZMQ_SNDMORE);
                 publisher.send(timestampMsg, ZMQ_SNDMORE);
 
