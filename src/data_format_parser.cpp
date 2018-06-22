@@ -260,6 +260,7 @@ void DataFormatParser::parse()
  * @brief Converts a given array of DataRefItems and generates and stores its xml string into the xmlStr member
  * @param items is a vector of AbstractDataRefItem to generate from
  * @param version is a string containing the version of the data format used
+ * @param key is a string containing the key from where the tap came from
  * @returns true on successful generation, false on failure
  */
 bool DataFormatParser::createFromDataRefItems(const std::vector<AbstractDataRefItem*>& items, const std::string& version, const std::string& key)
@@ -336,6 +337,7 @@ bool DataFormatParser::createFromDataRefItems(const std::vector<AbstractDataRefI
     // release resources
     XMLString::release(&xFormat);
     XMLString::release(&xVersion);
+    XMLString::release(&xKey);
     doc->release();
     
     // check validity against the schema
