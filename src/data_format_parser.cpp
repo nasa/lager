@@ -338,9 +338,8 @@ bool DataFormatParser::createFromDataRefItems(const std::vector<AbstractDataRefI
     XMLString::release(&xFormat);
     XMLString::release(&xVersion);
     XMLString::release(&xKey);
-    
+
     doc->release();
-    
     // check validity against the schema
     if (!isValid(xmlStr, items.size()))
     {

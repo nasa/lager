@@ -80,8 +80,7 @@ void Tap::start(const std::string& key_in)
 
     DataFormatParser p;
 
-    key = key_in;
-    if (p.createFromDataRefItems(dataRefItems, version, key))
+    if (p.createFromDataRefItems(dataRefItems, version, key_in))
     {
         formatStr = p.getXmlStr();
     }
@@ -94,7 +93,7 @@ void Tap::start(const std::string& key_in)
 
     chpClient->start();
     // sets the hashmap value so it will be sent to the bartender
-    chpClient->addOrUpdateKeyValue(key, formatStr);
+    chpClient->addOrUpdateKeyValue(key_in, formatStr);
 
     publisherThreadHandle = std::thread(&Tap::publisherThread, this);
     publisherThreadHandle.detach();
@@ -149,7 +148,6 @@ void Tap::publisherThread()
 {
     publisherRunning = true;
     zmq::socket_t publisher(*context.get(), ZMQ_PUB);
-    
     // setting linger so the socket doesn't hang around after being stopped
     int linger = 0;
 
@@ -186,7 +184,7 @@ void Tap::publisherThread()
                 {
                     zmq::message_t tmp(dataRefItems[i]->getSize());
                     dataRefItems[i]->getNetworkDataRef(tmp.data());
-                    
+
                     // make sure to use the sndmore flag until the last message
                     if (i < dataRefItems.size() - 1)
                     {

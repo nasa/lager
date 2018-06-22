@@ -112,7 +112,6 @@ void Mug::hashMapUpdated()
     {
         // parse the xml data format into a DataFormat object
         tmpDataFormat = formatParser->parseFromString(i->second);
-        
         // look for our DataFormat object's topic name in the uuid map
         for (auto j = tmpUuidMap.begin(); j != tmpUuidMap.end(); ++j)
         {

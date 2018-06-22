@@ -27,15 +27,7 @@ TEST_F(TapTests, BadPortNumber)
     EXPECT_FALSE(t.init("localhost", 65536, 100));
 }
 
-float ntohf(float nf)
-{
-   float x;
-   nf = ntohl(nf);
-   memcpy(&x, &nf, sizeof(float));
-   return x;
-}
-
-TEST_F(TapTests, DuplicateValues) //This is to demonstrate the tap tests were having before
+TEST_F(TapTests, DuplicateValues)
 {
 
     Tap t;
@@ -52,23 +44,24 @@ TEST_F(TapTests, DuplicateValues) //This is to demonstrate the tap tests were ha
         lager_utils::sleepMillis(5);
 
         uint1 += 1;
-        t.addItem(new DataRefItem<uint32_t>("num1", &uint1)); //this was the failure in the tap tests
+
+        //this was the failure in the tap tests
+        t.addItem(new DataRefItem<uint32_t>("num1", &uint1)); 
     }    
 
     std::vector<AbstractDataRefItem*> datarefitems = t.getItems();
-    float prevUnpackedValue = 0.0;
-    float theUnpackedValue = 0.0;
+    uint32_t prevUnpackedValue = 0;
+    uint32_t theUnpackedValue = 0;
     for(int i = 0; i < datarefitems.size(); i++) 
     {
         prevUnpackedValue = theUnpackedValue;
-        float bigEndianValue;
-        memcpy(&bigEndianValue, &datarefitems[0], sizeof(bigEndianValue));
-        theUnpackedValue = ntohf(bigEndianValue);
-        if (prevUnpackedValue == theUnpackedValue) 
-        {
+        memcpy(&theUnpackedValue, &datarefitems[0], sizeof(theUnpackedValue));     
+          
+        //skip first variable
+        if (i!= 0) {
+            EXPECT_EQ(prevUnpackedValue, theUnpackedValue); 
             t.stop();
             std::cerr<<"Duplicate values detected."<<std::endl;
-            EXPECT_FALSE(false);
             break;
         }
     }
