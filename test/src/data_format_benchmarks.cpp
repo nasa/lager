@@ -48,7 +48,7 @@ static void createFromTenDataRefs(benchmark::State& state)
 
     for (auto _ : state)
     {
-        p.createFromDataRefItems(dataRefItems, "test");
+        p.createFromDataRefItems(dataRefItems, "test", "test_key");
     }
 }
 
@@ -73,7 +73,7 @@ static void createFromHundredDataRefs(benchmark::State& state)
 
     for (auto _ : state)
     {
-        p.createFromDataRefItems(dataRefItems, "test");
+        p.createFromDataRefItems(dataRefItems, "test", "test_key");
     }
 }
 
@@ -98,7 +98,7 @@ static void createFromThousandDataRefs(benchmark::State& state)
 
     for (auto _ : state)
     {
-        p.createFromDataRefItems(dataRefItems, "test");
+        p.createFromDataRefItems(dataRefItems, "test", "test_key");
     }
 }
 
