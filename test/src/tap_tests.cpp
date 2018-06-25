@@ -50,16 +50,16 @@ TEST_F(TapTests, DuplicateValues)
     }
 
     std::vector<AbstractDataRefItem*> datarefitems = t.getItems();
-    uint32_t prevUnpackedValue = 0;
-    uint32_t theUnpackedValue = 0;
+    std::string prevItem = "";
+    std::string currItem = "";
     for(int i = 0; i < datarefitems.size(); i++)
     {
-        prevUnpackedValue = theUnpackedValue;
-        memcpy(&theUnpackedValue, &datarefitems[i], sizeof(theUnpackedValue));
+        prevItem = currItem;
+        currItem = datarefitems[i]->getName();
 
         //skip first variable
         if (i!= 0) {
-            EXPECT_NE(prevUnpackedValue, theUnpackedValue);
+            EXPECT_NE(currItem, prevItem);
             std::cout<<"FAIL"<<std::endl;
         }
     }
