@@ -46,25 +46,24 @@ TEST_F(TapTests, DuplicateValues)
         uint1 += 1;
 
         //this was the failure in the tap tests
-        t.addItem(new DataRefItem<uint32_t>("num1", &uint1)); 
-    }    
+        t.addItem(new DataRefItem<uint32_t>("num1", &uint1));
+    }
 
     std::vector<AbstractDataRefItem*> datarefitems = t.getItems();
     uint32_t prevUnpackedValue = 0;
     uint32_t theUnpackedValue = 0;
-    for(int i = 0; i < datarefitems.size(); i++) 
+    for(int i = 0; i < datarefitems.size(); i++)
     {
         prevUnpackedValue = theUnpackedValue;
-        memcpy(&theUnpackedValue, &datarefitems[0], sizeof(theUnpackedValue));     
-          
+        memcpy(&theUnpackedValue, &datarefitems[i], sizeof(theUnpackedValue));
+
         //skip first variable
         if (i!= 0) {
-            EXPECT_EQ(prevUnpackedValue, theUnpackedValue); 
-            t.stop();
-            std::cerr<<"Duplicate values detected."<<std::endl;
-            break;
+            EXPECT_NE(prevUnpackedValue, theUnpackedValue);
+            std::cout<<"FAIL"<<std::endl;
         }
     }
+    t.stop();
 }
 
 int main(int argc, char* argv[])

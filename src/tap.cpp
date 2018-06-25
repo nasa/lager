@@ -50,13 +50,26 @@ bool Tap::init(const std::string& serverHost_in, int basePort, int timeOutMillis
 */
 void Tap::addItem(AbstractDataRefItem* item)
 {
-    // set the offset of the new item based on order of addition
-    item->setOffset(offsetCount);
+    bool dupeCheck = false;
 
-    dataRefItems.push_back(item);
+    for(unsigned int i = 0; i < dataRefItems.size(); i++)
+    {
+        if(dataRefItems[i]->getName() == item->getName())
+        {
+            dupeCheck = true;
+            break;
+        }
+    }
 
-    // keeps track of the offset for later generation of the data format xml
-    offsetCount += item->getSize();
+    if(dupeCheck == false) {
+        // set the offset of the new item based on order of addition
+        item->setOffset(offsetCount);
+
+        dataRefItems.push_back(item);
+
+        // keeps track of the offset for later generation of the data format xml
+        offsetCount += item->getSize();
+    }
 }
 
 /**
