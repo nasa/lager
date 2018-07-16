@@ -15,22 +15,22 @@
 </xs:simpleType>
 
 <!-- attributes -->
+<xs:attribute name="key" type="xs:string"/>
 <xs:attribute name="name" type="xs:string"/>
-<xs:attribute name="type" type="xs:string"/>
-<xs:attribute name="size" type="PositiveInteger"/>
 <xs:attribute name="offset" type="PositiveInteger"/>
+<xs:attribute name="size" type="PositiveInteger"/>
+<xs:attribute name="type" type="xs:string"/>
+<xs:attribute name="value" type="xs:string"/>
 <xs:attribute name="version" type="LimitedString"/>
 <xs:attribute name="uuid" type="xs:string"/>
-<xs:attribute name="key" type="xs:string"/>
-<xs:attribute name="value" type="xs:string"/>
 
 <!-- elements -->
 <xs:element name="item">
     <xs:complexType>
         <xs:attribute ref="name" use="required"/>
-        <xs:attribute ref="type" use="required"/>
-        <xs:attribute ref="size" use="required"/>
         <xs:attribute ref="offset" use="required"/>
+        <xs:attribute ref="size" use="required"/>
+        <xs:attribute ref="type" use="required"/>
     </xs:complexType>
 </xs:element>
 
@@ -39,9 +39,9 @@
         <xs:sequence>
             <xs:element ref="item" minOccurs="1" maxOccurs="unbounded"/>
         </xs:sequence>
-        <xs:attribute ref="version" use="required"/>
-        <xs:attribute ref="uuid" use="required"/>
         <xs:attribute ref="key" use="required"/>
+        <xs:attribute ref="uuid" use="required"/>
+        <xs:attribute ref="version" use="required"/>
     </xs:complexType>
 </xs:element>
 

@@ -180,6 +180,7 @@ void Tap::publisherThread()
 
                 mutex.lock();
 
+                //std::copy(uuid.c_str().begin(), uuid.c_str().end(), uuidMsg.data());
                 memcpy(uuidMsg.data(), uuid.c_str(), uuid.size());
                 memcpy(versionMsg.data(), version.c_str(), version.size());
 
@@ -237,4 +238,22 @@ void Tap::publisherThread()
     mutex.lock();
     publisherRunning = false;
     mutex.unlock();
+}
+
+/**
+* @brief Returns flag
+* @return flags
+*/
+uint8_t Tap::getFlag()
+{
+    return flags;
+}
+
+/**
+ * @brief Sets flags
+ * @param setFlag is the flag you set
+ **/
+void Tap::setFlag(uint8_t setFlag)
+{
+    flags = setFlag;
 }

@@ -49,18 +49,28 @@ TEST_F(TapTests, DuplicateValues)
         t.addItem(new DataRefItem<uint32_t>("num1", &uint1));
     }
 
-    std::vector<AbstractDataRefItem*> datarefitems = t.getItems();
+    std::vector<AbstractDataRefItem*> datarefItems = t.getItems();
+    std::vector<std::string> datarefNames;
+
+
+    for(int i = 0; i < datarefItems.size(); i++)
+    {
+        datarefNames.push_back(datarefItems[i]->getName());
+    }
+
+    std::sort(datarefNames.begin(), datarefNames.end());
+
     std::string prevItem = "";
     std::string currItem = "";
-    for(int i = 0; i < datarefitems.size(); i++)
+
+    for(int i = 0; i < datarefNames.size(); i++)
     {
         prevItem = currItem;
-        currItem = datarefitems[i]->getName();
+        currItem = datarefNames[i];
 
         //skip first variable
         if (i!= 0) {
             EXPECT_NE(currItem, prevItem);
-            std::cout<<"FAIL"<<std::endl;
         }
     }
     t.stop();

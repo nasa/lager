@@ -23,6 +23,8 @@ public:
     void start(const std::string& key_in);
     void stop();
     void log();
+    uint8_t getFlag();
+    void setFlag(uint8_t setFlag);
 
 protected:
     void publisherThread();
