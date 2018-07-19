@@ -20,9 +20,9 @@
 <xs:attribute name="offset" type="PositiveInteger"/>
 <xs:attribute name="size" type="PositiveInteger"/>
 <xs:attribute name="type" type="xs:string"/>
+<xs:attribute name="uuid" type="xs:string"/>
 <xs:attribute name="value" type="xs:string"/>
 <xs:attribute name="version" type="LimitedString"/>
-<xs:attribute name="uuid" type="xs:string"/>
 
 <!-- elements -->
 <xs:element name="item">
