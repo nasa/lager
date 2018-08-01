@@ -105,14 +105,12 @@ TEST_F(DataFormatTests, AddItem)
 
     DataItem test1 = DataItem("test1", "int", 4, 0);
     DataItem test2 = DataItem("test2", "int", 4, 4);
-    
     df.addItem(test1);
     df.addItem(test2);
 
     items = df.getItems();
-
     EXPECT_TRUE(items.size() > 0);
-    EXPECT_NE(items[1].name, items[2].name);
+    EXPECT_NE(items[0].name, items[1].name);
 }
 
 int main(int argc, char* argv[])
