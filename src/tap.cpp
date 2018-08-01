@@ -57,11 +57,12 @@ void Tap::addItem(AbstractDataRefItem* item)
         if(dataRefItems[i]->getName() == item->getName())
         {
             dupeCheck = true;
-            throw std::runtime_error("Duplicate References found.");
+            break;
         }
     }
 
-    if(dupeCheck == false) {
+    if(dupeCheck == false) 
+    {
         // set the offset of the new item based on order of addition
         item->setOffset(offsetCount);
 
@@ -69,6 +70,10 @@ void Tap::addItem(AbstractDataRefItem* item)
 
         // keeps track of the offset for later generation of the data format xml
         offsetCount += item->getSize();
+    } 
+    else 
+    {
+        std::clog<<"Duplicate References found."<<std::endl;
     }
 }
 

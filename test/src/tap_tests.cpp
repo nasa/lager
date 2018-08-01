@@ -29,7 +29,6 @@ TEST_F(TapTests, BadPortNumber)
 
 TEST_F(TapTests, DuplicateValues)
 {
-
     Tap t;
     int arraySize = 10;
     uint32_t uint1 = 0;
@@ -51,7 +50,6 @@ TEST_F(TapTests, DuplicateValues)
 
     std::vector<AbstractDataRefItem*> datarefItems = t.getItems();
     std::vector<std::string> datarefNames;
-
 
     for(int i = 0; i < datarefItems.size(); i++)
     {
