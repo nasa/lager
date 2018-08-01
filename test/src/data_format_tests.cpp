@@ -97,6 +97,24 @@ TEST_F(DataFormatTests, SchemaCheckerGood)
     EXPECT_TRUE(p.isValid(p.getXmlStr(), dataRefItems.size()));
 }
 
+TEST_F(DataFormatTests, AddItem)
+{
+    DataFormat df("test_ver", "test_key");
+
+    std::vector<DataItem> items;
+
+    DataItem test1 = DataItem("test1", "int", 4, 0);
+    DataItem test2 = DataItem("test2", "int", 4, 4);
+    
+    df.addItem(test1);
+    df.addItem(test2);
+
+    items = df.getItems();
+
+    EXPECT_TRUE(items.size() > 0);
+    EXPECT_NE(items[1].name, items[2].name);
+}
+
 int main(int argc, char* argv[])
 {
     ::testing::InitGoogleTest(&argc, argv);

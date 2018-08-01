@@ -57,6 +57,7 @@ void Tap::addItem(AbstractDataRefItem* item)
         if(dataRefItems[i]->getName() == item->getName())
         {
             dupeCheck = true;
+            throw std::runtime_error("Duplicate References found.");
             break;
         }
     }
@@ -180,7 +181,6 @@ void Tap::publisherThread()
 
                 mutex.lock();
 
-                //std::copy(uuid.c_str().begin(), uuid.c_str().end(), uuidMsg.data());
                 memcpy(uuidMsg.data(), uuid.c_str(), uuid.size());
                 memcpy(versionMsg.data(), version.c_str(), version.size());
 
