@@ -58,7 +58,6 @@ void Tap::addItem(AbstractDataRefItem* item)
         {
             dupeCheck = true;
             throw std::runtime_error("Duplicate References found.");
-            break;
         }
     }
 
