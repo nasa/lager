@@ -19,7 +19,7 @@ public:
 
     bool init(const std::string& serverHost_in, int basePort, int timeOutMillis);
     void addItem(AbstractDataRefItem* item);
-    std::vector<AbstractDataRefItem*> getItems();
+    std::vector<AbstractDataRefItem*> getItems() const;
     void start(const std::string& key_in);
     void stop();
     void log();

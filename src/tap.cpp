@@ -73,7 +73,7 @@ void Tap::addItem(AbstractDataRefItem* item)
     } 
     else 
     {
-        std::clog<<"Duplicate References found."<<std::endl;
+        std::clog<<"Duplicate References found at key: "<<item->getName()<<std::endl;
     }
 }
 
@@ -81,7 +81,7 @@ void Tap::addItem(AbstractDataRefItem* item)
 * @brief Returns the vector of Items
 * @return dataRefItems
 */
-std::vector<AbstractDataRefItem*> Tap::getItems()
+std::vector<AbstractDataRefItem*> Tap::getItems() const
 {
     return dataRefItems;
 }
