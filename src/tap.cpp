@@ -50,13 +50,40 @@ bool Tap::init(const std::string& serverHost_in, int basePort, int timeOutMillis
 */
 void Tap::addItem(AbstractDataRefItem* item)
 {
-    // set the offset of the new item based on order of addition
-    item->setOffset(offsetCount);
+    bool dupeCheck = false;
 
-    dataRefItems.push_back(item);
+    for(unsigned int i = 0; i < dataRefItems.size(); i++)
+    {
+        if(dataRefItems[i]->getName() == item->getName())
+        {
+            dupeCheck = true;
+            break;
+        }
+    }
 
-    // keeps track of the offset for later generation of the data format xml
-    offsetCount += item->getSize();
+    if(dupeCheck == false) 
+    {
+        // set the offset of the new item based on order of addition
+        item->setOffset(offsetCount);
+
+        dataRefItems.push_back(item);
+
+        // keeps track of the offset for later generation of the data format xml
+        offsetCount += item->getSize();
+    } 
+    else 
+    {
+        std::clog<<"Duplicate References found at key: "<<item->getName()<<std::endl;
+    }
+}
+
+/**
+* @brief Returns the vector of Items
+* @return dataRefItems
+*/
+std::vector<AbstractDataRefItem*> Tap::getItems() const
+{
+    return dataRefItems;
 }
 
 /**
@@ -71,7 +98,7 @@ void Tap::start(const std::string& key_in)
 
     DataFormatParser p;
 
-    if (p.createFromDataRefItems(dataRefItems, version))
+    if (p.createFromDataRefItems(dataRefItems, version, key_in))
     {
         formatStr = p.getXmlStr();
     }
@@ -80,13 +107,11 @@ void Tap::start(const std::string& key_in)
         throw std::runtime_error("unable to build xml format of tap");
     }
 
-    key = key_in;
-
     running = true;
 
     chpClient->start();
     // sets the hashmap value so it will be sent to the bartender
-    chpClient->addOrUpdateKeyValue(key, formatStr);
+    chpClient->addOrUpdateKeyValue(key_in, formatStr);
 
     publisherThreadHandle = std::thread(&Tap::publisherThread, this);
     publisherThreadHandle.detach();
@@ -141,7 +166,6 @@ void Tap::publisherThread()
 {
     publisherRunning = true;
     zmq::socket_t publisher(*context.get(), ZMQ_PUB);
-
     // setting linger so the socket doesn't hang around after being stopped
     int linger = 0;
 
@@ -218,4 +242,22 @@ void Tap::publisherThread()
     mutex.lock();
     publisherRunning = false;
     mutex.unlock();
+}
+
+/**
+* @brief Returns flag
+* @return flags
+*/
+uint8_t Tap::getFlag()
+{
+    return flags;
+}
+
+/**
+ * @brief Sets flags
+ * @param setFlag is the flag you set
+ **/
+void Tap::setFlag(uint8_t setFlag)
+{
+    flags = setFlag;
 }

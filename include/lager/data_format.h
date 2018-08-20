@@ -27,19 +27,20 @@ struct DataItem
 class DataFormat
 {
 public:
-    explicit DataFormat(const std::string& version);
+    explicit DataFormat(const std::string& version, const std::string& key);
     virtual ~DataFormat();
 
     std::vector<DataItem> getItems() {return items;}
     unsigned int getItemCount() {return items.size();}
     std::string getVersion() {return version;}
+    std::string getKey() {return key;}
     size_t getItemsSize() {return itemsSize;}
 
     void addItem(const DataItem& item);
 
     friend std::ostream& operator<<(std::ostream& stream, const DataFormat& df)
     {
-        stream << "version: " << df.version << std::endl;
+        stream << "version: " << df.version << " key: " << df.key << std::endl;
 
         for (auto i = df.items.begin(); i != df.items.end(); ++i)
         {
@@ -52,6 +53,7 @@ public:
 private:
     std::vector<DataItem> items;
     std::string version;
+    std::string key;
     size_t itemsSize;
 };
 

@@ -21,7 +21,7 @@ static void parseFromString(benchmark::State& state)
 
     for (auto _ : state)
     {
-        p.parseFromString("<?xml version=\"1.0\" encoding=\"UTF-8\"?><format version=\"BEERR01\">"
+        p.parseFromString("<?xml version=\"1.0\" encoding=\"UTF-8\"?><format version=\"BEERR01\" key=\"test\">"
                           "<item name=\"column1\" type=\"string\" size=\"255\" offset=\"0\"/>"
                           "<item name=\"column2\" type=\"integer\" size=\"4\" offset=\"255\"/></format>");
     }
@@ -48,7 +48,7 @@ static void createFromTenDataRefs(benchmark::State& state)
 
     for (auto _ : state)
     {
-        p.createFromDataRefItems(dataRefItems, "test");
+        p.createFromDataRefItems(dataRefItems, "test", "test_key");
     }
 }
 
@@ -73,7 +73,7 @@ static void createFromHundredDataRefs(benchmark::State& state)
 
     for (auto _ : state)
     {
-        p.createFromDataRefItems(dataRefItems, "test");
+        p.createFromDataRefItems(dataRefItems, "test", "test_key");
     }
 }
 
@@ -98,7 +98,7 @@ static void createFromThousandDataRefs(benchmark::State& state)
 
     for (auto _ : state)
     {
-        p.createFromDataRefItems(dataRefItems, "test");
+        p.createFromDataRefItems(dataRefItems, "test", "test_key");
     }
 }
 

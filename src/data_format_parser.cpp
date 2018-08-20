@@ -170,7 +170,6 @@ void DataFormatParser::parse()
         MemBufInputSource xmlBuf((const XMLByte*)xmlStr.c_str(), xmlStr.size(), "unused");
 
         parser->parse(xmlBuf);
-
         // because we passed in the XSD file, this error count will tell us if
         // the xml file is valid per the schema
         if (parser->getErrorCount() != 0)
@@ -195,7 +194,12 @@ void DataFormatParser::parse()
         char* cVersion = XMLString::transcode(xVersion);
         std::string version(cVersion);
 
-        format.reset(new DataFormat(version));
+        // grab the key
+        const XMLCh* xKey = formatElement->getAttribute(attKey);
+        char* cKey = XMLString::transcode(xKey);
+        std::string key(cKey);
+
+        format.reset(new DataFormat(version, key));
 
         DOMNodeList* children = formatElement->getChildNodes();
 
@@ -244,6 +248,7 @@ void DataFormatParser::parse()
         }
 
         XMLString::release(&cVersion);
+        XMLString::release(&cKey);
     }
     catch (const std::runtime_error& e)
     {
@@ -255,12 +260,14 @@ void DataFormatParser::parse()
  * @brief Converts a given array of DataRefItems and generates and stores its xml string into the xmlStr member
  * @param items is a vector of AbstractDataRefItem to generate from
  * @param version is a string containing the version of the data format used
+ * @param key is a string containing the key from where the tap came from
  * @returns true on successful generation, false on failure
  */
-bool DataFormatParser::createFromDataRefItems(const std::vector<AbstractDataRefItem*>& items, const std::string& version)
+bool DataFormatParser::createFromDataRefItems(const std::vector<AbstractDataRefItem*>& items, const std::string& version, const std::string& key)
 {
     // temporary xml strings to use during generation
     XMLCh* xVersion = nullptr;
+    XMLCh* xKey = nullptr;
     XMLCh* xName = nullptr;
     XMLCh* xType = nullptr;
     XMLCh* xSize = nullptr;
@@ -283,6 +290,10 @@ bool DataFormatParser::createFromDataRefItems(const std::vector<AbstractDataRefI
     // add the version
     xVersion = XMLString::transcode(version.c_str());
     root->setAttribute(attVersion, xVersion);
+
+    // add the key
+    xKey = XMLString::transcode(key.c_str());
+    root->setAttribute(attKey, xKey);
 
     std::stringstream ss;
 
@@ -326,8 +337,9 @@ bool DataFormatParser::createFromDataRefItems(const std::vector<AbstractDataRefI
     // release resources
     XMLString::release(&xFormat);
     XMLString::release(&xVersion);
-    doc->release();
+    XMLString::release(&xKey);
 
+    doc->release();
     // check validity against the schema
     if (!isValid(xmlStr, items.size()))
     {

@@ -7,7 +7,7 @@ static void kegWriteOneUint32(benchmark::State& state)
 {
     Keg k(".");
 
-    k.addFormat("076ac37b-83dd-4fef-bc9d-16789794be87", "<?xml version=\"1.0\" encoding=\"UTF-8\"?><format version=\"BEERR01\">"
+    k.addFormat("076ac37b-83dd-4fef-bc9d-16789794be87", "<?xml version=\"1.0\" encoding=\"UTF-8\"?><format version=\"BEERR01\" key=\"test\">"
                 "<item name=\"column1\" type=\"uint32_t\" size=\"4\" offset=\"0\"/></format>");
 
     k.start();
@@ -57,7 +57,7 @@ static void kegWriteTenUint32(benchmark::State& state)
 {
     Keg k(".");
 
-    k.addFormat("076ac37b-83dd-4fef-bc9d-16789794be87", "<?xml version=\"1.0\" encoding=\"UTF-8\"?><format version=\"BEERR01\">"
+    k.addFormat("076ac37b-83dd-4fef-bc9d-16789794be87", "<?xml version=\"1.0\" encoding=\"UTF-8\"?><format version=\"BEERR01\" key=\"test\">"
                 "<item name=\"column1\" type=\"uint32_t\" size=\"4\" offset=\"0\"/>"
                 "<item name=\"column2\" type=\"uint32_t\" size=\"4\" offset=\"4\"/>"
                 "<item name=\"column3\" type=\"uint32_t\" size=\"4\" offset=\"8\"/>"
@@ -125,7 +125,7 @@ static void kegWriteHundredUint32(benchmark::State& state)
 {
     std::stringstream ss;
     off_t offset = 0;
-    ss << "<?xml version=\"1.0\" encoding=\"UTF-8\"?><format version=\"BEERR01\">";
+    ss << "<?xml version=\"1.0\" encoding=\"UTF-8\"?><format version=\"BEERR01\" key=\"test\">";
 
     for (uint16_t i = 0; i < 100; ++i)
     {
