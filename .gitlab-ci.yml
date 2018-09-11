@@ -85,7 +85,7 @@ coverage-report:
   dependencies: 
     - coverage
   script:
-    - git clone -b feature/generic-file-support git@js-er-code.jsc.nasa.gov:ci_build/ci_scripts.git
+    - git clone git@js-er-code.jsc.nasa.gov:ci_build/ci_scripts.git
     - cd ci_scripts 
     - pip install .
     - cd ..
