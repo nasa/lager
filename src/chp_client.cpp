@@ -202,31 +202,49 @@ void ClusteredHashmapClient::subscriberThread()
 {
     timedOut = false;
     subscriberRunning = true;
-    subscriber.reset(new zmq::socket_t(*context.get(), ZMQ_SUB));
-
-    // setting high water mark of 1 so messages don't stack up
-    int hwm = 1;
-
-    // setting linger so the socket doesn't hang around after being stopped
-    int linger = 0;
-
-    subscriber->setsockopt(ZMQ_RCVHWM, &hwm, sizeof(hwm));
-    subscriber->setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
-
-    // we want all messages from the server
-    subscriber->setsockopt(ZMQ_SUBSCRIBE, "", 0);
-
-    subscriber->connect(lager_utils::getRemoteUri(serverHost.c_str(), subscriberPort).c_str());
-
-    std::string key("");
-    std::string value("");
-    std::string uuid("");
-
-    // Sets up a poller for the subscriber socket
-    zmq::pollitem_t items[] = {{static_cast<void*>(*subscriber.get()), 0, ZMQ_POLLIN, 0}};
 
     try
     {
+        if (!context)
+        {
+            if (running)
+            {
+                throw std::runtime_error("ClusteredHashmapClient::subscriberThread attempted to start with a NULL context");
+            }
+            else
+            {
+                mutex.lock();
+                subscriberRunning = false;
+                timedOut = true;
+                mutex.unlock();
+                return;
+            }
+        }
+
+        subscriber.reset(new zmq::socket_t(*context.get(), ZMQ_SUB));
+
+        // setting high water mark of 1 so messages don't stack up
+        int hwm = 1;
+
+        // setting linger so the socket doesn't hang around after being stopped
+        int linger = 0;
+
+        subscriber->setsockopt(ZMQ_RCVHWM, &hwm, sizeof(hwm));
+        subscriber->setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
+
+        // we want all messages from the server
+        subscriber->setsockopt(ZMQ_SUBSCRIBE, "", 0);
+
+        subscriber->connect(lager_utils::getRemoteUri(serverHost.c_str(), subscriberPort).c_str());
+
+        std::string key("");
+        std::string value("");
+        std::string uuid("");
+
+        // Sets up a poller for the subscriber socket
+        zmq::pollitem_t items[] = {{static_cast<void*>(*subscriber.get()), 0, ZMQ_POLLIN, 0}};
+
+
         // counter to determine if the client is getting the latest message
         double sequence = 0;
 
@@ -298,7 +316,23 @@ void ClusteredHashmapClient::subscriberThread()
         // under the socket.
         if (e.num() == ETERM)
         {
-            subscriber->close();
+            try
+            {
+                if (subscriber)
+                {
+                    subscriber->close();
+                }
+            }
+            catch (const zmq::error_t& e)
+            {
+                if (e.num() != ETERM)
+                {
+                    std::stringstream ss;
+                    ss << "ClusteredHashmapClient::subscriberThread() uncaught zmq exception: " << e.what();
+                    throw std::runtime_error(ss.str());
+                }
+            }
+
             mutex.lock();
             subscriberRunning = false;
             timedOut = true;
@@ -307,7 +341,23 @@ void ClusteredHashmapClient::subscriberThread()
         }
     }
 
-    subscriber->close();
+    try
+    {
+        if (subscriber)
+        {
+            subscriber->close();
+        }
+    }
+    catch (const zmq::error_t& e)
+    {
+        if (e.num() != ETERM)
+        {
+            std::stringstream ss;
+            ss << "ClusteredHashmapClient::subscriberThread() uncaught zmq exception: " << e.what();
+            throw std::runtime_error(ss.str());
+        }
+    }
+
     mutex.lock();
     subscriberRunning = false;
     timedOut = true;
@@ -330,11 +380,6 @@ void ClusteredHashmapClient::snapshotThread()
     // linger zero so the socket shuts down nicely later
     int linger = 0;
 
-    snapshot.reset(new zmq::socket_t(*context.get(), ZMQ_DEALER));
-    snapshot->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
-    snapshot->setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
-    snapshot->connect(lager_utils::getRemoteUri(serverHost.c_str(), snapshotPort).c_str());
-
     std::map<std::string, std::string> updateMap; // <key, value>
     std::map<std::string, std::string> updateUuids; // <uuid, key>
 
@@ -350,6 +395,26 @@ void ClusteredHashmapClient::snapshotThread()
 
     try
     {
+        if (!context)
+        {
+            if (running)
+            {
+                throw std::runtime_error("ClusteredHashmapClient::snapshotThread attempted to start with a NULL context");
+            }
+            else
+            {
+                mutex.lock();
+                snapshotRunning = false;
+                mutex.unlock();
+                return;
+            }
+        }
+
+        snapshot.reset(new zmq::socket_t(*context.get(), ZMQ_DEALER));
+        snapshot->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
+        snapshot->setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
+        snapshot->connect(lager_utils::getRemoteUri(serverHost.c_str(), snapshotPort).c_str());
+
         while (running)
         {
             if (key != "KTHXBAI")
@@ -417,7 +482,23 @@ void ClusteredHashmapClient::snapshotThread()
         // under the socket.
         if (e.num() == ETERM)
         {
-            snapshot->close();
+            try
+            {
+                if (snapshot)
+                {
+                    snapshot->close();
+                }
+            }
+            catch (const zmq::error_t& e)
+            {
+                if (e.num() != ETERM)
+                {
+                    std::stringstream ss;
+                    ss << "ClusteredHashmapClient::snapshotThread() uncaught zmq exception: " << e.what();
+                    throw std::runtime_error(ss.str());
+                }
+            }
+
             mutex.lock();
             snapshotRunning = false;
             mutex.unlock();
@@ -448,7 +529,23 @@ void ClusteredHashmapClient::snapshotThread()
 
     // This thread ends after one successful call, subsequent hashmap updates come
     // from the subscriber thread
-    snapshot->close();
+    try
+    {
+        if (snapshot)
+        {
+            snapshot->close();
+        }
+    }
+    catch (const zmq::error_t& e)
+    {
+        if (e.num() != ETERM)
+        {
+            std::stringstream ss;
+            ss << "ClusteredHashmapClient::snapshotThread() uncaught zmq exception: " << e.what();
+            throw std::runtime_error(ss.str());
+        }
+    }
+
     mutex.lock();
     snapshotRunning = false;
     mutex.unlock();
@@ -475,6 +572,21 @@ void ClusteredHashmapClient::publisherThread()
 
     try
     {
+        if (!context)
+        {
+            if (running)
+            {
+                throw std::runtime_error("ClusteredHashmapClient::publisherThread attempted to start with a NULL context");
+            }
+            else
+            {
+                mutex.lock();
+                publisherRunning = false;
+                mutex.unlock();
+                return;
+            }
+        }
+
         publisher.reset(new zmq::socket_t(*context.get(), ZMQ_PUB));
         publisher->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
         publisher->setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
@@ -517,7 +629,23 @@ void ClusteredHashmapClient::publisherThread()
         // under the socket.
         if (e.num() == ETERM)
         {
-            publisher->close();
+            try
+            {
+                if (publisher)
+                {
+                    publisher->close();
+                }
+            }
+            catch (const zmq::error_t& e)
+            {
+                if (e.num() != ETERM)
+                {
+                    std::stringstream ss;
+                    ss << "ClusteredHashmapClient::publisherThread() uncaught zmq exception: " << e.what();
+                    throw std::runtime_error(ss.str());
+                }
+            }
+
             mutex.lock();
             publisherRunning = false;
             mutex.unlock();
@@ -525,7 +653,23 @@ void ClusteredHashmapClient::publisherThread()
         }
     }
 
-    publisher->close();
+    try
+    {
+        if (publisher)
+        {
+            publisher->close();
+        }
+    }
+    catch (const zmq::error_t& e)
+    {
+        if (e.num() != ETERM)
+        {
+            std::stringstream ss;
+            ss << "ClusteredHashmapClient::publisherThread() uncaught zmq exception: " << e.what();
+            throw std::runtime_error(ss.str());
+        }
+    }
+
     mutex.lock();
     publisherRunning = false;
     mutex.unlock();

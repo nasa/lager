@@ -52,16 +52,16 @@ void Tap::addItem(AbstractDataRefItem* item)
 {
     bool dupeCheck = false;
 
-    for(unsigned int i = 0; i < dataRefItems.size(); i++)
+    for (unsigned int i = 0; i < dataRefItems.size(); i++)
     {
-        if(dataRefItems[i]->getName() == item->getName())
+        if (dataRefItems[i]->getName() == item->getName())
         {
             dupeCheck = true;
             break;
         }
     }
 
-    if(dupeCheck == false) 
+    if (dupeCheck == false)
     {
         // set the offset of the new item based on order of addition
         item->setOffset(offsetCount);
@@ -70,10 +70,10 @@ void Tap::addItem(AbstractDataRefItem* item)
 
         // keeps track of the offset for later generation of the data format xml
         offsetCount += item->getSize();
-    } 
-    else 
+    }
+    else
     {
-        std::clog<<"Duplicate References found at key: "<<item->getName()<<std::endl;
+        std::clog << "Duplicate References found at key: " << item->getName() << std::endl;
     }
 }
 
@@ -165,12 +165,27 @@ void Tap::log()
 void Tap::publisherThread()
 {
     publisherRunning = true;
-    zmq::socket_t publisher(*context.get(), ZMQ_PUB);
     // setting linger so the socket doesn't hang around after being stopped
     int linger = 0;
 
     try
     {
+        if (!context)
+        {
+            if (running)
+            {
+                throw std::runtime_error("Tap::publisherThread attempted to start with a NULL context");
+            }
+            else
+            {
+                mutex.lock();
+                publisherRunning = false;
+                mutex.unlock();
+                return;
+            }
+        }
+
+        zmq::socket_t publisher(*context.get(), ZMQ_PUB);
         publisher.setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
         publisher.connect(lager_utils::getRemoteUri(serverHost, publisherPort).c_str());
 
@@ -225,20 +240,14 @@ void Tap::publisherThread()
     }
     catch (const zmq::error_t& e)
     {
-        // This is the proper way of shutting down multithreaded ZMQ sockets.
-        // The creator of the zmq context basically pulls the rug out from
-        // under the socket.
-        if (e.num() == ETERM)
+        if (e.num() != ETERM)
         {
-            publisher.close();
-            mutex.lock();
-            publisherRunning = false;
-            mutex.unlock();
-            return;
+            std::stringstream ss;
+            ss << "Tap::publisherThread() uncaught zmq exception: " << e.what();
+            throw std::runtime_error(ss.str());
         }
     }
 
-    publisher.close();
     mutex.lock();
     publisherRunning = false;
     mutex.unlock();
