@@ -130,6 +130,21 @@ void ClusteredHashmapServer::snapshotThread()
 
     try
     {
+        if (!context)
+        {
+            if (running)
+            {
+                throw std::runtime_error("ClusteredHashmapServer::snapshotThread() attempted to start with a NULL context");
+            }
+            else
+            {
+                mutex.lock();
+                snapshotRunning = false;
+                mutex.unlock();
+                return;
+            }
+        }
+
         snapshot.reset(new zmq::socket_t(*context.get(), ZMQ_ROUTER));
         snapshot->setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
         snapshot->bind(lager_utils::getLocalUri(snapshotPort).c_str());
@@ -173,7 +188,11 @@ void ClusteredHashmapServer::snapshotThread()
         // under the socket.
         if (e.num() == ETERM)
         {
-            snapshot->close();
+            if (snapshot)
+            {
+                snapshot->close();
+            }
+
             mutex.lock();
             snapshotRunning = false;
             mutex.unlock();
@@ -181,7 +200,23 @@ void ClusteredHashmapServer::snapshotThread()
         }
     }
 
-    snapshot->close();
+    try
+    {
+        if (snapshot)
+        {
+            snapshot->close();
+        }
+    }
+    catch (const zmq::error_t& e)
+    {
+        if (e.num() != ETERM)
+        {
+            std::stringstream ss;
+            ss << "ClusteredHashmapServer::snapshotThread() uncaught zmq exception: " << e.what();
+            throw std::runtime_error(ss.str());
+        }
+    }
+
     mutex.lock();
     snapshotRunning = false;
     mutex.unlock();
@@ -211,27 +246,39 @@ void ClusteredHashmapServer::snapshotMap(const std::string& identity)
 
         // TODO throw here if uuid not found, shouldn't happen?
 
-        // Build the frames of the ZMQ message and send
-        zmq::message_t identityMsg(identity.size());
-        zmq::message_t frame0(i->first.size());
-        zmq::message_t frame1(sizeof(double));
-        zmq::message_t frame2(tmpUuid.size());
-        zmq::message_t frame3(empty.size());
-        zmq::message_t frame4(i->second.size());
+        try
+        {
+            // Build the frames of the ZMQ message and send
+            zmq::message_t identityMsg(identity.size());
+            zmq::message_t frame0(i->first.size());
+            zmq::message_t frame1(sizeof(double));
+            zmq::message_t frame2(tmpUuid.size());
+            zmq::message_t frame3(empty.size());
+            zmq::message_t frame4(i->second.size());
 
-        memcpy(identityMsg.data(), identity.c_str(), identity.size());
-        memcpy(frame0.data(), i->first.c_str(), i->first.size());
-        memcpy(frame1.data(), (void*)&sequence, sizeof(double));
-        memcpy(frame2.data(), tmpUuid.c_str(), tmpUuid.size());
-        memcpy(frame3.data(), empty.c_str(), empty.size());
-        memcpy(frame4.data(), i->second.c_str(), i->second.size());
+            memcpy(identityMsg.data(), identity.c_str(), identity.size());
+            memcpy(frame0.data(), i->first.c_str(), i->first.size());
+            memcpy(frame1.data(), (void*)&sequence, sizeof(double));
+            memcpy(frame2.data(), tmpUuid.c_str(), tmpUuid.size());
+            memcpy(frame3.data(), empty.c_str(), empty.size());
+            memcpy(frame4.data(), i->second.c_str(), i->second.size());
 
-        snapshot->send(identityMsg, ZMQ_SNDMORE);
-        snapshot->send(frame0, ZMQ_SNDMORE);
-        snapshot->send(frame1, ZMQ_SNDMORE);
-        snapshot->send(frame2, ZMQ_SNDMORE);
-        snapshot->send(frame3, ZMQ_SNDMORE);
-        snapshot->send(frame4);
+            snapshot->send(identityMsg, ZMQ_SNDMORE);
+            snapshot->send(frame0, ZMQ_SNDMORE);
+            snapshot->send(frame1, ZMQ_SNDMORE);
+            snapshot->send(frame2, ZMQ_SNDMORE);
+            snapshot->send(frame3, ZMQ_SNDMORE);
+            snapshot->send(frame4);
+        }
+        catch (const zmq::error_t& e)
+        {
+            if (e.num() != ETERM)
+            {
+                std::stringstream ss;
+                ss << "ClusteredHashmapServer::snapshotMap() uncaught zmq exception: " << e.what();
+                throw std::runtime_error(ss.str());
+            }
+        }
     }
 }
 
@@ -245,26 +292,38 @@ void ClusteredHashmapServer::snapshotBye(const std::string& identity)
     std::string empty("");
     std::string subtree("");
 
-    zmq::message_t identityMsg(identity.size());
-    zmq::message_t frame0(kthxbai.size());
-    zmq::message_t frame1(sizeof(double));
-    zmq::message_t frame2(empty.size());
-    zmq::message_t frame3(empty.size());
-    zmq::message_t frame4(subtree.size());
+    try
+    {
+        zmq::message_t identityMsg(identity.size());
+        zmq::message_t frame0(kthxbai.size());
+        zmq::message_t frame1(sizeof(double));
+        zmq::message_t frame2(empty.size());
+        zmq::message_t frame3(empty.size());
+        zmq::message_t frame4(subtree.size());
 
-    memcpy(identityMsg.data(), identity.c_str(), identity.size());
-    memcpy(frame0.data(), kthxbai.c_str(), kthxbai.size());
-    memcpy(frame1.data(), (void*)&sequence, sizeof(double));
-    memcpy(frame2.data(), empty.c_str(), empty.size());
-    memcpy(frame3.data(), empty.c_str(), empty.size());
-    memcpy(frame4.data(), subtree.c_str(), subtree.size());
+        memcpy(identityMsg.data(), identity.c_str(), identity.size());
+        memcpy(frame0.data(), kthxbai.c_str(), kthxbai.size());
+        memcpy(frame1.data(), (void*)&sequence, sizeof(double));
+        memcpy(frame2.data(), empty.c_str(), empty.size());
+        memcpy(frame3.data(), empty.c_str(), empty.size());
+        memcpy(frame4.data(), subtree.c_str(), subtree.size());
 
-    snapshot->send(identityMsg, ZMQ_SNDMORE);
-    snapshot->send(frame0, ZMQ_SNDMORE);
-    snapshot->send(frame1, ZMQ_SNDMORE);
-    snapshot->send(frame2, ZMQ_SNDMORE);
-    snapshot->send(frame3, ZMQ_SNDMORE);
-    snapshot->send(frame4);
+        snapshot->send(identityMsg, ZMQ_SNDMORE);
+        snapshot->send(frame0, ZMQ_SNDMORE);
+        snapshot->send(frame1, ZMQ_SNDMORE);
+        snapshot->send(frame2, ZMQ_SNDMORE);
+        snapshot->send(frame3, ZMQ_SNDMORE);
+        snapshot->send(frame4);
+    }
+    catch (const zmq::error_t& e)
+    {
+        if (e.num() != ETERM)
+        {
+            std::stringstream ss;
+            ss << "ClusteredHashmapServer::snapshotBye() uncaught zmq exception: " << e.what();
+            throw std::runtime_error(ss.str());
+        }
+    }
 
     sequence++;
 }
@@ -347,6 +406,21 @@ void ClusteredHashmapServer::publisherThread()
 
     try
     {
+        if (!context)
+        {
+            if (running)
+            {
+                throw std::runtime_error("ClusteredHashmapServer::publisherThread() attempted to start with a NULL context");
+            }
+            else
+            {
+                mutex.lock();
+                publisherRunning = false;
+                mutex.unlock();
+                return;
+            }
+        }
+
         publisher.reset(new zmq::socket_t(*context.get(), ZMQ_PUB));
         publisher->setsockopt(ZMQ_RCVHWM, &hwm, sizeof(hwm));
         publisher->setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
@@ -374,7 +448,11 @@ void ClusteredHashmapServer::publisherThread()
         // under the socket.
         if (e.num() == ETERM)
         {
-            publisher->close();
+            if (publisher)
+            {
+                publisher->close();
+            }
+
             mutex.lock();
             publisherRunning = false;
             mutex.unlock();
@@ -382,7 +460,23 @@ void ClusteredHashmapServer::publisherThread()
         }
     }
 
-    publisher->close();
+    try
+    {
+        if (publisher)
+        {
+            publisher->close();
+        }
+    }
+    catch (const zmq::error_t& e)
+    {
+        if (e.num() != ETERM)
+        {
+            std::stringstream ss;
+            ss << "ClusteredHashmapServer::publisherThread() uncaught zmq exception: " << e.what();
+            throw std::runtime_error(ss.str());
+        }
+    }
+
     mutex.lock();
     publisherRunning = false;
     mutex.unlock();
@@ -397,23 +491,35 @@ void ClusteredHashmapServer::publishHugz()
     std::string empty("");
     double zero = 0;
 
-    zmq::message_t frame0(hugz.size());
-    zmq::message_t frame1(sizeof(double));
-    zmq::message_t frame2(empty.size());
-    zmq::message_t frame3(empty.size());
-    zmq::message_t frame4(empty.size());
+    try
+    {
+        zmq::message_t frame0(hugz.size());
+        zmq::message_t frame1(sizeof(double));
+        zmq::message_t frame2(empty.size());
+        zmq::message_t frame3(empty.size());
+        zmq::message_t frame4(empty.size());
 
-    memcpy(frame0.data(), hugz.c_str(), hugz.size());
-    memcpy(frame1.data(), (void*)&zero, sizeof(double));
-    memcpy(frame2.data(), empty.c_str(), empty.size());
-    memcpy(frame3.data(), empty.c_str(), empty.size());
-    memcpy(frame4.data(), empty.c_str(), empty.size());
+        memcpy(frame0.data(), hugz.c_str(), hugz.size());
+        memcpy(frame1.data(), (void*)&zero, sizeof(double));
+        memcpy(frame2.data(), empty.c_str(), empty.size());
+        memcpy(frame3.data(), empty.c_str(), empty.size());
+        memcpy(frame4.data(), empty.c_str(), empty.size());
 
-    publisher->send(frame0, ZMQ_SNDMORE);
-    publisher->send(frame1, ZMQ_SNDMORE);
-    publisher->send(frame2, ZMQ_SNDMORE);
-    publisher->send(frame3, ZMQ_SNDMORE);
-    publisher->send(frame4);
+        publisher->send(frame0, ZMQ_SNDMORE);
+        publisher->send(frame1, ZMQ_SNDMORE);
+        publisher->send(frame2, ZMQ_SNDMORE);
+        publisher->send(frame3, ZMQ_SNDMORE);
+        publisher->send(frame4);
+    }
+    catch (const zmq::error_t& e)
+    {
+        if (e.num() != ETERM)
+        {
+            std::stringstream ss;
+            ss << "ClusteredHashmapServer::publishHugz() uncaught zmq exception: " << e.what();
+            throw std::runtime_error(ss.str());
+        }
+    }
 }
 
 /**
@@ -431,6 +537,21 @@ void ClusteredHashmapServer::collectorThread()
 
     try
     {
+        if (!context)
+        {
+            if (running)
+            {
+                throw std::runtime_error("ClusteredHashmapServer::collectorThread() attempted to start with a NULL context");
+            }
+            else
+            {
+                mutex.lock();
+                collectorRunning = false;
+                mutex.unlock();
+                return;
+            }
+        }
+
         collector.reset(new zmq::socket_t(*context.get(), ZMQ_SUB));
         collector->setsockopt(ZMQ_RCVHWM, &hwm, sizeof(hwm));
         collector->setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
@@ -519,7 +640,11 @@ void ClusteredHashmapServer::collectorThread()
         // under the socket.
         if (e.num() == ETERM)
         {
-            collector->close();
+            if (collector)
+            {
+                collector->close();
+            }
+
             mutex.lock();
             collectorRunning = false;
             mutex.unlock();
@@ -527,7 +652,23 @@ void ClusteredHashmapServer::collectorThread()
         }
     }
 
-    collector->close();
+    try
+    {
+        if (collector)
+        {
+            collector->close();
+        }
+    }
+    catch (const zmq::error_t& e)
+    {
+        if (e.num() != ETERM)
+        {
+            std::stringstream ss;
+            ss << "ClusteredHashmapServer::collectorThread() uncaught zmq exception: " << e.what();
+            throw std::runtime_error(ss.str());
+        }
+    }
+
     mutex.lock();
     collectorRunning = false;
     mutex.unlock();

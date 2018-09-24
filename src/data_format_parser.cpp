@@ -170,6 +170,7 @@ void DataFormatParser::parse()
         MemBufInputSource xmlBuf((const XMLByte*)xmlStr.c_str(), xmlStr.size(), "unused");
 
         parser->parse(xmlBuf);
+
         // because we passed in the XSD file, this error count will tell us if
         // the xml file is valid per the schema
         if (parser->getErrorCount() != 0)
@@ -340,6 +341,7 @@ bool DataFormatParser::createFromDataRefItems(const std::vector<AbstractDataRefI
     XMLString::release(&xKey);
 
     doc->release();
+
     // check validity against the schema
     if (!isValid(xmlStr, items.size()))
     {
@@ -454,8 +456,8 @@ bool DataFormatParser::createFromUuidMap(const std::map<std::string, std::string
 
         for (auto meta = metaMap.begin(); meta != metaMap.end(); ++meta)
         {
-            XMLCh* xKey = nullptr;
-            XMLCh* xValue = nullptr;
+            XMLCh* xKey;
+            XMLCh* xValue;
 
             DOMElement* metaItem = doc->createElement(tagMeta);
 
@@ -499,10 +501,10 @@ std::string DataFormatParser::getStringFromDoc(xercesc::DOMDocument* doc)
 {
     // note that the DOMImplementation object retains ownership of this object's
     // memory and application code should *not* delete it
-    DOMImplementation* pImplement = nullptr;
+    DOMImplementation* pImplement;
 
-    DOMLSSerializer* pSerializer = nullptr;
-    MemBufFormatTarget* pTarget = nullptr;
+    DOMLSSerializer* pSerializer;
+    MemBufFormatTarget* pTarget;
 
     // grab available dom implementation (nullptr = no options)
     pImplement = DOMImplementationRegistry::getDOMImplementation(nullptr);

@@ -112,6 +112,7 @@ void Mug::hashMapUpdated()
     {
         // parse the xml data format into a DataFormat object
         tmpDataFormat = formatParser->parseFromString(i->second);
+
         // look for our DataFormat object's topic name in the uuid map
         for (auto j = tmpUuidMap.begin(); j != tmpUuidMap.end(); ++j)
         {
@@ -140,6 +141,21 @@ void Mug::subscriberThread()
 
     try
     {
+        if (!context)
+        {
+            if (running)
+            {
+                throw std::runtime_error("Mug::subscriberThread attempted to start with a NULL context");
+            }
+            else
+            {
+                mutex.lock();
+                subscriberRunning = false;
+                mutex.unlock();
+                return;
+            }
+        }
+
         subscriber.reset(new zmq::socket_t(*context.get(), ZMQ_SUB));
         subscriber->setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
         subscriber->connect(lager_utils::getRemoteUri(serverHost.c_str(), subscriberPort).c_str());
@@ -287,7 +303,11 @@ void Mug::subscriberThread()
         // under the socket.
         if (e.num() == ETERM)
         {
-            subscriber->close();
+            if (subscriber)
+            {
+                subscriber->close();
+            }
+
             mutex.lock();
             subscriberRunning = false;
             mutex.unlock();
@@ -295,7 +315,20 @@ void Mug::subscriberThread()
         }
     }
 
-    subscriber->close();
+    try
+    {
+        subscriber->close();
+    }
+    catch (const zmq::error_t& e)
+    {
+        if (e.num() != ETERM)
+        {
+            std::stringstream ss;
+            ss << "Mug::subscriberThread() uncaught zmq exception: " << e.what();
+            throw std::runtime_error(ss.str());
+        }
+    }
+
     mutex.lock();
     subscriberRunning = false;
     mutex.unlock();
