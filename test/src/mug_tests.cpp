@@ -5,21 +5,7 @@
 #include "lager/mug.h"
 #include "lager/lager_utils.h"
 
-class MugTests : public ::testing::Test
-{
-protected:
-    virtual void SetUp()
-    {
-
-    }
-
-    virtual void TearDown()
-    {
-
-    }
-};
-
-TEST_F(MugTests, BadPortNumber)
+TEST(MugTests, BadPortNumber)
 {
     Mug m;
     EXPECT_FALSE(m.init("localhost", -50, 100));

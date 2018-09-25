@@ -6,28 +6,14 @@
 #include "lager/lager_utils.h"
 #include "lager/data_ref_item.h"
 
-class TapTests : public ::testing::Test
-{
-protected:
-    virtual void SetUp()
-    {
-
-    }
-
-    virtual void TearDown()
-    {
-
-    }
-};
-
-TEST_F(TapTests, BadPortNumber)
+TEST(TapTests, BadPortNumber)
 {
     Tap t;
     EXPECT_FALSE(t.init("localhost", -50, 100));
     EXPECT_FALSE(t.init("localhost", 65536, 100));
 }
 
-TEST_F(TapTests, DuplicateValues)
+TEST(TapTests, DuplicateValues)
 {
     Tap t;
     int arraySize = 10;
@@ -77,6 +63,13 @@ TEST_F(TapTests, DuplicateValues)
     t.stop();
 }
 
+TEST(TapTests, StartWithNoDataItems)
+{
+    Tap t;
+    t.init("localhost", 12345, 1000);
+    EXPECT_ANY_THROW(t.start("/thisshouldfail"));
+}
+
 namespace tap_tests
 {
 
@@ -93,7 +86,7 @@ namespace tap_tests
         {
             tap.init(hostName, port, timeout);
             tap.addItem(new DataRefItem<double>("val1", &val1));
-            tap.addItem(new DataRefItem<double>("val1", &val2));
+            tap.addItem(new DataRefItem<double>("val2", &val2));
             tap.start("/lagerTester");
         }
 

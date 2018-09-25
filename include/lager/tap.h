@@ -32,7 +32,7 @@ protected:
     std::shared_ptr<ClusteredHashmapClient> chpClient;
     std::shared_ptr<zmq::context_t> context;
     std::thread publisherThreadHandle;
-    std::condition_variable publisherCv;
+    std::condition_variable cv;
     std::mutex mutex;
 
     std::vector<AbstractDataRefItem*> dataRefItems;
