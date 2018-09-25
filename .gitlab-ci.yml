@@ -4,7 +4,7 @@ stages:
   - postbuild
   - deploy
 
-trusty:
+ubuntu-trusty:
   stage: build
   image: js-er-code.jsc.nasa.gov:5005/lager/lager_image_base_trusty:stable
   script:
@@ -12,13 +12,21 @@ trusty:
     - cd build
     - cmake .. && make && ctest --verbose
 
-xenial:
+ubuntu-xenial:
   stage: build
   image: js-er-code.jsc.nasa.gov:5005/lager/lager_image_base_xenial:stable
   script:   
     - mkdir build
     - cd build
     - cmake .. && make && ctest --verbose
+
+centos7:
+  stage: build
+  image: js-er-code.jsc.nasa.gov:5005/lager/lager_image_base_centos:stable
+  script:   
+    - mkdir build
+    - cd build
+    - cmake3 .. && make && make test
 
 .windows:
   stage: build

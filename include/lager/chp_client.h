@@ -54,6 +54,7 @@ private:
     std::thread snapshotThreadHandle;
     std::thread subscriberThreadHandle;
     std::thread publisherThreadHandle;
+    std::condition_variable cv;
     std::mutex mutex;
 
     std::map<std::string, std::string> hashMap; // <topic name, xml format>

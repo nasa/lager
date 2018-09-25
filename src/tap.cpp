@@ -93,6 +93,13 @@ std::vector<AbstractDataRefItem*> Tap::getItems() const
 */
 void Tap::start(const std::string& key_in)
 {
+    if (dataRefItems.empty())
+    {
+        throw std::runtime_error("Tap started with zero data items");
+    }
+
+    std::unique_lock<std::mutex> lock(mutex);
+
     // TODO this should probably be compiled in from the cmake or something
     version = "BEERR01";
 
@@ -115,6 +122,11 @@ void Tap::start(const std::string& key_in)
 
     publisherThreadHandle = std::thread(&Tap::publisherThread, this);
     publisherThreadHandle.detach();
+
+    while (!publisherRunning)
+    {
+        cv.wait(lock);
+    }
 }
 
 /**
@@ -126,6 +138,8 @@ void Tap::stop()
     mutex.lock();
     running = false;
     mutex.unlock();
+
+    chpClient->stop();
 
     zmq_ctx_shutdown((void*)*context.get());
 
@@ -142,7 +156,6 @@ void Tap::stop()
         retries++;
     }
 
-    chpClient->stop();
     context->close();
 }
 
@@ -164,7 +177,6 @@ void Tap::log()
 */
 void Tap::publisherThread()
 {
-    publisherRunning = true;
     // setting linger so the socket doesn't hang around after being stopped
     int linger = 0;
 
@@ -188,6 +200,9 @@ void Tap::publisherThread()
         zmq::socket_t publisher(*context.get(), ZMQ_PUB);
         publisher.setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
         publisher.connect(lager_utils::getRemoteUri(serverHost, publisherPort).c_str());
+
+        publisherRunning = true;
+        cv.notify_all();
 
         while (running)
         {

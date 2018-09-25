@@ -20,7 +20,7 @@ download_project(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
 # Build GoogleTest
-add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
+add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR} EXCLUDE_FROM_ALL)
 
 # Include GoogleTest
 include_directories(

@@ -40,6 +40,8 @@ void ClusteredHashmapClient::start()
         throw std::runtime_error("ClusteredHashmapClient started before initialized");
     }
 
+    std::unique_lock<std::mutex> lock(mutex);
+
     running = true;
 
     snapshotThreadHandle = std::thread(&ClusteredHashmapClient::snapshotThread, this);
@@ -49,6 +51,11 @@ void ClusteredHashmapClient::start()
     snapshotThreadHandle.detach();
     subscriberThreadHandle.detach();
     publisherThreadHandle.detach();
+
+    while (!subscriberRunning || !snapshotRunning || !publisherRunning)
+    {
+        cv.wait(lock);
+    }
 }
 
 /**
@@ -201,7 +208,6 @@ std::map<std::string, std::string> ClusteredHashmapClient::getUnsyncedHashmap()
 void ClusteredHashmapClient::subscriberThread()
 {
     timedOut = false;
-    subscriberRunning = true;
 
     try
     {
@@ -244,9 +250,11 @@ void ClusteredHashmapClient::subscriberThread()
         // Sets up a poller for the subscriber socket
         zmq::pollitem_t items[] = {{static_cast<void*>(*subscriber.get()), 0, ZMQ_POLLIN, 0}};
 
-
         // counter to determine if the client is getting the latest message
         double sequence = 0;
+
+        subscriberRunning = true;
+        cv.notify_all();
 
         while (running)
         {
@@ -372,8 +380,6 @@ void ClusteredHashmapClient::subscriberThread()
  */
 void ClusteredHashmapClient::snapshotThread()
 {
-    snapshotRunning = true;
-
     // setting high water mark of 1 so messages don't stack up
     int hwm = 1;
 
@@ -414,6 +420,9 @@ void ClusteredHashmapClient::snapshotThread()
         snapshot->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
         snapshot->setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
         snapshot->connect(lager_utils::getRemoteUri(serverHost.c_str(), snapshotPort).c_str());
+
+        snapshotRunning = true;
+        cv.notify_all();
 
         while (running)
         {
@@ -591,6 +600,9 @@ void ClusteredHashmapClient::publisherThread()
         publisher->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
         publisher->setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
         publisher->connect(lager_utils::getRemoteUri(serverHost.c_str(), publisherPort).c_str());
+
+        publisherRunning = true;
+        cv.notify_all();
 
         while (running)
         {
