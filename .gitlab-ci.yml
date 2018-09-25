@@ -26,7 +26,7 @@ centos7:
   script:   
     - mkdir build
     - cd build
-    - cmake3 .. && make && ctest --verbose
+    - cmake3 .. && make && make test
 
 .windows:
   stage: build
