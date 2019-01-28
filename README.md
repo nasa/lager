@@ -11,6 +11,10 @@ Master
 Develop   
 [![pipeline status](https://js-er-code.jsc.nasa.gov/lager/lager/badges/develop/pipeline.svg)](https://js-er-code.jsc.nasa.gov/lager/lager/commits/develop) [![coverage report](https://js-er-code.jsc.nasa.gov/lager/lager/badges/develop/coverage.svg)](https://artifacts.jsc.nasa.gov/artifactory/doc/lager/lager/develop/coverage/index.html)   
 
+### Documentation
+
+* [Design Document](doc/design.md)
+
 ### Dependencies Linux
 
 Package dependencies   
