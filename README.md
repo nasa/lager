@@ -17,7 +17,7 @@ Package dependencies
 
 `sudo apt install -y git cmake build-essential uuid-dev libxerces-c-dev cppcheck`   
 
-[CMake](https://cmake.org) >= 3.1.3.  Note this package is `cmake` in Ubuntu 16.04 and `cmake3` in Ubuntu 14.04.  The primary reason for CMake 3.1.3 is XercesC works better with `find_package()`   
+[CMake](https://cmake.org) >= 3.1.3
 [XercesC](https://xerces.apache.org/xerces-c/) >= 3.1.1   
 [ZeroMQ](https://github.com/zeromq/libzmq) >= 4.2.2 required.  To install from source:   
 
@@ -60,7 +60,11 @@ Replace `Visual Studio 15 2017` with your appropriate version.
 3. `cmake -G "Visual Studio 15 2017" ..`   
 4. `cmake --build .`   
 
-### Usage
+### Examples
+
+See `src/tap_test_main.cpp`, `src/mug_test_main.cpp`, and `src/bartender_main.cpp`
+
+### Run examples
 
 Open a terminal window and run the bartender   
    
@@ -72,4 +76,4 @@ Open a second terminal window and run the tap
    
 Open a third terminal window and run the mug   
    
-`./test_mug`   
+`./test_mug`  
