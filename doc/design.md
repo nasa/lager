@@ -67,7 +67,7 @@ frame 2: uuid, 16 bytes
 frame 3: properties, as a ZMQ string
 frame 4: value, as a ZMQ string
 ```
-* Frame 0:  The key is a ZMQ string which identifies the Tap as a namespaced human readable identifier in the format:  /Namespace/Tap/.  E.g. /RobotA/MotionController/.  Note the leading and trailing slashes.
+* `Frame 0`:  The key is a ZMQ string which identifies the Tap as a namespaced human readable identifier in the format:  /Namespace/Tap/.  E.g. /RobotA/MotionController/.  Note the leading and trailing slashes.
 * `Frame 1`:  The sequence number is ignored in this part of the CHP spec and may be set to zero.
 * `Frame 2`:  The uuid is a 16 byte unique identifier for the Tap and must be universally unique across the Lager system. It's generated using the libuuid library.
 * `Frame 3`:  The properties frame of the CHP specification is not used in Lager, this should be an empty ZMQ string.
@@ -323,20 +323,22 @@ Notes
 -----
 
 ### Glossary
-•   Hashmap - an abstract map based collection class that is used for storing Key & value pairs
-•   ZMQ PUB/SUB (Publisher/Subscriber pattern) - https://rfc.zeromq.org/spec:29/PUBSUB
-•   ZMQ REQ/REP (Request/Reply pattern, specifically using DEALER/ROUTER) - https://rfc.zeromq.org/spec:28/REQREP
-•   ZMQ CHP (Clustered Hashmap Protocol) - https://rfc.zeromq.org/spec:12/CHP
-•   Tap - a source of data to be logged
-•   Mug - is a recipient of data from a Tap
-•   Bartender - is a middleware responsible for the connection between Taps and Mugs
-•   Log Action - one user invocation of the logging system
-•   Frame - one atomic set of data for a given log action
-•   Data Format - a description of the organization of data
-•   Keg - a non-volatile memory location for storage of files
-•   libuuid - a library used to generate unique identifiers - https://linux.die.net/man/3/libuuid
+
+• Hashmap - an abstract map based collection class that is used for storing Key & value pairs
+• ZMQ PUB/SUB (Publisher/Subscriber pattern) - https://rfc.zeromq.org/spec:29/PUBSUB
+• ZMQ REQ/REP (Request/Reply pattern, specifically using DEALER/ROUTER) - https://rfc.zeromq.org/spec:28/REQREP
+• ZMQ CHP (Clustered Hashmap Protocol) - https://rfc.zeromq.org/spec:12/CHP
+• Tap - a source of data to be logged
+• Mug - is a recipient of data from a Tap
+• Bartender - is a middleware responsible for the connection between Taps and Mugs
+• Log Action - one user invocation of the logging system
+• Frame - one atomic set of data for a given log action
+• Data Format - a description of the organization of data
+• Keg - a non-volatile memory location for storage of files
+• libuuid - a library used to generate unique identifiers - https://linux.die.net/man/3/libuuid
 
 ### Abbreviations and Acronyms
-•   ZMQ - ZeroMQ - A distributed messaging library 
-•   YAML - YAML Ain't Markup Language - A human readable serialization language
+
+• ZMQ - ZeroMQ - A distributed messaging library 
+• YAML - YAML Ain't Markup Language - A human readable serialization language
 
