@@ -1,0 +1,99 @@
+stages:
+  - prebuild
+  - build
+  - postbuild
+  - deploy
+
+ubuntu-trusty:
+  stage: build
+  image: js-er-code.jsc.nasa.gov:5005/lager/lager_image_base_trusty:stable
+  script:
+    - mkdir build
+    - cd build
+    - cmake .. && make && ctest --verbose
+
+ubuntu-xenial:
+  stage: build
+  image: js-er-code.jsc.nasa.gov:5005/lager/lager_image_base_xenial:stable
+  script:   
+    - mkdir build
+    - cd build
+    - cmake .. && make && ctest --verbose
+
+centos7:
+  stage: build
+  image: js-er-code.jsc.nasa.gov:5005/lager/lager_image_base_centos:stable
+  script:   
+    - mkdir build
+    - cd build
+    - cmake3 .. && make && make test
+
+.windows:
+  stage: build
+  script:
+    - mkdir build
+    - cd build
+    - cmake -G "Visual Studio 15 2017" ..
+    - cmake --build . --config Debug
+    - ctest -C Debug --verbose
+  tags:
+    - lager
+    - windows
+
+# todo: make this actually run the trace
+lttng:
+  stage: build
+  image: js-er-code.jsc.nasa.gov:5005/lager/lager_image_profiler:stable
+  script:
+    - mkdir build
+    - cd build
+    - cmake -DBUILD_LTTNG=ON .. && make    
+
+static-analysis:
+  stage: prebuild
+  image: js-er-code.jsc.nasa.gov:5005/lager/lager_image_base_xenial:stable
+  script:
+    - mkdir build
+    - cd build
+    - cmake ..
+    - make cppcheck
+
+coverage:
+  stage: postbuild
+  image: js-er-code.jsc.nasa.gov:5005/lager/lager_image_base_xenial:stable
+  script:   
+    - mkdir build
+    - cd build
+    - cmake -DCMAKE_BUILD_TYPE=Coverage .. && make && make run_coverage
+  coverage: '/lines[\.]+\: (\d+\.\d+)\%/'
+  artifacts:
+    paths:
+      - build/coverage/
+
+benchmark:
+  stage: postbuild
+  image: js-er-code.jsc.nasa.gov:5005/lager/lager_image_base_xenial:stable
+  script:   
+    - mkdir build
+    - cd build
+    - cmake -DCMAKE_BUILD_TYPE=Release .. && make && make run_benchmarks
+
+leakcheck:
+  stage: postbuild
+  image: js-er-code.jsc.nasa.gov:5005/lager/lager_image_profiler:stable
+  script:
+    - mkdir build
+    - cd build
+    - cmake -DCMAKE_BUILD_TYPE=Debug .. && make
+    - valgrind --error-exitcode=1 --leak-check=full --quiet ./test/end_to_end_profile
+
+coverage-report:
+  image: js-er-code.jsc.nasa.gov:5005/ci_build/ubuntu_xenial_with_nasa_certs_and_python
+  stage: deploy
+  dependencies: 
+    - coverage
+  script:
+    - artifactory_upload generic $CI_PROJECT_PATH/$CI_COMMIT_REF_SLUG build/coverage
+  only:
+    - master
+    - develop

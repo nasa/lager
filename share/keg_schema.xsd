@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+<!-- custom types -->
+<xs:simpleType name="LimitedString">
+    <xs:restriction base="xs:string">
+        <xs:maxLength value="8"/>
+    </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="PositiveInteger">
+    <xs:restriction base="xs:integer">
+        <xs:minInclusive value="0"/>
+    </xs:restriction>
+</xs:simpleType>
+
+<!-- attributes -->
+<xs:attribute name="key" type="xs:string"/>
+<xs:attribute name="name" type="xs:string"/>
+<xs:attribute name="offset" type="PositiveInteger"/>
+<xs:attribute name="size" type="PositiveInteger"/>
+<xs:attribute name="type" type="xs:string"/>
+<xs:attribute name="uuid" type="xs:string"/>
+<xs:attribute name="value" type="xs:string"/>
+<xs:attribute name="version" type="LimitedString"/>
+
+<!-- elements -->
+<xs:element name="item">
+    <xs:complexType>
+        <xs:attribute ref="name" use="required"/>
+        <xs:attribute ref="offset" use="required"/>
+        <xs:attribute ref="size" use="required"/>
+        <xs:attribute ref="type" use="required"/>
+    </xs:complexType>
+</xs:element>
+
+<xs:element name="format">
+    <xs:complexType>
+        <xs:sequence>
+            <xs:element ref="item" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute ref="key" use="required"/>
+        <xs:attribute ref="uuid" use="required"/>
+        <xs:attribute ref="version" use="required"/>
+    </xs:complexType>
+</xs:element>
+
+<xs:element name="formats">
+    <xs:complexType>
+        <xs:sequence>
+            <xs:element ref="format" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+</xs:element>
+
+<xs:element name="meta">
+    <xs:complexType>
+        <xs:attribute ref="key" use="required"/>
+        <xs:attribute ref="value" use="required"/>
+    </xs:complexType>
+</xs:element>
+
+<xs:element name="metadata">
+    <xs:complexType>
+        <xs:sequence>
+            <xs:element ref="meta" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+</xs:element>
+
+<!-- main -->
+<xs:element name="keg">
+    <xs:complexType>
+        <xs:sequence>
+            <xs:element ref="formats" minOccurs="1" maxOccurs="1"/>
+            <xs:element ref="metadata" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+</xs:element>
+
+</xs:schema>
